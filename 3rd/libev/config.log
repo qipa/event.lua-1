@@ -599,8 +599,8 @@ configure:11502: $? = 0
 configure:11502: result: yes
 configure:11502: checking for kqueue
 configure:11502: gcc -o conftest -g -O3   conftest.c  >&5
-/tmp/ccM7SzbR.o: In function `main':
-/data/4s/event.lua/3rd/libev/conftest.c:65: undefined reference to `kqueue'
+/tmp/cciG70ja.o: In function `main':
+/data/caiguanqiu/event.lua/3rd/libev/conftest.c:65: undefined reference to `kqueue'
 collect2: ld returned 1 exit status
 configure:11502: $? = 1
 configure: failed program was:
@@ -675,8 +675,8 @@ configure: failed program was:
 configure:11502: result: no
 configure:11502: checking for port_create
 configure:11502: gcc -o conftest -g -O3   conftest.c  >&5
-/tmp/ccMnwLIQ.o: In function `main':
-/data/4s/event.lua/3rd/libev/conftest.c:65: undefined reference to `port_create'
+/tmp/ccg94Zdc.o: In function `main':
+/data/caiguanqiu/event.lua/3rd/libev/conftest.c:65: undefined reference to `port_create'
 collect2: ld returned 1 exit status
 configure:11502: $? = 1
 configure: failed program was:
@@ -767,8 +767,8 @@ configure:11502: $? = 0
 configure:11502: result: yes
 configure:11514: checking for clock_gettime
 configure:11514: gcc -o conftest -g -O3   conftest.c  >&5
-/tmp/ccax1Mw0.o: In function `main':
-/data/4s/event.lua/3rd/libev/conftest.c:69: undefined reference to `clock_gettime'
+/tmp/ccOIgAho.o: In function `main':
+/data/caiguanqiu/event.lua/3rd/libev/conftest.c:69: undefined reference to `clock_gettime'
 collect2: ld returned 1 exit status
 configure:11514: $? = 1
 configure: failed program was:
@@ -856,8 +856,8 @@ configure:11618: result: yes
 configure:11693: checking for library containing floor
 configure:11724: gcc -o conftest -g -O3   conftest.c  >&5
 conftest.c:44: warning: conflicting types for built-in function 'floor'
-/tmp/ccyOdxs6.o: In function `main':
-/data/4s/event.lua/3rd/libev/conftest.c:48: undefined reference to `floor'
+/tmp/cc0uDWZr.o: In function `main':
+/data/caiguanqiu/event.lua/3rd/libev/conftest.c:48: undefined reference to `floor'
 collect2: ld returned 1 exit status
 configure:11724: $? = 1
 configure: failed program was:
@@ -1047,7 +1047,7 @@ lt_cv_to_tool_file_cmd=func_convert_file_noop
 ## Output variables. ##
 ## ----------------- ##
 
-ACLOCAL='${SHELL} /data/4s/event.lua/3rd/libev/missing aclocal-1.14'
+ACLOCAL='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/missing aclocal-1.14'
 AMDEPBACKSLASH='\'
 AMDEP_FALSE='#'
 AMDEP_TRUE=''
@@ -1057,9 +1057,9 @@ AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
 AM_DEFAULT_VERBOSITY='1'
 AM_V='$(V)'
 AR='ar'
-AUTOCONF='${SHELL} /data/4s/event.lua/3rd/libev/missing autoconf'
-AUTOHEADER='${SHELL} /data/4s/event.lua/3rd/libev/missing autoheader'
-AUTOMAKE='${SHELL} /data/4s/event.lua/3rd/libev/missing automake-1.14'
+AUTOCONF='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/missing autoconf'
+AUTOHEADER='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/missing autoheader'
+AUTOMAKE='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/missing automake-1.14'
 AWK='gawk'
 CC='gcc'
 CCDEPMODE='depmode=gcc3'
@@ -1094,7 +1094,7 @@ LTLIBOBJS=''
 MAINT='#'
 MAINTAINER_MODE_FALSE=''
 MAINTAINER_MODE_TRUE='#'
-MAKEINFO='${SHELL} /data/4s/event.lua/3rd/libev/missing makeinfo'
+MAKEINFO='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/missing makeinfo'
 MANIFEST_TOOL=':'
 MKDIR_P='/bin/mkdir -p'
 NM='/usr/bin/nm -B'
@@ -1150,7 +1150,7 @@ host_vendor='unknown'
 htmldir='${docdir}'
 includedir='${prefix}/include'
 infodir='${datarootdir}/info'
-install_sh='${SHELL} /data/4s/event.lua/3rd/libev/install-sh'
+install_sh='${SHELL} /data/caiguanqiu/event.lua/3rd/libev/install-sh'
 libdir='${exec_prefix}/lib'
 libexecdir='${exec_prefix}/libexec'
 localedir='${datarootdir}/locale'
