@@ -1,5 +1,5 @@
 local event = require "event"
-
+local helper = require "helper"
 local client_countor = 0
 local function client_accept(cid,addr)
 	-- print("client_accept",cid,addr)
@@ -17,6 +17,8 @@ local function client_close(cid)
 		print("client_countor",client_countor)
 	end
 end
+
+helper.cpu.start("cpu.prof")
 
 local countor = 0
 local function client_data(cid,message_id,data,size)
@@ -36,4 +38,10 @@ event.fork(function ()
 		event.breakout(string.format("%s %s",env.name,reason))
 		os.exit(1)
 	end
+end)
+
+
+event.fork(function ()
+	event.sleep(20)
+	helper.cpu.stop()
 end)
