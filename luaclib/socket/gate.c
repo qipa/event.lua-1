@@ -18,6 +18,7 @@
 #define ALIVE_TIME 			60
 #define WARN_OUTPUT_FLOW 	10 * 1024
 #define MAX_SEQMENT 		64 * 1024
+#define HEADER 				2
 
 __thread uint8_t CACHED_BUFFER[CACHED_SIZE];
 
@@ -44,7 +45,7 @@ struct ev_client {
 	int need;
 	int freq;
 	int execute;
-	int mark;
+	int markdead;
 	uint8_t seed;
 	uint16_t order;
 	double tick;
@@ -79,29 +80,34 @@ error_happen(struct ev_session* session,void* ud) {
 	struct ev_client* client = ud;
 	int id = client->id;
 	struct gate_ctx* gate = client->gate;
-	close_client(0,client);
 	gate->close_func(gate->ud,id);
+
+	if (client->execute == 1) {
+		client->markdead = 1;
+	} else {
+		close_client(0,client);
+	}
 }
 
 static void
 read_complete(struct ev_session* ev_session, void* ud) {
 	struct ev_client* client = ud;
 	client->execute = 1;
-	while (client->mark == 0) {
+	while (client->markdead == 0) {
 		size_t total = ev_session_input_size(ev_session);
 		if (client->need == 0) {
 			if (total < 2) {
 				break;
 			}
 	
-			uint8_t header[2];
-			ev_session_read(ev_session,(char*)header,2);
+			uint8_t header[HEADER];
+			ev_session_read(ev_session,(char*)header,HEADER);
 			client->need = header[0] | header[1] << 8;
-			client->need -= 2;
+			client->need -= HEADER;
 			assert(client->need > 0);
 			if (client->need > MAX_SEQMENT) {
 				error_happen(ev_session, client);
-				return;
+				break;
 			}
 		} else {
 			if (total < client->need) {
@@ -126,9 +132,10 @@ read_complete(struct ev_session* ev_session, void* ud) {
 
 		    if (sum != 0 || order != client->order) {
 		    	error_happen(ev_session, client);
-			    if (data != CACHED_BUFFER)
+			    if (data != CACHED_BUFFER) {
 			    	free(data);
-				return;
+			    }
+				break;
 		    } else {
 		    	client->order++;
 		    }
@@ -136,16 +143,18 @@ read_complete(struct ev_session* ev_session, void* ud) {
 		    client->tick = loop_ctx_now(client->gate->loop_ctx);
 		    client->gate->data_func(client->gate->ud,client->id,id,&data[6],client->need - 6);
 
-		    if (data != CACHED_BUFFER)
+		    if (data != CACHED_BUFFER) {
 		    	free(data);
+		    }
 
 		    client->need = 0;
 		}
 	}
-	if (client->mark) {
+	client->execute = 0;
+
+	if (client->markdead) {
 		close_client(0,client);
 	}
-	client->execute = 0;
 }	
 
 static void
@@ -279,7 +288,7 @@ gate_close(struct gate_ctx* gate,int client_id,int grace) {
 	}
 	if (!grace) {
 		if (client->execute) {
-			client->mark = 1;
+			client->markdead = 1;
 		} else {
 			close_client(0,client);
 		}
