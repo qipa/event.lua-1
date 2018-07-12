@@ -88,7 +88,7 @@ function channel:dispatch(message,size)
 		end
 		self.session_ctx[message.session] = nil
 	else
-		monitor.report_input(message.file,message.method,size)
+		-- monitor.report_input(message.file,message.method,size)
 		event.fork(call_method,self,message.session,message.file,message.method,message.args)
 	end
 end
@@ -124,7 +124,7 @@ function channel:send(file,method,args,callback)
 	local ptr,size = table.encode({file = file,method = method,session = 0,args = args})
 	self:write(ptr,size)
 	
-	monitor.report_output(file,method,size)
+	-- monitor.report_output(file,method,size)
 
 	if session ~= 0 then
 		self.session_ctx[session] = {callback = callback}
@@ -137,7 +137,7 @@ function channel:call(file,method,args)
 	local ptr,size = table.encode({file = file,method = method,session = session,args = args})
 	self:write(ptr,size)
 
-	monitor.report_output(file,method,size)
+	-- monitor.report_output(file,method,size)
 
 	local ok,value = event.wait(session)
 	if not ok then

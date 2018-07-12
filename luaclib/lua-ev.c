@@ -998,7 +998,7 @@ static int
 _lgate_new(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
 	uint32_t max_client = luaL_optinteger(L, 2, 1000);
-	uint32_t max_freq = luaL_optinteger(L, 3, 100);
+	uint32_t max_freq = luaL_optinteger(L, 3, 1000);
 	if (max_client <= 0 || max_client >= 10000) {
 		luaL_error(L,"error create gate,size invalid:%d",max_client);
 	}

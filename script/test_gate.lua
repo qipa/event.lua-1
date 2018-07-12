@@ -23,9 +23,9 @@ local function client_data(cid,message_id,data,size)
 	countor = countor + 1
 	-- print("client_data",cid,countor)
 	-- -- table.print(table.decode(data,size))
-	-- if countor % 10000 == 0 then
-	-- 	print("client_data",cid,countor)
-	-- end
+	if countor % 10000 == 0 then
+		print("client_data",cid,countor)
+	end
 end
 
 event.fork(function ()

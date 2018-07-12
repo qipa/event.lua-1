@@ -14,7 +14,7 @@
 #include "socket/gate.h"
 
 #define CACHED_SIZE 		1024 * 1024
-#define MAX_FREQ 			100
+#define MAX_FREQ 			500
 #define ALIVE_TIME 			60
 #define WARN_OUTPUT_FLOW 	10 * 1024
 #define MAX_SEQMENT 		64 * 1024

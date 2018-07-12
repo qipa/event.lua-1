@@ -29,9 +29,12 @@ event.fork(function ()
 				return
 			end
 			channel.packet = util.packet_new()
-			for i = 1,2000 do
-				channel:write(channel.packet:pack(1,table.encode{ta = 1,hi = "mrq"}))
-				event.sleep(0.001)
+			while true do
+				for i = 1,50 do
+					local ptr,size = channel.packet:pack(1,table.encode{ta = 1,hi = "mrq"})
+					channel:write(ptr,size,1)
+				end
+				event.sleep(0.1)
 			end
 			-- channel:close()
 		end)

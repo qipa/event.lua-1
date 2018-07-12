@@ -20,7 +20,7 @@ local count = 0
 function test_rpc(args)
 	count = count + 1
 	if count %10000 == 0 then
-		print(count)
+		-- print(count)
 	end
 	return "ok"
 end
