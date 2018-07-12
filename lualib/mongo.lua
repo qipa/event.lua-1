@@ -125,7 +125,7 @@ function mongo_channel:update(db,name,selector,update,upsert,multi)
 	name = string.format("%s.%s",db,name)
 	local flags	= (upsert and 1	or 0) +	(multi and 2 or	0)
 	local data = driver.update(name, flags, bson.encode(selector), bson.encode(update))
-	self:write(data)
+	self.buffer:write(data,1)
 end
 
 function mongo_channel:insert(db,name,doc)
@@ -136,7 +136,7 @@ function mongo_channel:insert(db,name,doc)
 	end
 
 	local data = driver.insert(0, name, bson.encode(doc))
-	self:write(data)
+	self.buffer:write(data,1)
 end
 
 function mongo_channel:drop(db,name)
