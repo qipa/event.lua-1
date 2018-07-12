@@ -22,18 +22,28 @@
 
 __thread uint8_t CACHED_BUFFER[CACHED_SIZE];
 
+struct gate_callback {
+	accept_callback accept;
+	close_callback close;
+	data_callback data;
+};
+
 struct gate_ctx {
 	struct ev_loop_ctx* loop_ctx;
+
 	struct ev_listener* listener;
+
 	struct object_container* container;
+	uint32_t client_count;
+
 	uint32_t max_freq;
 	uint32_t max_client;
 	uint32_t max_offset;
-	uint32_t client_count;
+	uint32_t max_index;
+	
 	uint32_t index;
-	accept_callback accept_func;
-	close_callback close_func;
-	data_callback data_func;
+
+	struct gate_callback cb;
 	void* ud;
 };
 
@@ -80,7 +90,7 @@ error_happen(struct ev_session* session,void* ud) {
 	struct ev_client* client = ud;
 	int id = client->id;
 	struct gate_ctx* gate = client->gate;
-	gate->close_func(gate->ud,id);
+	gate->cb.close(gate->ud,id);
 
 	if (client->execute == 1) {
 		client->markdead = 1;
@@ -141,7 +151,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 		    }
 		    client->freq++;
 		    client->tick = loop_ctx_now(client->gate->loop_ctx);
-		    client->gate->data_func(client->gate->ud,client->id,id,&data[6],client->need - 6);
+		    client->gate->cb.data(client->gate->ud,client->id,id,&data[6],client->need - 6);
 
 		    if (data != CACHED_BUFFER) {
 		    	free(data);
@@ -199,7 +209,10 @@ accept_client(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	int slot = container_add(gate->container,client);
 	
 	uint32_t index = gate->index++;
-
+	if (index >= gate->max_index) {
+		gate->index = 0;
+	}
+	
 	client->gate = gate;
 
 	client->session = session;
@@ -212,7 +225,7 @@ accept_client(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	ev_timer_init(&client->timer,timeout,1,1);
 	ev_timer_start(loop_ctx_get(gate->loop_ctx),&client->timer);
 
-	gate->accept_func(gate->ud,client->id,addr);
+	gate->cb.accept(gate->ud,client->id,addr);
 }
 
 static void
@@ -235,10 +248,11 @@ gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq,
 	gate->index = 1;
 
 	int offset = 0;
-	for (; max_client > 0; offset++)
+	for (; max_client > 0; offset++) {
         max_client /= 10;
+	}
     gate->max_offset = pow(10,offset);
-	
+	gate->max_index = 0xffffffff / gate->max_offset;
 	return gate;
 }
 
@@ -265,19 +279,20 @@ gate_start(struct gate_ctx* gate,const char* ip,int port) {
 
 void
 gate_callback(struct gate_ctx* gate,accept_callback accept,close_callback close,data_callback data) {
-	gate->accept_func = accept;
-	gate->close_func = close;
-	gate->data_func = data;
+	gate->cb.accept = accept;
+	gate->cb.close = close;
+	gate->cb.data = data;
 }
 
 int
 gate_stop(struct gate_ctx* gate) {
-	if (gate->listener) {
-		ev_listener_free(gate->listener);
-		gate->listener = NULL;
-		return 0;
+	if (gate->listener == NULL) {
+		return -1;
 	}
-	return -1;
+
+	ev_listener_free(gate->listener);
+	gate->listener = NULL;
+	return 0;
 }
 
 int
