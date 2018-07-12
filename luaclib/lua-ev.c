@@ -439,14 +439,20 @@ _session_write(lua_State* L) {
 
 	char* block = NULL;
 	if (lev_session->header != 0 && noheader == 0) {
-		int total = size + lev_session->header;
-	    char* buffer = malloc(total);
-
-	    memcpy(buffer, &total, lev_session->header);
-	    memcpy(buffer + 4, block, size);
-
-	    block = buffer;
-	    size = total;
+		
+	    if (lev_session->header == HEADER_TYPE_WORD) {
+	    	ushort length = size + lev_session->header;
+	   	 	block = malloc(length);
+	   	 	memcpy(block, &length, sizeof(ushort));
+	   	 	memcpy(block + sizeof(ushort), data, size);
+	   	 	size = length;
+	    } else {
+	    	uint32_t length = size + lev_session->header;
+	   	 	block = malloc(length);
+	   	 	memcpy(block, &length, sizeof(uint32_t));
+	   	 	memcpy(block + sizeof(uint32_t), data, size);
+	   	 	size = length;
+	    }
 
 	    if (vt == LUA_TLIGHTUSERDATA) {
 	    	free(data);
