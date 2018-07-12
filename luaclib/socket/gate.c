@@ -96,7 +96,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 	while (client->markdead == 0) {
 		size_t total = ev_session_input_size(ev_session);
 		if (client->need == 0) {
-			if (total < 2) {
+			if (total < HEADER) {
 				break;
 			}
 	
