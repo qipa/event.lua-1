@@ -64,7 +64,7 @@ function API.saveRecentLoginSrvs(channel,args)
 end 
 
 function API.getLoginBulletin(channel,args)
-
+	return {title = "标题",content = "内容"}
 end
 
 function dispatcher(channel,header,url,body)

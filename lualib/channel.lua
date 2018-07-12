@@ -98,14 +98,6 @@ function channel:data(data,size)
 	self:dispatch(message,size)
 end
 
-local function pack_table(tbl)
-	-- local str = table.tostring(tbl)
-	-- local pat = string.format("I4c%d",str:len())
-	-- return string.pack(pat,str:len()+4,str)
-	local ptr,size = table.encode(tbl)
-	return util.rpc_pack(ptr,size)
-end
-
 function channel:write(...)
 	local ok,total = self.buffer:write(...)
 	if ok then
@@ -129,7 +121,7 @@ function channel:send(file,method,args,callback)
 	if callback then
 		session = event.gen_session()
 	end
-	local ptr,size = pack_table({file = file,method = method,session = 0,args = args})
+	local ptr,size = table.encode({file = file,method = method,session = 0,args = args})
 	self:write(ptr,size)
 	
 	monitor.report_output(file,method,size)
@@ -142,7 +134,7 @@ end
 function channel:call(file,method,args)
 	local session = event.gen_session()
 	self.session_ctx[session] = {}
-	local ptr,size = pack_table({file = file,method = method,session = session,args = args})
+	local ptr,size = table.encode({file = file,method = method,session = session,args = args})
 	self:write(ptr,size)
 
 	monitor.report_output(file,method,size)
@@ -155,7 +147,7 @@ function channel:call(file,method,args)
 end
 
 function channel:ret(session,...)
-	local ptr,size = pack_table({ret = true,session = session,args = {...}})
+	local ptr,size = table.encode({ret = true,session = session,args = {...}})
 	self:write(ptr,size)
 end
 

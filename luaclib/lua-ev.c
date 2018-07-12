@@ -398,37 +398,63 @@ pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
 }
 
 //-------------------------tcp session api---------------------------
-
 static int
 _session_write(lua_State* L) {
 	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
-	if (lev_session->closed)
+	if (lev_session->closed) {
 		luaL_error(L,"session already closed");
+	}
 	
 	size_t size;
-	char* data = NULL;;
-
+	char* data = NULL;
+	uint8_t need_dup = 0;
+	int noheader;
 	switch(lua_type(L,2)) {
 		case LUA_TSTRING: {
-			const char* str = lua_tolstring(L,2,&size);
-			data = malloc(size);
-			memcpy(data,str,size);
+			data = (char*)lua_tolstring(L, 2, &size);
+			noheader = luaL_optinteger(L, 3, 0);
+			need_dup = 1;
 			break;
 		}
 		case LUA_TLIGHTUSERDATA:{
-			data = lua_touserdata(L,2);
-			size = lua_tointeger(L,3);
+			data = lua_touserdata(L, 2);
+			size = luaL_checkinteger(L, 3);
+			noheader = luaL_optinteger(L, 4, 0);
 			break;
 		}
 		default:
 			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,lua_type(L,2)));
 	}
 
-	if (size == 0)
+	if (size == 0) {
 		luaL_error(L,"session write error:size is zero");
+	}
 
-	if (ev_session_write(lev_session->session, data, size) == -1) {
-		free(data);
+	char* block = NULL;
+	if (lev_session->header != 0 && noheader == 0) {
+		int total = size + lev_session->header;
+	    char* buffer = malloc(total);
+
+	    memcpy(buffer, &total, lev_session->header);
+	    memcpy(buffer + 4, block, size);
+
+	    block = buffer;
+	    size = total;
+
+	    if (need_dup == 0) {
+	    	free(data);
+	    }
+	} else {
+		if (need_dup == 1) {
+			block = malloc(size);
+			memcpy(block, data, size);
+		} else {
+			block = data;
+		}
+	}
+
+	if (ev_session_write(lev_session->session, block, size) == -1) {
+		free(block);
 		lua_pushboolean(L,0);
 		return 1;
 	}
@@ -683,8 +709,9 @@ _listen(lua_State* L) {
 	
 	int header = lua_tointeger(L, 2);
 	if (header != 0) {
-		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD)
-			luaL_error(L,"error header size:%d",header);
+		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD) {
+			luaL_error(L,"create listener error:error header size:%d",header);
+		}
 	}
 	
 	int multi = lua_toboolean(L, 3);

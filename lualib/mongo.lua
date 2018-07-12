@@ -36,7 +36,7 @@ function mongo_channel:data(data,size)
 
 		if cursor ~= nil then
 			local more_data = driver.more(session, session_ctx.name, 50000, cursor)
-			self.buffer:write(more_data)
+			self.buffer:write(more_data,1)
 		else
 			local list = {}
 			for _,doc in pairs(session_ctx.result) do
@@ -71,7 +71,7 @@ function mongo_channel:runCommand(db,cmd,cmd_v,...)
 	self.session_ctx[session] = {count = 1,name = full_name,hold = {},result = {}}
 
 	local data = driver.query(session, 0, full_name, 0,	1, bson_cmd)
-	self.buffer:write(data)
+	self.buffer:write(data,1)
 
 	local ok,result = event.wait(session)
 	if not ok then
@@ -89,7 +89,7 @@ local function find(self,db,name,query,selector,count,callback)
 	name = string.format("%s.%s",db,name)
 	self.session_ctx[session] = {count = count,name = name,hold = {},result = {},callback = callback}
 	local data = driver.query(session, 0, name, 0, count, query and bson.encode(query) or empty_bson, selector and bson.encode(selector))
-	self.buffer:write(data)
+	self.buffer:write(data,1)
 
 	if callback then
 		return
