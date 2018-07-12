@@ -21,6 +21,6 @@ int gate_close(struct gate_ctx* gate,int client_id,int grace);
 
 void gate_callback(struct gate_ctx* gate,accept_callback accept,close_callback close,data_callback data);
 
-int gate_send(struct gate_ctx* gate,int client_id,int message_id,void* data,size_t size);
+int gate_send(struct gate_ctx* gate,int client_id,ushort message_id,void* data,size_t size);
 
 #endif

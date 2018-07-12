@@ -52,7 +52,7 @@ struct ev_client {
 	struct ev_session* session;
 	struct ev_timer timer;
 	uint64_t id;
-	int need;
+	uint32_t need;
 	int freq;
 	int execute;
 	int markdead;
@@ -210,11 +210,10 @@ accept_client(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	
 	uint32_t index = gate->index++;
 	if (index >= gate->max_index) {
-		gate->index = 0;
+		gate->index = 1;
 	}
 	
 	client->gate = gate;
-
 	client->session = session;
 	client->id = index * gate->max_offset + slot;
 
@@ -317,21 +316,23 @@ gate_close(struct gate_ctx* gate,int client_id,int grace) {
 }
 
 int
-gate_send(struct gate_ctx* gate,int client_id,int message_id,void* data,size_t size) {
+gate_send(struct gate_ctx* gate,int client_id,ushort message_id,void* data,size_t size) {
 	struct ev_client* client = get_client(gate,client_id);
 	if (!client) {
 		return -1;
 	}
 
-	size_t total = size + sizeof(short) * 2;
+	ushort total = size + sizeof(short) * 2;
 
     uint8_t* mb = malloc(total);
-    memset(mb,0,total);
-    memcpy(mb,&total,2);
-    memcpy(mb+2,&message_id,2);
-    memcpy(mb+4,data,size);
+    memcpy(mb, &total, sizeof(ushort));
+    memcpy(mb + sizeof(ushort), &message_id, sizeof(ushort));
+    memcpy(mb + sizeof(ushort) * 2, data, size);
 
-	ev_session_write(client->session,(char*)mb,total);
+	if (ev_session_write(client->session,(char*)mb,total) < 0) {
+		free(mb);
+		return -1;
+	}
 	return 0;
 }
 

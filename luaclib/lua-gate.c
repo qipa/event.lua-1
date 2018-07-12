@@ -103,10 +103,10 @@ lgate_send(lua_State* L) {
 	int client_id = luaL_checkinteger(L, 2);
 	int message_id = luaL_checkinteger(L, 3);
 
-	int need_free = 0;
 	size_t size;
   	void* data = NULL;
-    switch(lua_type(L,4)) {
+  	int vt = lua_type(L, 4);
+    switch(vt) {
         case LUA_TSTRING: {
             data = (void*)lua_tolstring(L, 4, &size);
             break;
@@ -114,23 +114,23 @@ lgate_send(lua_State* L) {
         case LUA_TLIGHTUSERDATA:{
             data = lua_touserdata(L, 4);
             size = lua_tointeger(L, 5);
-            need_free = 1;
             break;
         }
         default:
-            luaL_error(L,"unkown type:%s",lua_typename(L,lua_type(L,4)));
+            luaL_error(L,"lgate send error:unkown type:%s",lua_typename(L,vt));
     }
 
-    if (size == 0)
-    	luaL_error(L,"gate send failed,size is zero");
-
-    if (gate_send(lgate->gate,client_id,message_id,data,size) < 0) {
-    	if (need_free)
-    		free(data);
-    	luaL_error(L,"gate send failed,no such client:%d",client_id);
+    if (size == 0) {
+    	luaL_error(L,"lgate send error:size is zero");
     }
-    if (need_free)
+
+    int status = gate_send(lgate->gate,client_id,message_id,data,size);
+    if (vt == LUA_TLIGHTUSERDATA) {
     	free(data);
+    }
+    if (status < 0) {
+    	luaL_error(L,"lgate send error:no such client:%d",client_id);
+    }
     return 0;
 }
 

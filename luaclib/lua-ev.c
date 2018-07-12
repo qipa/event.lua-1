@@ -398,22 +398,29 @@ pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
 }
 
 //-------------------------tcp session api---------------------------
-static int
-_session_write(lua_State* L) {
+
+static inline struct lua_ev_session* 
+get_session(lua_State* L, int index) {
 	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
 	if (lev_session->closed) {
 		luaL_error(L,"session already closed");
 	}
+	return lev_session;
+}
+
+static int
+_session_write(lua_State* L) {
+	struct lua_ev_session* lev_session = get_session(L, 1);
 	
+	int noheader;
 	size_t size;
 	char* data = NULL;
-	uint8_t need_dup = 0;
-	int noheader;
-	switch(lua_type(L,2)) {
+	
+	int vt = lua_type(L,2);
+	switch(vt) {
 		case LUA_TSTRING: {
 			data = (char*)lua_tolstring(L, 2, &size);
 			noheader = luaL_optinteger(L, 3, 0);
-			need_dup = 1;
 			break;
 		}
 		case LUA_TLIGHTUSERDATA:{
@@ -423,7 +430,7 @@ _session_write(lua_State* L) {
 			break;
 		}
 		default:
-			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,lua_type(L,2)));
+			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,vt));
 	}
 
 	if (size == 0) {
@@ -441,11 +448,11 @@ _session_write(lua_State* L) {
 	    block = buffer;
 	    size = total;
 
-	    if (need_dup == 0) {
+	    if (vt == LUA_TLIGHTUSERDATA) {
 	    	free(data);
 	    }
 	} else {
-		if (need_dup == 1) {
+		if (vt == LUA_TSTRING) {
 			block = malloc(size);
 			memcpy(block, data, size);
 		} else {
@@ -467,17 +474,17 @@ _session_write(lua_State* L) {
 
 static int
 _session_read(lua_State* L) {
-	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
+	struct lua_ev_session* lev_session = get_session(L, 1);
 	size_t size = luaL_optinteger(L,2,0);
-	if (lev_session->closed)
-		luaL_error(L,"buffer already closed");
-	
-	size_t len = ev_session_input_size(lev_session->session);
-	if ((size != 0 && size > len) || len == 0)
-		return 0;
 
-	if (size == 0)
-		size = len;
+	size_t total = ev_session_input_size(lev_session->session);
+	if (total == 0) {
+		return 0;
+	}
+
+	if (size == 0 || size > total) {
+		size = total;
+	}
 
 	char* data = THREAD_CACHED_BUFFER;
 	if (size > THREAD_CACHED_SIZE) {
@@ -488,15 +495,16 @@ _session_read(lua_State* L) {
 
 	lua_pushlstring(L, data, size);
 	
-	if (data != THREAD_CACHED_BUFFER)
+	if (data != THREAD_CACHED_BUFFER) {
 		free(data);
+	}
 
 	return 1;
 }
 
 static int
 _session_read_util(lua_State* L) {
-	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
+	struct lua_ev_session* lev_session = get_session(L, 1);
 	size_t size;
 	const char* sep = lua_tolstring(L,2,&size);
 
@@ -505,9 +513,12 @@ _session_read_util(lua_State* L) {
 	if (!data) {
 		return 0;
 	}
+	
 	lua_pushlstring(L, data, length);
-	if (data != THREAD_CACHED_BUFFER)
+
+	if (data != THREAD_CACHED_BUFFER) {
 		free(data);
+	}
 	return 1;
 }
 
@@ -520,9 +531,7 @@ _session_alive(lua_State* L) {
 
 static int
 _session_close(lua_State* L) {
-	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
-	if (lev_session->closed == 1)
-		luaL_error(L, "session already closed");
+	struct lua_ev_session* lev_session = get_session(L, 1);
 	
 	luaL_checktype(L, 2, LUA_TBOOLEAN);
 	int immediately = lua_toboolean(L, 2);
