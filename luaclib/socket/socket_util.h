@@ -36,6 +36,7 @@ union sockaddr_all {
 
 int socket_nonblock(int fd);
 int socket_closeonexec(int fd);
+int socket_no_delay(int fd);
 int socket_keep_alive(int fd);
 int socket_reuse_addr(int fd);
 int socket_reuse_port(int fd);

@@ -30,9 +30,14 @@ int socket_closeonexec(int fd) {
     return 0;
 }
 
+int socket_no_delay(int fd) {
+    int on = 1;
+    return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void*)&on, sizeof(on));
+}
+
 int socket_keep_alive(int fd) {
     int keepalive = 1;
-    return setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&keepalive , sizeof(keepalive));  
+    return setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&keepalive , sizeof(keepalive));  
 }
 
 int socket_reuse_addr(int fd) {

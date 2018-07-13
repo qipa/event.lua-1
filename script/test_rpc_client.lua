@@ -1,7 +1,7 @@
 local event = require "event"
 local channel = require "channel"
 
-
+local count = 0
 for i = 1,50 do
 	event.fork(function ()
 		local channel,err = event.connect("tcp://127.0.0.1:1989",4,false,channel)
@@ -10,8 +10,12 @@ for i = 1,50 do
 		end
 
 		while true do
-			for i = 1,1024 do
-				channel:send("handler.test_handler","test_rpc",{fuck = 1})
+			for i = 1,100 do
+				count = count + 1
+				channel:call("handler.test_handler","test_rpc",{fuck = 1})
+				if count == 100000 then
+					os.exit()
+				end
 			end
 			event.sleep(0.2)
 		end

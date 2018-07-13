@@ -292,6 +292,7 @@ accept_socket(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	struct lua_ev* lev = lev_listener->lev;
 
 	socket_nonblock(fd);
+	socket_no_delay(fd);
 	socket_keep_alive(fd);
 	socket_closeonexec(fd);
 
