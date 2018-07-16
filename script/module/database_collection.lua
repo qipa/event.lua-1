@@ -10,7 +10,7 @@ end
 function cls_collection:dirty_field(field)
 	self.__dirty[field] = true
 	self.__dirty["__name"] = true
-	self.__parent:dirty_collection(self:get_type())
+	self.__parent:dirty_collection(self)
 end
 
 function cls_collection:attach_db(parent)

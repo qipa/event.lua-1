@@ -13,9 +13,9 @@ for i = 1,50 do
 			for i = 1,100 do
 				count = count + 1
 				channel:call("handler.test_handler","test_rpc",{fuck = 1})
-				if count == 100000 then
-					os.exit()
-				end
+				-- if count == 100000 then
+				-- 	os.exit()
+				-- end
 			end
 			event.sleep(0.2)
 		end
