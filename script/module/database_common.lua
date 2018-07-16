@@ -1,14 +1,28 @@
 local model = require "model"
+local event = require "event"
 local object = import "module.object"
 
 --对应着mongodb中的database概念
 cls_database_common = object.cls_base:inherit("database_common")
 
+db_common_inst = db_common_inst or nil
+
 local pairs = pairs
 local type = type
 
-function cls_database_common:create()
+function cls_database_common:create(interval)
 	self.data_ctx = setmetatable({},{__mode = "k"})
+	assert(db_common_inst == nil)
+	db_common_inst = self
+	if interval < 1 then
+		interval = 1
+	end
+	event.fork(function ()
+		while true do
+			db_common_inst:save()
+			event.sleep(interval)
+		end
+	end)
 end
 
 function cls_database_common:dirty_collection(obj)
@@ -58,6 +72,8 @@ function cls_database_common:save()
 end
 
 function cls_database_common:save_rightnow(data)
+	local db_channel = model.get_db_channel()
+
 	local data_info = self.data_ctx[data]
 	self.__dirty[data] = nil
 	local updater = {}
@@ -75,4 +91,9 @@ function cls_database_common:save_rightnow(data)
 		end
 	end
 	db_channel:update("common",data_info.name,data_info.index,updater,true)
+end
+
+function cls_database_common:insert(name,data)
+	local db_channel = model.get_db_channel()
+	db_channel:insert("common",name,data)
 end

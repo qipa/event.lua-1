@@ -1,16 +1,26 @@
 local event = require "event"
 local mongo = require "mongo"
+local model = require "model"
+local db_common = import "module.database_common"
+
+
+
+model.register_value("db_channel")
 
 local db_channel,reason = event.connect("tcp://127.0.0.1:10105",4,true,mongo)
 if not db_channel then
 	os.exit()
 end
-db_channel:init("sunset")
+db_channel:init()
 
--- for i = 1,10 do
--- 	db_channel:insert("role",{name = "mrq",id = i})
--- end
+model.set_db_channel(db_channel)
 
-local updater = {}
-updater["$set"] = {["list.a"] = 3}
-db_channel:update("role",{account = "m111q"},updater,1)
+local db = db_common.cls_database_common:new(10)
+
+event.fork(function ()
+	local data = db:load("role",{id = 1})
+	table.print(data)
+
+	data.name = "fuck.mrq"
+	db:dirty_collection(data)
+end)

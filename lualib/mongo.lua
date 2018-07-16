@@ -11,7 +11,7 @@ function mongo_channel:disconnect()
 	print("mongo_channel closed")
 end
 
-function mongo_channel:init(db)
+function mongo_channel:init()
 	self.session_ctx = {}
 end
 
