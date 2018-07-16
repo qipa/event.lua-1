@@ -100,17 +100,19 @@ end
 
 function channel:write(...)
 	local ok,total = self.buffer:write(...)
-	if ok then
-		if total >= self.threhold then
-			local mb = math.modf(total/WARN_FLOW)
-			event.error(string.format("channel:%s more than %dmb data need to send out",self.addr,mb))
-			self.threhold = self.threhold + WARN_FLOW
-		else
-			if total < self.threhold / 2 then
-				self.threhold = self.threhold - WARN_FLOW
-				if self.threhold < WARN_FLOW then
-					self.threhold = WARN_FLOW
-				end
+	if not ok then
+		return
+	end
+
+	if total >= self.threhold then
+		local mb = math.modf(total/WARN_FLOW)
+		event.error(string.format("channel:%s more than %dmb data need to send out",self.addr,mb))
+		self.threhold = self.threhold + WARN_FLOW
+	else
+		if total < self.threhold / 2 then
+			self.threhold = self.threhold - WARN_FLOW
+			if self.threhold < WARN_FLOW then
+				self.threhold = WARN_FLOW
 			end
 		end
 	end

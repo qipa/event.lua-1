@@ -413,8 +413,8 @@ static int
 _session_write(lua_State* L) {
 	struct lua_ev_session* lev_session = get_session(L, 1);
 	
-	int noheader;
-	size_t size;
+	int noheader = 0;
+	size_t size = 0;
 	char* data = NULL;
 	
 	int vt = lua_type(L,2);
