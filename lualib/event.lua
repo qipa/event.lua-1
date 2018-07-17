@@ -207,8 +207,7 @@ function _M.gate(max)
 end
 
 function _M.run_process(cmd,line)
-    local FILE = io.popen(cmd)
-    local fd = FILE:fd()
+    local FILE,fd = assert(io.popen(cmd))
     if not _stream_base then
     	_stream_base = require "stream"
     end
