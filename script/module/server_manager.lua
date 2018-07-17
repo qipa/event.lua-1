@@ -15,7 +15,7 @@ _server_counter = 1
 _event_listener = _event_listener or module_object.cls_base:new()
 
 function __init__(self)
-	self.fs = persistence:open("master")
+	self.fs = persistence:open("./data/","master")
 	local attr = util.attributes("./data/master/dist_id")
 	if not attr then
 		self._server_counter = 1

@@ -4,9 +4,10 @@ local channel = require "channel"
 local count = 0
 for i = 1,50 do
 	event.fork(function ()
-		local channel,err = event.connect("tcp://127.0.0.1:1989",4,false,channel)
+		local channel,err = event.connect("tcp://111.230.136.170:1989",4,false,channel)
 		if not channel then
 			event.breakout(err)
+			return
 		end
 
 		while true do

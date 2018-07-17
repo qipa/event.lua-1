@@ -92,8 +92,8 @@ struct lua_udp_session {
 struct lua_pipe {
 	struct lua_ev* lev;
 	struct ev_io io;
-	int recv_mail_fd;
-	int send_mail_fd;
+	int recv_fd;
+	int send_fd;
 	int ref;
 	int callback;
 	int closed;
@@ -707,8 +707,8 @@ _lpipe_release(lua_State* L) {
 		luaL_error(L,"mail box already closed");
 
 	ev_io_stop(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
-	close(lpipe->recv_mail_fd);
-	close(lpipe->send_mail_fd);
+	close(lpipe->recv_fd);
+	close(lpipe->send_fd);
 
 	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->ref);
 	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->callback);
@@ -964,31 +964,34 @@ static int
 _lpipe_new(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
 
-	luaL_checktype(L,2,LUA_TFUNCTION);
-	int callback = luaL_ref(L,LUA_REGISTRYINDEX);
+	luaL_checktype(L, 2, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	struct lua_pipe* lpipe = lua_newuserdata(L, sizeof(struct lua_pipe));
 	memset(lpipe,0,sizeof(*lpipe));
 
 	int fd[2];
-	if (pipe(fd))
-		return 0;
+	if (pipe(fd)) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
 
 	socket_nonblock(fd[0]);
 	socket_nonblock(fd[1]);
 
 	lpipe->lev = lev;
-	lpipe->recv_mail_fd = fd[0];
-	lpipe->send_mail_fd = fd[1];
+	lpipe->recv_fd = fd[0];
+	lpipe->send_fd = fd[1];
 	lpipe->callback = callback;
 	lpipe->closed = 0;
 
 	lpipe->io.data = lpipe;
-	ev_io_init(&lpipe->io,pipe_recv,lpipe->recv_mail_fd,EV_READ);
-	ev_io_start(loop_ctx_get(lpipe->lev->loop_ctx),&lpipe->io);
+	ev_io_init(&lpipe->io, pipe_recv, lpipe->recv_fd, EV_READ);
+	ev_io_start(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
 
-	lpipe->ref = meta_init(L,META_PIPE);
-	lua_pushinteger(L, lpipe->send_mail_fd);
+	lpipe->ref = meta_init(L, META_PIPE);
+	lua_pushinteger(L, lpipe->send_fd);
 
 	return 2;
 }

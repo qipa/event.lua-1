@@ -17,12 +17,6 @@ function cls_database_common:create(interval)
 	if interval < 1 then
 		interval = 1
 	end
-	event.fork(function ()
-		while true do
-			db_common_inst:save()
-			event.sleep(interval)
-		end
-	end)
 end
 
 function cls_database_common:dirty_collection(obj)

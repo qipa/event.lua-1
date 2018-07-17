@@ -8,7 +8,7 @@ local logger = require "logger"
 local profiler = require "profiler"
 
 
-local ctx = profiler.start(1,0)
+-- local ctx = profiler.start(1,0)
 
 local _M = {}
 
@@ -63,5 +63,5 @@ end)
 
 event.timer(100,function (timer)
 	timer:cancel()
-	profiler.stop(ctx)
+	-- profiler.stop(ctx)
 end)

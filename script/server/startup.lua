@@ -48,7 +48,6 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 		for _,file in pairs(list) do
 			protocol.parse(file)
 		end
-		protocol.load()
 	end
 
 	if db_addr then
