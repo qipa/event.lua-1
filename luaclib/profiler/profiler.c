@@ -105,12 +105,10 @@ frame_delete(context_t* ctx,frame_t* frame) {
 }
 
 void 
-frame_push(co_t* co_ctx, context_t* profiler, int tailcall, const char* name, const char* source, int linedefined) {
+frame_push(co_t* co_ctx, context_t* profiler, const char* name, const char* source, int linedefined) {
 	double now = get_time();
 
 	frame_t* frame = frame_create(profiler, source, name, linedefined);
-
-	frame->tailcall = tailcall;
 
 	frame->alloc_count = co_ctx->alloc_count;
 	frame->alloc_total = co_ctx->alloc_total;
@@ -133,7 +131,6 @@ frame_push(co_t* co_ctx, context_t* profiler, int tailcall, const char* name, co
 
 	frame_t* prev_frame = frame->prev;
 	if (prev_frame) {
-		double now = get_time();
 		prev_frame->invoke_cost += now - prev_frame->invoke_start;
 	}
 }
@@ -144,7 +141,7 @@ frame_pop(co_t* co_ctx, context_t* profiler) {
 	assert(co_ctx->tail != NULL);
 	
 	frame_t* frame = NULL;
-	while (1) {
+	while (co_ctx->tail) {
 		frame = co_ctx->tail;
 		assert(frame != NULL);
 
@@ -155,14 +152,7 @@ frame_pop(co_t* co_ctx, context_t* profiler) {
 			co_ctx->tail = frame->prev;
 			co_ctx->tail->next = NULL;
 		}
-
-		if (co_ctx->tail == NULL) {
-			break;
-		}
-
-		if (frame->tailcall == 0 ) {
-			break;
-		}
+		break;
 	}
 
 	frame->alloc_count = co_ctx->alloc_count - frame->alloc_count;
@@ -176,7 +166,6 @@ frame_pop(co_t* co_ctx, context_t* profiler) {
 		kputc_(':', &profiler->name_cached);
 		kputs(frame->name, &profiler->name_cached);
 	}
-	// ksprintf(&profiler->name_cached, "%s:%d:%s", frame->source, frame->linedefined, frame->name);
 
 	frame_t* fm = hash_frame_find(profiler->hash, profiler->name_cached.s);
 	if (fm == NULL) {
@@ -218,12 +207,18 @@ lhook (lua_State *L, lua_Debug *ar) {
 		return;
 	}
 
-	if ( ar->event == LUA_HOOKCALL || ar->event == LUA_HOOKTAILCALL ) {
-		frame_push(co_ctx, ctx, ar->event == LUA_HOOKTAILCALL, ar->name, ar->source, ar->linedefined);
-	}
-	else {
-		assert(ar->event == LUA_HOOKRET);
-		frame_pop(co_ctx, ctx);
+	switch(ar->event) {
+		case LUA_HOOKCALL: {
+			frame_push(co_ctx, ctx, ar->name, ar->source, ar->linedefined);
+			break;
+		}
+		case LUA_HOOKRET: {
+			frame_pop(co_ctx, ctx);
+			break;
+		}
+		default: {
+			break;
+		}
 	}
 }
 

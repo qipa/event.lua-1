@@ -8,7 +8,7 @@ local logger = require "logger"
 local profiler = require "profiler"
 
 
--- local ctx = profiler.start(1,0)
+local ctx = profiler.start(2,0)
 
 local _M = {}
 
@@ -22,7 +22,9 @@ function _M.test4()
 	end
 	local b = 1
 	local c = 2
-	test5()
+	for i = 1,10 do
+		test5()
+	end
 	local d = 3
 	local e = 4
 end
@@ -54,14 +56,14 @@ end
 
 event.fork(function ()
 	while true do
-		for i = 1,1024 * 10 do
+		for i = 1,1024 do
 			test1()
 		end
 		event.sleep(0.01)
 	end
 end)
 
-event.timer(100,function (timer)
+event.timer(5,function (timer)
 	timer:cancel()
-	-- profiler.stop(ctx)
+	profiler.stop(ctx)
 end)
