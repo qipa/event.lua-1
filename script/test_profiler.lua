@@ -62,6 +62,15 @@ event.fork(function ()
 		event.sleep(0.01)
 	end
 end)
+event.fork(function ()
+	while true do
+		for i = 1,1024 do
+			test1()
+		end
+		event.sleep(0.01)
+	end
+end)
+
 
 event.timer(5,function (timer)
 	timer:cancel()
