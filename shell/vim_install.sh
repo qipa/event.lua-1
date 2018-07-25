@@ -24,13 +24,13 @@ fi
 if [ ! -f ./Python-2.7.5.tgz ];then
 	wget https://www.python.org/ftp/python/2.7.5/Python-2.7.5.tgz
 	tar zxvf Python-2.7.5.tgz
-	cd Python-2.7.5.tgz && ./configure && make
+	cd Python-2.7.5 && ./configure && make
 fi
 
 cd vim
 ./configure  --enable-pythoninterp=yes --with-python-config-dir=/usr/lib/python2.7/config
 sudo make && sudo make install
-cp /usr/local/bin/vim /usr/bin/vim
+sudo cp /usr/local/bin/vim /usr/bin/vim
 
 if [ ! -d ~/.vim ];then
 	mkdir ~/.vim
