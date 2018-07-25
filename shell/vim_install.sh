@@ -27,9 +27,9 @@ if [ ! -f ./Python-2.7.5.tgz ];then
 	cd Python-2.7.5 && ./configure && make
 fi
 
-cd vim
+cd ~/vim_asset/vim
 ./configure  --enable-pythoninterp=yes --with-python-config-dir=/usr/lib/python2.7/config
-sudo make && sudo make install
+make
 sudo cp /usr/local/bin/vim /usr/bin/vim
 
 if [ ! -d ~/.vim ];then
