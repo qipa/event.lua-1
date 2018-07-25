@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CURPATH='pwd'
+CURPATH=`pwd`
 VIMRC=${CURPATH}/vimrc
 
 cd ~
