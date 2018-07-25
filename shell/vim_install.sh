@@ -29,7 +29,7 @@ fi
 
 cd ~/vim_asset/vim
 ./configure  --enable-pythoninterp=yes --with-python-config-dir=/usr/lib/python2.7/config
-make
+sudo make
 sudo cp /usr/local/bin/vim /usr/bin/vim
 
 if [ ! -d ~/.vim ];then
