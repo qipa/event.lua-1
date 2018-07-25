@@ -24,7 +24,7 @@ fi
 if [ ! -f ./Python-2.7.5.tgz ];then
 	wget https://www.python.org/ftp/python/2.7.5/Python-2.7.5.tgz
 	tar zxvf Python-2.7.5.tgz
-	cd Python-2.7.5 && ./configure && make
+	cd Python-2.7.5 && ./configure --enable-shared && make
 fi
 
 cd ~/vim_asset/vim
@@ -48,6 +48,7 @@ fi
 
 
 if [ ! -f ~/.vimrc ];then
+	dos2unix ${VIMRC}
 	cp ${VIMRC} ~/.vimrc
 fi
 
