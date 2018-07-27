@@ -98,33 +98,13 @@ function channel:data(data,size)
 	self:dispatch(message,size)
 end
 
-function channel:write(...)
-	local ok,total = self.buffer:write(...)
-	if not ok then
-		return
-	end
-
-	if total >= self.threhold then
-		local mb = math.modf(total/WARN_FLOW)
-		event.error(string.format("channel:%s more than %dmb data need to send out",self.addr,mb))
-		self.threhold = self.threhold + WARN_FLOW
-	else
-		if total < self.threhold / 2 then
-			self.threhold = self.threhold - WARN_FLOW
-			if self.threhold < WARN_FLOW then
-				self.threhold = WARN_FLOW
-			end
-		end
-	end
-end
-
 function channel:send(file,method,args,callback)
 	local session = 0
 	if callback then
 		session = event.gen_session()
 	end
 	local ptr,size = table.encode({file = file,method = method,session = 0,args = args})
-	self:write(ptr,size)
+	self.buffer:write(ptr,size)
 	
 	-- monitor.report_output(file,method,size)
 
@@ -137,7 +117,7 @@ function channel:call(file,method,args)
 	local session = event.gen_session()
 	self.session_ctx[session] = {}
 	local ptr,size = table.encode({file = file,method = method,session = session,args = args})
-	self:write(ptr,size)
+	self.buffer:write(ptr,size)
 
 	-- monitor.report_output(file,method,size)
 
@@ -150,7 +130,7 @@ end
 
 function channel:ret(session,...)
 	local ptr,size = table.encode({ret = true,session = session,args = {...}})
-	self:write(ptr,size)
+	self.buffer:write(ptr,size)
 end
 
 function channel:close()

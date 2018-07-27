@@ -34,6 +34,8 @@
 #define THREAD_CACHED_SIZE 1024 * 1024
 #define MAX_PACKET_SIZE 16 * 1024 * 1024
 
+#define MB 1024*1024
+
 __thread char THREAD_CACHED_BUFFER[THREAD_CACHED_SIZE];
 
 struct lua_ev_timer;
@@ -59,6 +61,8 @@ struct lua_ev_session {
 	int header;
 	int state;
 	int need;
+		
+	int threhold;
 };
 
 struct lua_ev_listener {
@@ -117,7 +121,8 @@ session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
 	lev_session->state = STATE_HEAD;
 	lev_session->execute = 0;
 	lev_session->markdead = 0;
-	
+	lev_session->threhold = MB;
+
 	if (fd > 0)
 		lev_session->session = ev_session_bind(lev->loop_ctx, fd);
 
@@ -472,11 +477,20 @@ _session_write(lua_State* L) {
 		lua_pushboolean(L,0);
 		return 1;
 	}
-
+	size_t total = ev_session_output_size(lev_session->session);
+	if (total >= lev_session->threhold) {
+		size_t howmuch = total / MB;
+		lev_session->threhold += MB;
+		fprintf(stderr,"channel:%p more than %ldmb data need to send out\n",lev_session,howmuch);
+	} else {
+		size_t threhold = lev_session->threhold;
+		if ( threhold > MB && total < threhold / 2) {
+			lev_session->threhold -= MB;
+		}	
+	}
 	lua_pushboolean(L,1);
-	lua_pushinteger(L,ev_session_output_size(lev_session->session));
 	
-	return 2;
+	return 1;
 }
 
 static int
