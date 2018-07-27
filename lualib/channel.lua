@@ -3,7 +3,6 @@ local event = require "event"
 local monitor = require "monitor"
 local util = require "util"
 
-local WARN_FLOW = 1024 * 1024
 local channel = {}
 
 local xpcall = xpcall
@@ -25,7 +24,6 @@ function channel:new(buffer,addr)
 	ctx.buffer = buffer
 	ctx.addr = addr or "unknown"
 	ctx.session_ctx = {}
-	ctx.threhold = WARN_FLOW
 	return ctx
 end
 
@@ -57,10 +55,6 @@ end
 
 function channel:read(num)
 	return self.buffer:read(num)
-end
-
-function channel:read_line()
-	return self.buffer:read_line()
 end
 
 function channel:read_util(sep)
