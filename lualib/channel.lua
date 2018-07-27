@@ -9,8 +9,11 @@ local channel = {}
 local xpcall = xpcall
 local tinsert = table.insert
 local tunpack = table.unpack
+local tencode = table.encode
+local tdecode = table.decode
 local setmetatable = setmetatable
 local pairs = pairs
+local gen_session = event.gen_session
 
 function channel:inherit()
 	local children = setmetatable({},{__index = self})
@@ -94,29 +97,28 @@ function channel:dispatch(message,size)
 end
 
 function channel:data(data,size)
-	local message = table.decode(data,size)
+	local message = tdecode(data,size)
 	self:dispatch(message,size)
 end
 
 function channel:send(file,method,args,callback)
 	local session = 0
 	if callback then
-		session = event.gen_session()
+		session = gen_session()
+		self.session_ctx[session] = {callback = callback}
 	end
-	local ptr,size = table.encode({file = file,method = method,session = 0,args = args})
+
+	local ptr,size = tencode({file = file,method = method,session = 0,args = args})
 	self.buffer:write(ptr,size)
 	
 	-- monitor.report_output(file,method,size)
-
-	if session ~= 0 then
-		self.session_ctx[session] = {callback = callback}
-	end
 end
 
 function channel:call(file,method,args)
-	local session = event.gen_session()
+	local session = gen_session()
 	self.session_ctx[session] = {}
-	local ptr,size = table.encode({file = file,method = method,session = session,args = args})
+
+	local ptr,size = tencode({file = file,method = method,session = session,args = args})
 	self.buffer:write(ptr,size)
 
 	-- monitor.report_output(file,method,size)
@@ -129,7 +131,7 @@ function channel:call(file,method,args)
 end
 
 function channel:ret(session,...)
-	local ptr,size = table.encode({ret = true,session = session,args = {...}})
+	local ptr,size = tencode({ret = true,session = session,args = {...}})
 	self.buffer:write(ptr,size)
 end
 
