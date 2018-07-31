@@ -152,21 +152,23 @@ lgate_callback(lua_State* L) {
 int
 lgate_release(lua_State* L) {
 	struct lgate_ctx* lgate = lua_touserdata(L, 1);
-	if (lgate->alive == 1) {
-		lgate->alive = 0;
-		gate_release(lgate->gate);
+	if (lgate->alive == 0) {
+		luaL_error(L, "gate:%p already release", lgate);
+	}
 
-		luaL_unref(L, LUA_REGISTRYINDEX, lgate->ref);
+	lgate->alive = 0;
+	gate_release(lgate->gate);
 
-		if (lgate->accept_ref == 0) {
-			luaL_unref(L, LUA_REGISTRYINDEX, lgate->accept_ref);
-		}
-		if (lgate->close_ref == 0) {
-			luaL_unref(L, LUA_REGISTRYINDEX, lgate->close_ref);
-		}
-		if (lgate->data_ref == 0) {
-			luaL_unref(L, LUA_REGISTRYINDEX, lgate->data_ref);
-		}
+	luaL_unref(L, LUA_REGISTRYINDEX, lgate->ref);
+
+	if (lgate->accept_ref == 0) {
+		luaL_unref(L, LUA_REGISTRYINDEX, lgate->accept_ref);
+	}
+	if (lgate->close_ref == 0) {
+		luaL_unref(L, LUA_REGISTRYINDEX, lgate->close_ref);
+	}
+	if (lgate->data_ref == 0) {
+		luaL_unref(L, LUA_REGISTRYINDEX, lgate->data_ref);
 	}
 	return 0;
 }
