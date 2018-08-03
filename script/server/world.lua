@@ -30,13 +30,12 @@ local function channel_accept()
 end
 
 event.fork(function ()
+	env.dist_id = server_manager:reserve_id()
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
-
-	env.dist_id = server_manager:apply_id()
 	id_builder:init(env.dist_id)
 
-	local ok,reason = event.listen(env.world,4,channel_accept,common_channel)
-	if not ok then
+	local listener,reason = server_manager:listen_server("world")
+	if not listener then
 		event.breakout(reason)
 		return
 	end

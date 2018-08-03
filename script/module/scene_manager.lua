@@ -4,13 +4,17 @@ local model = require "model"
 local server_manager = import "module.server_manager"
 local id_builder = import "module.id_builder"
 
+_scene_addr = _scene_addr or {}
 _scene_ctx = _scene_ctx or {}
 _user_ctx = _user_ctx or {}
 _agent_server_status = _agent_server_status or {}
 
 function __init__(self)
-	server_manager:listen("AGENT_DOWN",self,"agent_down")
-	server_manager:listen("SCENE_DOWN",self,"scene_down")
+	server_manager:register_event("SERVER_DOWN",self,"server_down")
+end
+
+function server_down(self,name,srv_id)
+
 end
 
 function agent_down(self,listener,server_id)
@@ -53,6 +57,10 @@ function scene_down(self,listener,server_id)
 			end
 		end
 	end
+end
+
+function register_scene_addr(channel,args)
+	_scene_addr[args.id] = args.addr
 end
 
 local function find_min_scene(scene_info)

@@ -8,11 +8,7 @@ local monitor = require "monitor"
 local util = require "util"
 local http = require "http"
 
-local rpc_channel = channel:inherit()
-function rpc_channel:disconnect()
-	model[string.format("set_%s_channel",self.name)](nil)
-	event.wakeup(self.monitor)
-end
+local server_manager = import "module.server_manager"
 
 local mongodb_channel = mongo:inherit()
 function mongodb_channel:disconnect()
@@ -21,8 +17,8 @@ function mongodb_channel:disconnect()
 end
 
 function run(monitor_collect,db_addr,config_path,protocol_path)
-	connect_server("logger")
-	
+	server_manager:connect_server("logger")
+
 	local runtime_logger = logger:create("runtime",5)
 	event.error = function (...)
 		runtime_logger:ERROR(...)
@@ -34,8 +30,11 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 
 	if config_path then
 		_G.config = {}
+
 		local list = util.list_dir(config_path,true,"lua",true)
+
 		for _,path in pairs(list) do
+
 			local file = table.remove(path:split("/"))
 			local name = file:match("%S[^%.]+")
 			local data = loadfile(path)()
@@ -58,62 +57,18 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 			os.exit()
 		end
 		model.set_db_channel(db_channel)
-
 		event.error(string.format("connect mongodb:%s success",db_addr))
 	end
 end
 
 function apply_id()
-	local world_channel = model.get_world_channel()
-	local id = world_channel:call("module.server_manager","apply_id")
-	return id
+	return server_manager:call_world("module.server_manager","reserve_id")
 end
 
 function how_many_agent()
-	local world_channel = model.get_world_channel()
-	return world_channel:call("module.server_manager","how_many_agent")
+	return server_manager:call_world("module.server_manager","agent_amount")
 end
 
 function how_many_scene()
-	local world_channel = model.get_world_channel()
-	return world_channel:call("module.server_manager","how_many_scene")
-end
-
-function connect_server(name)
-	model.register_value(string.format("%s_channel",name))
-	local channel,reason
-	local count = 0
-	while not channel do
-		channel,reason = event.connect(env[name],4,false,rpc_channel)
-		if not channel then
-			event.error(string.format("connect server:%s %s failed:%s",name,env[name],reason))
-			count = count + 1
-			if count >= 10 then
-				os.exit(1)
-			end
-			event.sleep(1)
-		end
-	end
-
-	channel.name = name
-	channel.monitor = event.gen_session()
-	model[string.format("set_%s_channel",name)](channel)
-
-	event.fork(function ( ... )
-		event.wait(channel.monitor)
-		while true do
-			local channel,reason
-			while not channel do
-				channel,reason = event.connect(env[name],4,false,rpc_channel)
-				if not channel then
-					event.error(string.format("connect server:%s %s failed:%s",name,env[name],reason))
-					event.sleep(1)
-				end
-			end
-			channel.name = name
-			channel.monitor = event.gen_session()
-			model[string.format("set_%s_channel",name)](channel)
-			event.wait(channel.monitor)
-		end
-	end)
+	return server_manager:call_world("module.server_manager","scene_amount")
 end

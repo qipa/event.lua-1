@@ -3,7 +3,7 @@ local model = require "model"
 
 local server_manager = import "module.server_manager"
 local scene_manager = import "module.scene_manager"
-local database_manager = import "module.database_manager"
+local database_common = import "module.database_common"
 local world_user = import "module.world_user"
 import "handler.world_handler"
 
@@ -17,8 +17,9 @@ function __init__(self)
 		end
 	end)
 
-	server_manager:listen("AGENT_DOWN",self,"agent_down")
-	server_manager:listen("SCENE_DOWN",self,"scene_down")
+	self.db_common = database_common.cls_database_common:new(30)
+
+	server_manager:register_event("SERVER_DOWN",self,"server_down")
 end
 
 function start(self)
@@ -32,7 +33,7 @@ function start(self)
 end
 
 function flush(self)
-	database_manager:flush()
+	self.db_common:flush()
 	local all = model.fetch_world_user()
 	for _,user in pairs(all) do
 		user:save()
@@ -58,6 +59,10 @@ function scene_down(self,listener,server_id)
 			user.scene_channel = nil
 		end
 	end
+end
+
+function server_down(self,name,srv_id)
+
 end
 
 function enter(self,user_uid,user_agent)

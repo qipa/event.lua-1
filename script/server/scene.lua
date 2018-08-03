@@ -23,27 +23,18 @@ local function agent_accept(_,channel)
 end
 
 event.fork(function ()
-	-- helper.heap.start("scene")
+	server_manager:connect_server("world")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
-
-	startup.connect_server("world")
 
 	env.dist_id = startup.apply_id()
 	id_builder:init(env.dist_id)
 
-	local addr
-	if env.scene == "ipc" then
-		addr = string.format("ipc://scene%02d.ipc",env.dist_id)
-	else
-		addr = "tcp://127.0.0.1:0"
-	end
-	local listener,reason = event.listen(addr,4,agent_accept,agent_channel)
+	local listener,reason = server_manager:listen_scene()
 	if not listener then
 		event.breakout(reason)
 		return
 	end
-
 	local ip,port = listener:addr()
 	local addr_info = {}
 	if port == 0 then
@@ -58,11 +49,4 @@ event.fork(function ()
 
 	import "handler.scene_handler"
 
-	-- local count = 1
-	-- while true do
-	-- 	helper.heap.dump("timeout")
-	-- 	print(event.run_process(string.format("pprof --text ./event scene.%04d.heap",count)))
-	-- 	count = count + 1
-	-- 	event.sleep(10)
-	-- end
 end)

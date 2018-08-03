@@ -1,217 +1,240 @@
-local model = require "model"
 local event = require "event"
-local persistence = require "persistence"
+local model = require "model"
+local channel = require "channel"
+local mongo = require "mongo"
 local util = require "util"
-local module_object = import "module.object"
+local persistence = require "persistence"
 
-_agent_server_manager = _agent_server_manager or {}
+local object_module = import "module.object"
 
-_scene_server_manager = _scene_server_manager or {}
+_server_channel = _server_channel or {}
+_server_name_ctx = _server_name_ctx or {}
+_server_counter = _server_counter or nil
+_event_listener = _event_listener or object_module.cls_base:new()
 
-_login_server = _login_server or nil
+local client_channel = channel:inherit()
+function client_channel:disconnect()
+	_event_listener:fire_event("SERVER_DOWN",self.name,self.id)
+	_server_channel[self.id] = nil
+	_server_name_ctx[self.name] = nil
+	event.wakeup(self.monitor)
+end
 
-_server_counter = 1
+local server_channel = channel:inherit()
+function server_channel:disconnect()
+	_server_channel[self.id] = nil
+	_server_name_ctx[self.name] = nil
+	_event_listener:fire_event("SERVER_DOWN",self.name,self.id)
+end
 
-_event_listener = _event_listener or module_object.cls_base:new()
+local function channel_accept()
+
+end
 
 function __init__(self)
-	self.fs = persistence:open("./data/","master")
-	local attr = util.attributes("./data/master/dist_id")
-	if not attr then
-		self._server_counter = 1
-		self.fs:save("dist_id",{id = self._server_counter})
-	else
-		local dist_info = self.fs:load("dist_id")
-		self._server_counter = dist_info.id
+	if env.name == "world" then
+		_server_counter = 1
 	end
 end
 
-function apply_id(self)
+function reserve_id(channel)
+	assert(env.name == "world")
 	local id = _server_counter
 	_server_counter = _server_counter + 1
-	fs:save("dist_id",{id = _server_counter})
 	return id
 end
 
-function how_many_agent()
-	local result = {}
-	for id,info in pairs(_agent_server_manager) do
-		table.insert(result,id)
-	end
-	return result
+function register_server(channel,args)
+	_server_channel[args.id] = channel
+	_server_name_ctx[args.name] = args.id
+	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
 end
 
-function how_many_scene()
-	local result = {}
-	for id,info in pairs(_scene_server_manager) do
-		table.insert(result,id)
-	end
-	return result
-end
-
-function register_agent_server(channel,args)
-	local agent = {channel = channel,count = 0,ip = args.ip,port = args.port,id = args.id}
-	assert(_agent_server_manager[args.id] == nil,args.id)
-	_agent_server_manager[args.id] = agent
-	channel.name = "agent"
-	channel.id = args.id
-	return true
-end
-
-function agent_server_down(self,agent_server_id)
-	local agent_info = _agent_server_manager[agent_server_id]
-	_agent_server_manager[agent_server_id] = nil
-	_event_listener:fire_event("AGENT_DOWN",agent_server_id)
-end
-
-function agent_count_add(self,agent_server_id)
-	local agent = _agent_server_manager[agent_server_id]
-	agent.count = agent.count + 1
-end
-
-function agent_count_sub(self,agent_server_id)
-	local agent = _agent_server_manager[agent_server_id]
-	agent.count = agent.count - 1
-end
-
-function find_agent(self,id)
-	return _agent_server_manager[id]
-end
-
-function get_agent_channel(self,id)
-	local agent_info = _agent_server_manager[id]
-	if not agent_info then
-		return
-	end
-	return agent_info.channel
-end
-
-function find_min_agent(self)
-	local min
-	local best
-	local host
-	for agent_server_id,agent in pairs(_agent_server_manager) do
-		if not min or min > agent.count then
-			min = agent.count
-			best = agent_server_id
-			host = {ip = agent.ip,port = agent.port}
+function agent_amount()
+	assert(env.name == "world")
+	local amount = 0
+	for _,channel in pairs(_server_channel) do
+		if channel.name == "agent" then
+			amount = amount + 1
 		end
 	end
-	return best,host
+	return amount
 end
 
-function send_agent(self,agent_server_id,file,method,args,callback)
-	local agent = _agent_server_manager[agent_server_id]
-	agent.channel:send(file,method,args,callback)
+function scene_amount()
+	assert(env.name == "world")
+	local amount = 0
+	for _,channel in pairs(_server_channel) do
+		if channel.name == "scene" then
+			amount = amount + 1
+		end
+	end
+	return amount
 end
 
-function call_agent(self,agent_server_id,file,method,args)
-	local agent = _agent_server_manager[agent_server_id]
-	return agent.channel:call(file,method,args)
+function listen_server(self,name)
+	local listener,reason = event.listen(env[name],4,channel_accept,server_channel)
+	if not listener then
+		return listener,reason
+	end
+	return listener
 end
 
-function register_scene_server(channel,args)
-	local scene_server = {channel = channel,count = 0,addr = args.addr,id = args.id}
-	assert(_scene_server_manager[args.id] == nil,args.id)
-	_scene_server_manager[args.id] = scene_server
-	channel.name = "scene"
-	channel.id = args.id
-	return true
-end
-
-function scene_server_down(self,scene_server_id)
-	local scene_server = _scene_server_manager[scene_server_id]
-	_scene_server_manager[scene_server_id] = nil
-
-	_event_listener:fire_event("SCENE_DOWN",scene_server_id)
-end
-
-function scene_server_add_count(self,scene_server_id)
-	local scene_server = _scene_server_manager[scene_server_id]
-	scene_server.count = scene_server.count + 1
-end
-
-function scene_server_sub_count(self,scene_server_id)
-	local scene_server = _scene_server_manager[scene_server_id]
-	scene_server.count = scene_server.count - 1
-end
-
-function find_min_scene_server(self)
-	local min
-	local best
+function liten_scene(self)
 	local addr
+	if env.scene == "ipc" then
+		addr = string.format("ipc://scene%02d.ipc",env.dist_id)
+	else
+		addr = "tcp://127.0.0.1:0"
+	end
+	local listener,reason = event.listen(addr,4,channel_accept,server_channel)
+	if not listener then
+		return listener,reason
+	end
+	return listener
+end
 
-	for scene_server_id,scene_server in pairs(_scene_server_manager) do
-		if not min or min > scene_server.count then
-			min = scene_server.count
-			best = scene_server_id
-			addr = scene_server.addr
+function connect_server(self,name)
+	local function channel_init(channel,name)
+		channel.name = name
+		channel.monitor = event.gen_session()
+
+		if not env.dist_id then
+			if name == "world" then
+				env.dist_id = channel:call("module.server_manager","reserve_id")
+			else
+				env.dist_id = self:call_world("module.server_manager","reserve_id")
+			end
+			channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
 		end
+		channel.id = env.dist_id
+
+		_server_channel[channel.id] = channel
+		_server_name_ctx[channel.name] = channel.id
+
+		_event_listener:fire_event("SERVER_CONNECT",name,channel.id)
 	end
-	return best,addr
+
+	local function channel_connect(name,try)
+		local channel,reason
+		local count = 0
+		while not channel do
+			channel,reason = event.connect(env[name],4,false,client_channel)
+			if not channel then
+				event.error(string.format("connect server:%s %s failed:%s",name,env[name],reason))
+				event.sleep(1)
+				count = count + 1
+				if try and count >= 10 then
+					os.exit(1)
+				end
+			end
+		end
+		channel_init(channel,name)
+		return channel
+	end
+
+	
+	local channel = channel_connect(name,10)
+
+	event.fork(function ()
+		while true do
+			event.wait(channel.monitor)
+			channel_connect(name)
+		end
+	end)
 end
 
-function get_scene_addr(self,scene_server_id)
-	local scene_info = _scene_server_manager[scene_server_id]
-	if not scene_info then
+function register_event(ev,obj,method)
+	_event_listener:register_event(ev,obj,method)
+end
+
+function deregister_event(ev,obj)
+	_event_listener:deregister_event(obj,ev)
+end 
+
+-------------------------------------------------
+function send_agent(self,srv_id,file,method,args,callback)
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= "agent" then
 		return
 	end
-	return scene_info.addr
+	channel:send(file,method,args,callback)
 end
 
-function send_scene(self,scene_server_id,file,method,args,callback)
-	local scene_info = _scene_server_manager[scene_server_id]
-	if not scene_info then
-		event.error(string.format("no such scene server:%d",scene_server_id))
+function call_agent(self,srv_id,file,method,args)
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= "agent" then
 		return
 	end
-	scene_info.channel:send(file,method,args,callback)
+	return channel:call(file,method,args)
 end
 
-function call_scene(self,scene_server_id,file,method,args)
-	local scene_info = _scene_server_manager[scene_server_id]
-	if not scene_info then
-		event.error(string.format("no such scene server:%d",scene_server_id))
+function send_scene(self,srv_id,file,method,args,callback)
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= "scene" then
 		return
 	end
-	return scene_info.channel:call(file,method,args,callback)
+	channel:send(file,method,args,callback)
 end
 
-function get_scene_channel(self,id)
-	local scene_info = _scene_server_manager[id]
-	if not scene_info then
+function call_scene(self,srv_id,file,method,args)
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= "scene" then
 		return
 	end
-	return scene_info.channel
+	return channel:call(file,method,args)
 end
 
-function register_login_server(channel,args)
-	local login = {channel = channel,id = args.id}
-	_login_server = login
-	channel.name = "login"
-	channel.id = args.id
-	return true
-end
-
-function login_server_down(self)
-	_login_server = nil
-end
-
-function listen(self,event,inst,method)
-	_event_listener:register_event(event,inst,method)
-end
-
-function broadcast(self,file,method,args)
-	local result = {}
-	for id,server in pairs(_scene_server_manager) do
-		local value = server.channel:call(file,method,args)
-		result[id] = value
+function send_login(self,file,method,args,callback)
+	local srv_id = _server_name_ctx.login
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
 	end
-	for id,server in pairs(_agent_server_manager) do
-		local value = server.channel:call(file,method,args)
-		result[id] = value
+	channel:send(file,method,args,callback)
+end
+
+function call_login(self,file,method,args)
+	local srv_id = _server_name_ctx.login
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
 	end
-	local value = _login_server.channel:call(file,method,args)
-	result[_login_server.id] = value
-	return result
+	return channel:call(file,method,args)
+end
+
+function send_world(self,file,method,args,callback)
+	local srv_id = _server_name_ctx.world
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
+	end
+	channel:send(file,method,args,callback)
+end
+
+function call_world(self,file,method,args)
+	local srv_id = _server_name_ctx.world
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
+	end
+	return channel:call(file,method,args)
+end
+
+function send_log(self,file,method,args,callback)
+	local srv_id = _server_name_ctx.log
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
+	end
+	channel:send(file,method,args,callback)
+end
+
+function call_log(self,file,method,args)
+	local srv_id = _server_name_ctx.log
+	local channel = _server_channel[srv_id]
+	if not channel or channel.name ~= srv_id then
+		return
+	end
+	return channel:call(file,method,args)
 end

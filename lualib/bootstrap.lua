@@ -48,13 +48,13 @@ if not func then
 	error(err)
 end
 
-env.name = name
-env.tid = util.thread_id()
-
 local list = name:split("/")
+env.path = name
+env.name = list[#list]
+env.tid = util.thread_id()
+env.command = string.format("%s@%07d",env.name,env.uid)
 
-local command = string.format("%s@%07d",list[#list],env.uid)
-util.thread_name(command)
+util.thread_name(env.command)
 
 if main then
 	local _G_protect = {}
@@ -85,7 +85,7 @@ end
 
 collectgarbage("collect")
 local lua_mem = collectgarbage("count")
-event.error(string.format("thread:%d start,command:%s,lua mem:%fkb,c mem:%fkb",env.tid,command,lua_mem,helper.allocated()/1024))
+event.error(string.format("thread:%d start,command:%s,lua mem:%fkb,c mem:%fkb",env.tid,env.command,lua_mem,helper.allocated()/1024))
 
 if main then
 	event.dispatch()
