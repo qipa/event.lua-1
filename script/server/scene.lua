@@ -23,6 +23,7 @@ local function agent_accept(_,channel)
 end
 
 event.fork(function ()
+	env.dist_id = startup.reserve_id()
 	server_manager:connect_server("world")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)

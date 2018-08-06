@@ -36,7 +36,6 @@ function log(_,args)
 	else
 		content = strformat("[%s:%s][%s %s] %s",log_tag,log_type,os_date("%Y-%m-%d %H:%M:%S",args.time),args.source_name,args.log)
 	end
-
 	if FILE then
 		FILE:write(content)
 		FILE:write("\r\n")

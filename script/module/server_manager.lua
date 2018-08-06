@@ -99,14 +99,8 @@ function connect_server(self,name)
 		channel.name = name
 		channel.monitor = event.gen_session()
 
-		if not env.dist_id then
-			if name == "world" then
-				env.dist_id = channel:call("module.server_manager","reserve_id")
-			else
-				env.dist_id = self:call_world("module.server_manager","reserve_id")
-			end
-			channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
-		end
+		channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
+	
 		channel.id = env.dist_id
 
 		_server_channel[channel.id] = channel
@@ -124,7 +118,7 @@ function connect_server(self,name)
 				event.error(string.format("connect server:%s %s failed:%s",name,env[name],reason))
 				event.sleep(1)
 				count = count + 1
-				if try and count >= 10 then
+				if try and count >= try then
 					os.exit(1)
 				end
 			end

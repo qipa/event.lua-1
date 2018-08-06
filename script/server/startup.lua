@@ -61,8 +61,15 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 	end
 end
 
-function apply_id()
-	return server_manager:call_world("module.server_manager","reserve_id")
+function reserve_id()
+	local result,reason = http.post_world("/module/server_manager/reserve_id/")
+	while not result do
+		result,reason = http.post_world("/module/server_manager/reserve_id/")
+		if not result then
+			event.sleep(1)
+		end
+	end
+	return tonumber(result)
 end
 
 function how_many_agent()

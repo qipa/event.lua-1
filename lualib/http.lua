@@ -150,7 +150,7 @@ function httpd_channel:reply(statuscode,info)
 	else
 		table.insert(content,"\r\n")
 	end
-	self:write(table.concat(content,""))
+	self.buffer:write(table.concat(content,""))
 	self:close()
 end
 
@@ -163,10 +163,10 @@ end
 function httpc_channel:disconnect()
 end
 
-function httpc_channel:dispatch(method,url,header,body)
+function httpc_channel:dispatch(status,body)
 	-- self:close_immediately()
 	if self.callback then
-		self.callback(self,method,url,header,body)
+		self.callback(self,status,body)
 	else
 		event.wakeup(self.session,body)
 	end
@@ -249,11 +249,11 @@ function _M.get(host,url,header,form,callback)
 end
 
 
-function _M.post_master(method,content)
+function _M.post_world(method,content)
 	local url = method
 	local header = header or {}
 	header["Content-Type"] = "application/json"
-	local channel,err = event.connect(env.master_http,0,false,httpc_channel)
+	local channel,err = event.connect(env.world_http,0,false,httpc_channel)
 	if not channel then
 		return false,err
 	end
@@ -267,11 +267,11 @@ function _M.post_master(method,content)
 	if content then
 		content = cjson.encode(content)
 		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:%d\r\n\r\n", "POST", url, header_content, #content)
-		channel:write(data)
-		channel:write(content)
+		channel.buffer:write(data)
+		channel.buffer:write(content)
 	else
 		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:0\r\n\r\n", "POST", url, header_content)
-		channel:write(data)
+		channel.buffer:write(data)
 	end
 
 	local result = event.wait(channel.session)

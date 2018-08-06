@@ -3,8 +3,9 @@ local util = require "util"
 local model = require "model"
 local protocol = require "protocol"
 local mongo = require "mongo"
+local cjson = require "cjson"
 local route = require "route"
-
+local http = require "http"
 local channel = require "channel"
 local startup = import "server.startup"
 local server_manager = import "module.server_manager"
@@ -12,22 +13,32 @@ local world_server = import "module.world_server"
 local id_builder = import "module.id_builder"
 local mongo_indexes = import "common.mongo_indexes"
 
-local common_channel = channel:inherit()
-function common_channel:disconnect()
-	if self.id ~= nil then
-		if self.name == "agent" then
-			server_manager:agent_server_down(self.id)
-		elseif self.name == "scene" then
-			server_manager:scene_server_down(self.id)
-		elseif self.name == "login" then
-			server_manager:login_server_down(self.id)
-		end
-	end
-end
+event.fork(function ()
+    local httpd,reason = http.listen(env.world_http,function (channel,method,url,header,body)
+        event.fork(function ()
+            local url = url:split("/")
+            local func = url[#url]
+            local file = table.concat(url,".",1,#url-1)
+            if body ~= "" then
+                body = cjson.decode(body)
+            end
+            local ok,info = pcall(route.dispatch,file,func,channel,body)
+            local str = cjson.encode(info)
+            if not ok then
+                channel:reply(404,info)
+            else
+                channel:reply(200,str)
+            end
+        end)
 
-local function channel_accept()
+    end)
+    if not httpd then
+        event.error(string.format("world http listen:%s failed:%s",env.world_http,reason))
+        os.exit(1)
+    end
+    event.error(string.format("world http listen:%s success",env.world_http))
+end)
 
-end
 
 event.fork(function ()
 	env.dist_id = server_manager:reserve_id()
