@@ -24,11 +24,12 @@ end
 
 event.fork(function ()
 	env.dist_id = startup.reserve_id()
+	
 	server_manager:connect_server("world")
+	server_manager:connect_server("logger")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 
-	env.dist_id = startup.apply_id()
 	id_builder:init(env.dist_id)
 
 	local listener,reason = server_manager:listen_scene()
@@ -36,17 +37,9 @@ event.fork(function ()
 		event.breakout(reason)
 		return
 	end
-	local ip,port = listener:addr()
-	local addr_info = {}
-	if port == 0 then
-		addr_info.file = ip
-	else
-		addr_info.ip = ip
-		addr_info.port = port
-	end
 
-	local world_channel = model.get_world_channel()
-	world_channel:send("module.server_manager","register_scene_server",{id = env.dist_id,addr = addr_info})
+	local addr = listener:addr()
+	server_manager:send_world("module.server_manager","register_scene_addr",{id = env.dist_id,addr = addr})
 
 	import "handler.scene_handler"
 

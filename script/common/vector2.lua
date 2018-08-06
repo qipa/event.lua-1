@@ -41,7 +41,7 @@ function _M.inside_circle(src_x,src_z,range,x,z)
 end
 
 function _M.inside_sector(src_x,src_z,range,toward_angle,degree,x,z)
-	if not _M.inside_circle(src_x,src_z,range,x,z)
+	if not _M.inside_circle(src_x,src_z,range,x,z) then
 		return false
 	end
 

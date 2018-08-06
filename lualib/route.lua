@@ -1,6 +1,6 @@
 local protocol = require "protocol"
 local co_core = require "co.core"
-local monitor = require "monitor"
+
 local event = require "event"
 local import = require "import"
 

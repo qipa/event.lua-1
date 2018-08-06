@@ -80,12 +80,12 @@ function listen_server(self,name)
 	return listener
 end
 
-function liten_scene(self)
+function listen_scene(self)
 	local addr
 	if env.scene == "ipc" then
 		addr = string.format("ipc://scene%02d.ipc",env.dist_id)
 	else
-		addr = "tcp://127.0.0.1:0"
+		addr = "tcp://0.0.0.0:0"
 	end
 	local listener,reason = event.listen(addr,4,channel_accept,server_channel)
 	if not listener then
@@ -105,7 +105,6 @@ function connect_server(self,name)
 
 		_server_channel[channel.id] = channel
 		_server_name_ctx[channel.name] = channel.id
-
 		_event_listener:fire_event("SERVER_CONNECT",name,channel.id)
 	end
 
@@ -216,9 +215,9 @@ function call_world(self,file,method,args)
 end
 
 function send_log(self,file,method,args,callback)
-	local srv_id = _server_name_ctx.log
+	local srv_id = _server_name_ctx.logger
 	local channel = _server_channel[srv_id]
-	if not channel or channel.name ~= srv_id then
+	if not channel or channel.name ~= "logger" then
 		return
 	end
 	channel:send(file,method,args,callback)

@@ -1,4 +1,4 @@
-local logger = require "logger"
+
 local event = require "event"
 local model = require "model"
 local channel = require "channel"
@@ -7,6 +7,7 @@ local protocol = require "protocol"
 local monitor = require "monitor"
 local util = require "util"
 local http = require "http"
+local logger = require "module.logger"
 
 local server_manager = import "module.server_manager"
 
@@ -17,8 +18,7 @@ function mongodb_channel:disconnect()
 end
 
 function run(monitor_collect,db_addr,config_path,protocol_path)
-	server_manager:connect_server("logger")
-
+	
 	local runtime_logger = logger:create("runtime",5)
 	event.error = function (...)
 		runtime_logger:ERROR(...)

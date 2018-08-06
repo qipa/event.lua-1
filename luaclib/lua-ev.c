@@ -595,9 +595,18 @@ _listen_addr(lua_State* L) {
 	if (ev_listener_addr(lev_listener->listener,addr,INET6_ADDRSTRLEN,&port) < 0) {
 		return 0;
 	}
-	lua_pushstring(L, addr);
-	lua_pushinteger(L, port);
-	return 2;
+
+	lua_newtable(L);
+	if (port == 0) {
+		lua_pushstring(L, addr);
+		lua_setfield(L, -2, "file");
+	} else {
+		lua_pushstring(L, addr);
+		lua_setfield(L, -2, "ip");
+		lua_pushinteger(L, port);
+		lua_setfield(L, -2, "port");
+	}
+	return 1;
 }
 
 static int

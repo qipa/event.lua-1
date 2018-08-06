@@ -1,4 +1,4 @@
-local aoi_core = require "fastaoi.core"
+local aoi_core = require "simpleaoi.core"
 local nav_core = require "nav.core"
 local cjson = require "cjson"
 local object = import "module.object"
