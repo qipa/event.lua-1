@@ -14,9 +14,6 @@ local mongo_indexes = import "common.mongo_indexes"
 local xpcall = xpcall
 local traceback = debug.traceback
 
-model.register_binder("scene_channel","id")
-model.register_value("client_manager")
-
 
 local function client_data(cid,message_id,data,size)
 	local ok,err = xpcall(agent_server.dispatch_client,traceback,agent_server,cid,message_id,data,size)
@@ -41,41 +38,28 @@ end
 
 
 event.fork(function ()
+	env.dist_id = startup.reserve_id()
+
+	server_manager:connect_server("logger")
+
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
-
-	startup.connect_server("login")
-	startup.connect_server("world")
-
-	env.dist_id = startup.apply_id()
-	id_builder:init(env.dist_id)
 	
-	local scene_set = {}
-	while #scene_set == 0 do
-		scene_set = startup.how_many_scene()
-		if #scene_set == 0 then
-			event.sleep(1)
-		else
-			break
-		end
-	end
+	server_manager:connect_server("login")
+	server_manager:connect_server("world")
 
-	event.error(string.format("scene ready:%s",table.concat(scene_set,",")))
+	id_builder:init(env.dist_id)
 
-	local client_manager = event.client_manager(1024)
-	client_manager:set_callback(client_accept,client_close,client_data)
-	local port,reason = client_manager:start("0.0.0.0",0)
+	local gate = event.gate(1024)
+	gate:set_callback(client_accept,client_close,client_data)
+	local port,reason = gate:start("0.0.0.0",0)
 	if not port then
 		event.breakout(string.format("%s %s",env.name,reason))
 		os.exit(1)
 	end
-	model.set_client_manager(client_manager)
+	model.set_client_manager(gate)
 
-	local login_channel = model.get_login_channel()
-	login_channel:send("module.server_manager","register_agent_server",{ip = "0.0.0.0",port = port,id = env.dist_id})
+	server_manager:send_login("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
 
-	local world_channel = model.get_world_channel()
-	world_channel:send("module.server_manager","register_agent_server",{ip = "0.0.0.0",port = port,id = env.dist_id})
-
-	agent_server:start(client_manager)
+	agent_server:start(gate)
 	event.error("start success")
 end)

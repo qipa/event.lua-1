@@ -301,3 +301,18 @@ function server_stop()
 	local world_channel = model.get_world_channel()
 	world_channel:send("handler.world_handler","server_stop",{id = env.dist_id})
 end
+
+function scene_server_update()
+
+end
+
+function connect_scene_server()
+	local result = server_manager:send_world("module.scene_manager","scene_server_info")
+	local list = server_manager:find_server("scene")
+
+	for _,info in pairs(result) do
+		if not list[info.id] then
+
+		end
+	end
+end

@@ -59,8 +59,34 @@ function scene_down(self,listener,server_id)
 	end
 end
 
-function register_scene_addr(channel,args)
-	_scene_addr[args.id] = args.addr
+function register_scene_server(channel,args)
+	_scene_server_status[args.id] = {
+		user_amount = 0,
+		addr = args.addr,
+		scene_info = {}
+	}
+
+	local list = server_manager:find_server("agent")
+	for id in pairs(list) do
+		server_manager:send_agent(id,"module.agent_server","scene_server_update")
+	end
+end
+
+function scene_server_info()
+	local result = {}
+	for srv_id,srv_info in pairs(_scene_server_status) do
+		table.insert(result,{id = srv_id,addr = srv_info.addr})
+	end
+	return result
+end
+
+function report_agent_status(_,args)
+	local agent_info = _agent_server_status[args.agent_server_id]
+	if not agent_info then
+		agent_info = {}
+		_agent_server_status[args.agent_server_id] = agent_info
+	end
+	agent_info[args.scene_server_id] = true
 end
 
 local function find_min_scene(scene_info)

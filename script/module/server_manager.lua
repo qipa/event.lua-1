@@ -45,6 +45,8 @@ function reserve_id(channel)
 end
 
 function register_server(channel,args)
+	channel.name = args.name
+	channel.id = args.id
 	_server_channel[args.id] = channel
 	_server_name_ctx[args.name] = args.id
 	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
@@ -70,6 +72,16 @@ function scene_amount()
 		end
 	end
 	return amount
+end
+
+function find_server(self,name)
+	local result = {}
+	for id,channel in pairs(_server_channel) do
+		if channel.name == name then
+			result[id] = true
+		end
+	end
+	return result
 end
 
 function listen_server(self,name)

@@ -7,6 +7,7 @@ local protocol = require "protocol"
 local id_builder = import "module.id_builder"
 local database_object = import "module.database_object"
 local server_manager = import "module.server_manager"
+local agent_manager = import "module.agent_manager"
 
 cls_login_user = database_object.cls_database:inherit("login_user","account")
 
@@ -93,7 +94,7 @@ function cls_login_user:leave()
 end
 
 function cls_login_user:enter_agent(uid)
-	local agent_server,agent_addr = server_manager:find_min_agent()
+	local agent_server,agent_addr = agent_manager:user_enter()
 	local time = util.time()
 	local json = cjson.encode({account = self.account,uid = uid})
 	local token = util.authcode(json,tostring(time),1)
