@@ -56,7 +56,6 @@ event.fork(function ()
 		event.breakout(string.format("%s %s",env.name,reason))
 		os.exit(1)
 	end
-	model.set_client_manager(gate)
 
 	server_manager:send_login("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
 

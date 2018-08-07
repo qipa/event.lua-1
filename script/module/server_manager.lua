@@ -106,7 +106,7 @@ function listen_scene(self)
 	return listener
 end
 
-function connect_server(self,name)
+function connect_server(self,name,try)
 	local function channel_init(channel,name)
 		channel.name = name
 		channel.monitor = event.gen_session()
@@ -139,7 +139,7 @@ function connect_server(self,name)
 	end
 
 	
-	local channel = channel_connect(name,10)
+	local channel = channel_connect(name,try)
 
 	event.fork(function ()
 		while true do
