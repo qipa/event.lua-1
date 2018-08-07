@@ -26,6 +26,10 @@ function cls_item_base:destroy()
 
 end
 
-function cls_item_base:get_info()
+function cls_item_base:get_base_info()
 	return {cid = self.cid,uid = self.uid,amount = self.amount}
+end
+
+function cls_item_base:get_extra_info()
+
 end
