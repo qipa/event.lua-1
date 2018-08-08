@@ -1,7 +1,11 @@
 local event = require "event"
 local protocol = require "protocol"
-
 local server_manager = import "module.server_manager"
+
+local modf = math.modf
+local xpcall = xpcall
+local pairs = pairs
+local ipairs = ipairs
 
 _gate = _gate
 
@@ -15,6 +19,7 @@ function __init__(self)
 end
 
 local function client_data(cid,message_id,data,size)
+	local cid = cid * 100 + env.dist_id
 	local ok,err = xpcall(_data_func,debug.traceback,cid,message_id,data,size)
 	if not ok then
 		event.error(err)
@@ -22,6 +27,7 @@ local function client_data(cid,message_id,data,size)
 end
 
 local function client_accept(cid,addr)
+	local cid = cid * 100 + env.dist_id
 	local ok,err = xpcall(_accept_func,debug.traceback,cid,addr)
 	if not ok then
 		event.error(err)
@@ -29,6 +35,7 @@ local function client_accept(cid,addr)
 end
 
 local function client_close(cid)
+	local cid = cid * 100 + env.dist_id
 	local ok,err = xpcall(_data_func,debug.traceback,cid)
 	if not ok then
 		event.error(err)
@@ -57,24 +64,26 @@ local do_send_client
 local do_broadcast_client
 if env.name == "login" or env.name == "agent" then
 	do_send_client = function (cid,mid,data)
+		cid = modf(cid / 100) 
 		_gate:send(cid,mid,data)
 	end
 
 	do_broadcast_client = function (cids,mid,data)
 		for _,cid in pairs(cids) do
+			cid = modf(cid / 100) 
 			_gate:send(cid,mid,data)
 		end
 	end
 else
 	do_send_client = function (cid,mid,data)
-		local agent_id = cid - math.modf(cid / 100) * 100
+		local agent_id = cid - modf(cid / 100) * 100
 		server_manager:send_agent(agent_id,"module.client_manager","send_client",{cid = cid,mid = mid,data = data})
 	end
 	do_broadcast_client = function (cids,mid,data)
 		
 		local forward_info = {}
 		for cid in pairs(cids) do
-			local agent_id = cid - math.modf(cid / 100) * 100
+			local agent_id = cid - modf(cid / 100) * 100
 			local info = forward_info[agent_id]
 			if not info then
 				info = {}
