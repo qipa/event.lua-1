@@ -47,9 +47,13 @@ end
 function register_server(channel,args)
 	channel.name = args.name
 	channel.id = args.id
+
+	assert(_server_channel[args.id] == nil)
+
 	_server_channel[args.id] = channel
 	_server_name_ctx[args.name] = args.id
 	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
+	return env.dist_id
 end
 
 function agent_amount()
@@ -106,31 +110,38 @@ function listen_scene(self)
 	return listener
 end
 
-function connect_server(self,name,try)
+function connect_server(self,name,reconnect,try,addr)
 	local function channel_init(channel,name)
-		channel.name = name
+		
 		channel.monitor = event.gen_session()
 
-		channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
-	
-		channel.id = env.dist_id
+		local id = channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
+
+		channel.id = id
+		channel.name = name
+
+		assert(_server_channel[channel.id] == nil)
 
 		_server_channel[channel.id] = channel
 		_server_name_ctx[channel.name] = channel.id
 		_event_listener:fire_event("SERVER_CONNECT",name,channel.id)
 	end
 
-	local function channel_connect(name,try)
+	local function channel_connect(name,addr,try)
+		if not addr then
+			addr = env[name]
+		end
+
 		local channel,reason
 		local count = 0
 		while not channel do
-			channel,reason = event.connect(env[name],4,false,client_channel)
+			channel,reason = event.connect(addr,4,false,client_channel)
 			if not channel then
-				event.error(string.format("connect server:%s %s failed:%s",name,env[name],reason))
+				event.error(string.format("connect server:%s %s failed:%s",name,addr,reason))
 				event.sleep(1)
 				count = count + 1
 				if try and count >= try then
-					os.exit(1)
+					return
 				end
 			end
 		end
@@ -139,14 +150,23 @@ function connect_server(self,name,try)
 	end
 
 	
-	local channel = channel_connect(name,try)
+	local channel = channel_connect(name,addr,try)
+	if not channel then
+		return false
+	end
+	if reconnect then
+		event.fork(function ()
+			while true do
+				event.wait(channel.monitor)
+				channel_connect(name,addr)
+			end
+		end)
+	end
+	return true
+end
 
-	event.fork(function ()
-		while true do
-			event.wait(channel.monitor)
-			channel_connect(name)
-		end
-	end)
+function connect_server_with_addr(self,name,addr,reconnect,try)
+	return self:connect_server(name,reconnect,try,addr)
 end
 
 function register_event(ev,obj,method)

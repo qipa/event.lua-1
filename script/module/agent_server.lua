@@ -14,16 +14,10 @@ local common = import "common.common"
 _user_token = _user_token or {}
 _enter_user = _enter_user or {}
 _server_stop = _server_stop or false
-_scene_channel_ctx = _scene_channel_ctx or {}
+
 _client_manager = _client_manager or nil
 _event_listener = _event_listener or module_object.cls_base:new()
 
-local scene_channel = channel:inherit()
-
-function scene_channel:disconnect()
-	_scene_channel_ctx[self.id] = nil
-	_event_listener:fire_event("SCENE_DOWN",self.id)
-end
 
 function __init__(self)
 	_event_listener:register_event(self,"SCENE_DOWN","scene_down")
@@ -241,10 +235,11 @@ function get_all_enter_user(self)
 end
 
 function connect_scene_server(self,scene_server,scene_addr)
-	local scene_channel = _scene_channel_ctx[scene_server]
-	if scene_channel then
+	local all_scene_server = server_manager:find_server("scene")
+	if all_scene_server[scene_server] then
 		return true
 	end
+
 	local addr
 	if scene_addr.file then
 		addr = string.format("ipc://%s",scene_addr.file)
@@ -252,17 +247,8 @@ function connect_scene_server(self,scene_server,scene_addr)
 		addr = string.format("tcp://%s:%d",scene_addr.ip,scene_addr.port)
 	end
 
-	local channel,reason = event.connect(addr,4,false,scene_channel)
-	if not channel then
-		event.error(string.format("connect scene server:%d faield:%s",addr,reason))
-		return false
-	end
-
-	channel:call("module.server_manager","register_agent_server",{id = env.dist_id})
-	channel.id = scene_server
-
-	_scene_channel_ctx[scene_server] = channel
-	return true
+	local channel = server_manager:connect_server_with_addr("scene",addr,false,1)
+	return channel ~= nil
 end
 
 function scene_down(self,scene_server_id)
@@ -274,9 +260,6 @@ function scene_down(self,scene_server_id)
 	end
 end
 
-function get_scene_channel(self,scene_server_id)
-	return _scene_channel_ctx[scene_server_id]
-end
 
 function server_stop()
 	_server_stop = true

@@ -72,6 +72,15 @@ function register_scene_server(channel,args)
 	end
 end
 
+function register_agent_server(_,args)
+	local agent_info = _agent_server_status[args.agent_server_id]
+	if not agent_info then
+		agent_info = {}
+		_agent_server_status[args.agent_server_id] = agent_info
+	end
+	agent_info[args.scene_server_id] = true
+end
+
 function scene_server_info()
 	local result = {}
 	for srv_id,srv_info in pairs(_scene_server_status) do
@@ -80,14 +89,35 @@ function scene_server_info()
 	return result
 end
 
-function report_agent_status(_,args)
-	local agent_info = _agent_server_status[args.agent_server_id]
+function agent_connect_scene(agent_server_id,scene_server_id)
+	local agent_info = _agent_server_status[agent_server_id]
+
+	local connected = false
+	if agent_info and agent_info[scene_server_id] then
+		connected = true
+	end
+
+	if connected then
+		return true
+	end
+
+
+	local result = server_manager:call_agent(agent_server_id,"handler.agent_handler","connect_scene_server",{ scene_server = scene_server_id,
+																				 scene_addr = scene_addr})
+	if not result then
+		return false
+	end
+
+	local agent_info = _agent_server_status[agent_server_id]
 	if not agent_info then
 		agent_info = {}
-		_agent_server_status[args.agent_server_id] = agent_info
+		_agent_server_status[agent_server_id] = agent_info
 	end
-	agent_info[args.scene_server_id] = true
+	agent_info[scene_server_id] = true
+
+	return true
 end
+
 
 local function find_min_scene(scene_info)
 	local min_server
@@ -197,25 +227,8 @@ function execute_enter_scene(user_info,fighter_data,scene_id,scene_uid,scene_pos
 		return
 	end
 
-	local agent_info = _agent_server_status[user_info.user_agent]
-	local connected = false
-	if agent_info and agent_info[scene_server] then
-		connected = true
-	end
+	if not agent_connect_scene(user_info.agent_server,scene_server) then
 
-	if not connected then
-		local result = server_manager:call_agent(user_info.user_agent,"handler.agent_handler","connect_scene_server",{ scene_server = scene_server,
-																					 scene_addr = scene_addr})
-		if not result then
-			return
-		end
-
-		local agent_info = _agent_server_status[user_info.user_agent]
-		if not agent_info then
-			agent_info = {}
-			_agent_server_status[user_info.user_agent] = agent_info
-		end
-		agent_info[scene_server] = true
 	end
 
 	local fighter_data = fighter_data
