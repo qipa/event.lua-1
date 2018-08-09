@@ -24,14 +24,14 @@ function cls_database:load()
 		if not self.__alive then
 			break
 		end
-		local result = db_channel:findOne(db,field,{query = db_index})
-		if result then
-			if result.__name then
-				self[field] = class.instance_from(result.__name,result)
-			else
-				self[field] = result
-			end
+		local result
+		local cls = class.get(field)
+		if cls then
+			result = cls:load(db_channel,db,db_index)
+		else
+			result = db_channel:findOne(db,field,{query = db_index})
 		end
+		self[field] = result
 	end
 end
 
@@ -42,21 +42,15 @@ function cls_database:save()
 		if self.__save_fields[field] ~= nil then
 			local data = self[field]
 			if data then
-				local updater = {}
 				if type(data) == "table" then
-					if data.save_data then
-						local set,unset = data:save_data()
-						if set then
-							updater["$set"] = set
-						end
-						if unset then
-							updater["$unset"] = unset
-						end
+					if data.save then
+						data:save(db_channel,db,self:db_index())
 					else
+						local updater = {}
 						updater["$set"] = data
+						db_channel:update(db,field,self:db_index(),updater,true)
 					end
 				end
-				db_channel:update(db,field,self:db_index(),updater,true)
 			end
 		end
 	end

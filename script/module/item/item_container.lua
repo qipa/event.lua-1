@@ -1,9 +1,9 @@
 local id_builder = import "module.id_builder"
-local database_document = import "module.database_document"
+local database_collection = import "module.database_collection"
 local item_factory = import "module.item.item_factory"
 
 
-cls_item_container = database_document.cls_document:inherit("item_container")
+cls_item_container = database_collection.cls_collection_set:inherit("item_container")
 
 function __init__(self)
 	
@@ -11,8 +11,7 @@ end
 
 
 function cls_item_container:create()
-	self.slots = {}
-	self.helper = {}
+
 end
 
 function cls_item_container:init()
@@ -46,7 +45,6 @@ local function del_item(self,item)
 	helper_info[item.uid] = nil
 	item:destroy()
 end
-
 
 function cls_item_container:insert_item_by_cid(cid,amount)
 

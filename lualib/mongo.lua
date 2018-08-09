@@ -139,6 +139,10 @@ function mongo_channel:insert(db,name,doc)
 	self.buffer:write(data,1)
 end
 
+function mongo_channel:delete(db,name,selector)
+
+end
+
 function mongo_channel:drop(db,name)
 	return self:runCommand(db,"drop",name)
 end
