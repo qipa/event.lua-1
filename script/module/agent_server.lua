@@ -60,39 +60,17 @@ function dispatch_client(self,cid,message_id,data,size)
 	if not user then
 		route.dispatch_client(message_id,data,size,cid)
 	else
-		local proto = protocol.id_name[message_id]
-		local forward = common.PROTOCOL_FORWARD[proto]
-		if forward == common.SERVER_TYPE.WORLD then
-			user:forward_world(message_id,string.copy(data,size))
-		elseif forward == common.SERVER_TYPE.SCENE then
-			user:forward_scene(message_id,string.copy(data,size))
-		else
-			route.dispatch_client(message_id,data,size,user)
-		end
+		route.dispatch_client(message_id,data,size,user)
 	end
 end
 
 
-function send_login(self,file,method,args,callback)
-
-end
-
-function call_login(self,file,method,args)
-
-end
-
-function send_world(self,file,method,args,callback)
-
-end
-
-function call_world(self,file,method,args)
-
-end
-
 function enter(self,cid,addr)
+	print(string.format("client enter:%d,%s",cid,addr))
 end
 
 function leave(self,cid)
+	print(string.format("client leave:%d,%s",cid,addr))
 	local enter_info = _enter_user[cid]
 	_enter_user[cid] = nil
 	if not enter_info then
