@@ -16,6 +16,7 @@ local _M = {}
 
 _M.encode = {}
 _M.decode = {}
+_M.name = _id_name
 
 local function replace_field(info)
 	if info.fields ~= nil then

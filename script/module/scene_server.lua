@@ -30,6 +30,17 @@ function flush()
 	end
 end
 
+function dispatch_client(_,args)
+	local user = model.fetch_scene_user_with_cid(args.cid)
+
+	if not user then
+		route.dispatch_client(args.cid,args.message_id,args.data)
+	else
+		route.dispatch_client(user,args.message_id,args.data)
+	end
+
+end
+
 function create_scene(self,scene_id,scene_uid)
 	local scene_info = _scene_ctx[scene_id]
 	if not scene_info then

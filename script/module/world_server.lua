@@ -40,6 +40,15 @@ function flush(self)
 	end
 end
 
+function dispatch_client(self,args)
+	local user = model.fetch_world_user_with_cid(args.cid)
+	if not user then
+		route.dispatch_client(args.cid,args.message_id,args.data)
+	else
+		route.dispatch_client(user,args.message_id,args.data)
+	end
+end
+
 function agent_down(self,listener,server_id)
 	local all = model.fetch_world_user()
 	for _,user in pairs(all) do

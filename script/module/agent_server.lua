@@ -56,6 +56,16 @@ function flush(self)
 end
 
 function dispatch_client(self,cid,message_id,data,size)
+	local pto_name = protocol.name[message_id]
+	local forward = common.PROTOCOL_FORWARD[pto_name]
+	if forward then
+		if forward == common.SERVER_TYPE.WORLD then
+			server_manager:send_world("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+		elseif forward == common.SERVER_TYPE.SCENE then
+			server_manager:send_scene("module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+		end
+		return
+	end
 	local user = model.fetch_agent_user_with_cid(cid)
 	if not user then
 		route.dispatch_client(cid,message_id,data,size)
