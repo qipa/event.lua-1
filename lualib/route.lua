@@ -26,7 +26,7 @@ function _M.dispatch(file,method,...)
 	return result
 end
 
-function _M.dispatch_client(message_id,data,size,...)
+function _M.dispatch_client(source,message_id,data,size)
 	local name,message = protocol.decode[message_id](data,size)
 	if not protocol.handler[name] then
 		event.error(string.format("no such id:%d proto:%s ",message_id,name))
@@ -36,7 +36,7 @@ function _M.dispatch_client(message_id,data,size,...)
 	monitor.report_input(protocol,message_id,size)
 
 	-- co_core.start()
-	protocol.handler[name](...,message)
+	protocol.handler[name](source,message)
 	-- local diff = co_core.stop()
 	-- monitor.report_diff("protocol",message_id,diff)
 end

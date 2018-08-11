@@ -58,9 +58,9 @@ end
 function dispatch_client(self,cid,message_id,data,size)
 	local user = model.fetch_agent_user_with_cid(cid)
 	if not user then
-		route.dispatch_client(message_id,data,size,cid)
+		route.dispatch_client(cid,message_id,data,size)
 	else
-		route.dispatch_client(message_id,data,size,user)
+		route.dispatch_client(user,message_id,data,size)
 	end
 end
 
