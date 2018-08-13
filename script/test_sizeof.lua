@@ -24,3 +24,35 @@ print(util.size_of(filter_list))
 print(util.size_of(content))
 
 print("mem",collectgarbage("count") - count)
+
+local eSCENE_DEFINE = {
+	CITY = 1,
+	
+}
+
+local kLOGIN_MAX = 1
+
+local g_mount = 1
+
+local _amount = 1
+
+
+local cScene = {}
+local  = {
+	id = 1,
+	_name = "fuck"
+	__timer = ""
+}A
+
+local function _enter_city()
+
+
+end
+
+local function enter_scene()
+
+end
+
+function cScene:enter()
+
+end
