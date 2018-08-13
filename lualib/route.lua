@@ -8,22 +8,7 @@ local _M = {}
 
 
 function _M.dispatch(file,method,...)
-
-	local lm = import.get_module(file)
-	if not lm then
-		error(string.format("no such file:%s",file))
-	end
-
-	local func = lm[method]
-	if not func then
-		error(string.format("no such method:%s",method))
-	end
-
-	-- co_core.start()
-	local result = func(...)
-	-- local diff = co_core.stop()
-	-- monitor.report_diff(file,method,diff)
-	return result
+	return import.dispatch(file,method,...)
 end
 
 function _M.dispatch_client(source,message_id,data,size)

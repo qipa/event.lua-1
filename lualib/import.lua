@@ -84,4 +84,18 @@ function _M.get_module(file)
 	end
 end
 
+function _M.dispatch(file,method,...)
+	local ctx = _script_ctx[file]
+	if not ctx then
+		error(string.format("no such file:%s",file))
+	end
+
+	local func = ctx.env[method]
+	if not func then
+		error(string.format("no such method:%s",method))
+	end
+
+	return func(...)
+end
+
 return _M

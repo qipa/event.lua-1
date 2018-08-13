@@ -48,7 +48,7 @@ function channel:disconnect()
 	end)
 
 	for _,session in pairs(list) do
-		event.wakeup(session,false,"buffer closed")
+		event.wakeup(session,false,"channel closed")
 	end
 	self.session_ctx = {}
 end
@@ -78,8 +78,11 @@ end
 function channel:dispatch(message,size)
 	if message.ret then
 		local call_ctx = self.session_ctx[message.session]
+		local ok = message.args[1]
 		if call_ctx.callback then
-			call_ctx.callback(message.args)
+			if ok then
+				call_ctx.callback(tunpack(message.args,2))
+			end
 		else
 			event.wakeup(message.session,tunpack(message.args))
 		end
