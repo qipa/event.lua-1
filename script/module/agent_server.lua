@@ -5,7 +5,8 @@ local route = require "route"
 local cjson = require "cjson"
 local protocol = require "protocol"
 local channel = require "channel"
-
+local client_manager = import "module.client_manager"
+local server_manager = import "module.server_manager"
 local module_object = import "module.object"
 local agent_user = import "module.agent_user"
 local scene_user = import "module.scene_user"
@@ -15,16 +16,14 @@ _user_token = _user_token or {}
 _enter_user = _enter_user or {}
 _server_stop = _server_stop or false
 
-_client_manager = _client_manager or nil
 _event_listener = _event_listener or module_object.cls_base:new()
 
 
 function __init__(self)
-	_event_listener:register_event(self,"SCENE_DOWN","scene_down")
+	server_manager:register_event("SERVER_DOWN",self,"server_down")
 end
 
 function start(self,client_mgr)
-	_client_manager = client_mgr
 	self.db_timer = event.timer(30,function ()
 		local all = model.fetch_agent_user()
 		for _,user in pairs(all) do
@@ -62,7 +61,13 @@ function dispatch_client(self,cid,message_id,data,size)
 		if forward == common.SERVER_TYPE.WORLD then
 			server_manager:send_world("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		elseif forward == common.SERVER_TYPE.SCENE then
-			server_manager:send_scene("module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			local user = model.fetch_agent_user_with_cid(cid)
+			if not user then
+				event.error(string.format("forward scene error:no such user:%d",cid))
+				return
+			end
+
+			server_manager:send_scene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		end
 		return
 	end
@@ -120,13 +125,13 @@ function user_kick(self,uid)
 	if not enter_info then
 		return
 	end
-	_client_manager:close(user.cid)
+	client_manager:close(user.cid)
 	_enter_user.mutex(user_leave,user)
 end
 
 function user_auth(self,cid,token)
 	if not _user_token[token] then
-		_client_manager:close(cid)
+		client_manager:close(cid)
 		return
 	end
 
@@ -135,14 +140,14 @@ function user_auth(self,cid,token)
 
 	local now = util.time()
 	if now - info.time >= 60 * 100 then
-		_client_manager:close(cid)
+		client_manager:close(cid)
 		return
 	end
 
 	local token_info = util.authcode(token,info.time,0)
 	token_info = cjson.decode(token_info)
 	if token_info.uid ~= info.uid then
-		_client_manager:close(cid)
+		client_manager:close(cid)
 		return
 	end
 
@@ -239,22 +244,23 @@ function connect_scene_server(self,scene_server,scene_addr)
 	return channel ~= nil
 end
 
-function scene_down(self,scene_server_id)
-	local all = model.fetch_agent_user()
-	for _,user in pairs(all) do
-		if user.scene_server == scene_server_id then
-			user:scene_down()
+function server_down(self,name,id)
+	if name == "scene" then
+		local all = model.fetch_agent_user()
+		for _,user in pairs(all) do
+			if user.scene_server == id then
+				user:scene_down()
+			end
 		end
 	end
 end
 
-
 function server_stop()
 	_server_stop = true
-	_client_manager:stop()
+	client_manager:stop()
 
 	for cid,enter_info in pairs(_enter_user) do
-		_client_manager:close(cid)
+		client_manager:close(cid)
 		local user = model.fetch_agent_user_with_uid(enter_info.uid)
 		if user then
 			enter_info.mutex(user_leave,self,user)

@@ -60,6 +60,17 @@ function start(conf)
 	return gate
 end
 
+function stop(self)
+	assert(_gate ~= nil)
+	return _gate:stop()
+end
+
+function close(self,cid)
+	assert(_gate ~= nil)
+	local cid = modf(cid / 100) 
+	_gate:close(cid)
+end
+
 local do_send_client
 local do_broadcast_client
 if env.name == "login" or env.name == "agent" then

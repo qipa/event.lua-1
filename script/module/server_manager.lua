@@ -169,11 +169,11 @@ function connect_server_with_addr(self,name,addr,reconnect,try)
 	return self:connect_server(name,reconnect,try,addr)
 end
 
-function register_event(ev,obj,method)
+function register_event(self,ev,obj,method)
 	_event_listener:register_event(ev,obj,method)
 end
 
-function deregister_event(ev,obj)
+function deregister_event(self,ev,obj)
 	_event_listener:deregister_event(obj,ev)
 end 
 
