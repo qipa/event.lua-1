@@ -75,10 +75,15 @@ function leave(self,cid)
 end
 
 function dispatch_client(self,cid,message_id,data,size)
-	route.dispatch_client(message_id,data,size,cid)
+	local user = model.fetch_login_user_with_cid(cid)
+	if not user then
+		route.dispatch_client(cid,message_id,data,size)
+	else
+		route.dispatch_client(user,message_id,data,size)
+	end
 end
 
-function user_auth(self,cid,account)
+function user_auth(cid,account)
 	local info = _login_ctx[cid]
 	assert(info ~= nil,cid)
 	assert(info.account == nil,info.account)

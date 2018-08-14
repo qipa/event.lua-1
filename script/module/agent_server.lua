@@ -16,14 +16,11 @@ _user_token = _user_token or {}
 _enter_user = _enter_user or {}
 _server_stop = _server_stop or false
 
-_event_listener = _event_listener or module_object.cls_base:new()
-
-
 function __init__(self)
 	server_manager:register_event("SERVER_DOWN",self,"server_down")
 end
 
-function start(self,client_mgr)
+function start(self)
 	self.db_timer = event.timer(30,function ()
 		local all = model.fetch_agent_user()
 		for _,user in pairs(all) do
