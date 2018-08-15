@@ -61,13 +61,14 @@ struct ev_client {
 	double tick;
 };
 
+#define SLOT(id,max) (id - (id / max) * max)
 
 static void 
 close_client(int id,void* data) {
 	struct ev_client* client = data;
 	ev_session_free(client->session);
 	ev_timer_stop(loop_ctx_get(client->gate->loop_ctx),(struct ev_timer*)&client->timer);
-	uint32_t slot = client->id - (client->id / client->gate->max_offset) * client->gate->max_offset;
+	uint32_t slot = SLOT(client->id,client->gate->max_offset);
 	container_remove(client->gate->container,slot);
 	client->gate->client_count--;
 	free(client);
@@ -88,7 +89,7 @@ release_client(struct ev_client* client) {
 
 static inline struct ev_client*
 get_client(struct gate_ctx* gate,uint32_t id) {
-	uint32_t slot = id - (id / gate->max_offset) * gate->max_offset;
+	uint32_t slot = SLOT(id,gate->max_offset);
 	struct ev_client* client = container_get(gate->container,slot);
 	if (!client || client->id != id) {
 		return NULL;
@@ -183,7 +184,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 
 	grab_client(client);
 
-	while (true) {
+	for(;;) {
 		if (client->need == 0) {
 			if (read_header(client) < 0) {
 				break;
@@ -268,6 +269,13 @@ close_complete(struct ev_session* ev_session, void* ud) {
 	release_client(client);
 }
 
+static void
+close_error(struct ev_session* session, void* ud) {
+	struct ev_client* client = ud;
+	fprintf(stderr,"client:%d close error\n",client->id);
+	release_client(client);
+}
+
 struct gate_ctx*
 gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq,void* ud) {
 	struct gate_ctx* gate = malloc(sizeof(*gate));
@@ -340,9 +348,9 @@ gate_close(struct gate_ctx* gate,uint32_t client_id,int grace) {
 	}
 	else {
 		client->markdead = 1;
-		ev_session_setcb(client->session, NULL, close_complete, error_happen, client);
-		ev_session_disable(client->session,EV_READ);
+		ev_session_setcb(client->session, NULL, close_complete, close_error, client);
 		ev_session_enable(client->session, EV_WRITE);
+		ev_session_disable(client->session, EV_READ);
 	}
 	release_client(client);
 	return 0;
