@@ -1,0 +1,121 @@
+local aoi_core = require "simpleaoi.core"
+local sceneConst = import "module.scene.scene_const"
+local object = import "module.object"
+
+cSceneObj = object.cls_base:inherit("sceneobj")
+
+function __init__(self)
+	self.cSceneObj:pack_field("uid")
+	self.cSceneObj:pack_field("pos")
+end
+
+function cSceneObj:create(uid,x,z,face)
+	self.uid = uid
+	self.pos = {x,z}
+	self.face = face
+	self.hp = hp
+	self.maxHp = hp
+	self.witnessCtx = {}
+	self.viewerCtx = {}
+end
+
+function cSceneObj:destroy()
+
+end
+
+function cSceneObj:sceneObjType()
+	assert(false)
+end
+
+function cSceneObj:enterScene(scene,x,z)
+	self.pox[1] = x
+	self.pox[2] = z
+	scene:enter(self,x,z)
+end
+
+function cSceneObj:leaveScene()
+
+end
+
+function cSceneObj:onEnterScene(scene)
+	self.aoiEntityId = scene:createEntity(self)
+	self.scene = scene
+end
+
+function cSceneObj:onLeaveScene(scene)
+	scene:removeEntity(self)
+end
+
+function cSceneObj:move(x,z)
+	self.scene:moveAoiEntity(self,x,z)
+end
+
+function cSceneObj:onObjEnter(objList)
+
+end
+
+function cSceneObj:onObjLeave(objList)
+
+end
+
+function cSceneObj:onUpdate(Now)
+
+end
+
+function cSceneObj:getViewer(range)
+	local result = {}
+	local sceneInst = self.scene
+
+	for aoiTriggerId in pairs(self.viewerCtx) do
+		local sceneObjUid = sceneInst.viewerCtx[aoiTriggerId]
+		local sceneObj = sceneInst.objMgr[sceneObjUid]
+		table.insert(result,sceneObj)
+	end
+
+	return result
+end
+
+function cSceneObj:getWitness()
+
+	local result = {}
+	local sceneInst = self.scene
+
+	for aoiEntityId in pairs(self.witnessCtx) do
+		local sceneObjUid = sceneInst.witnessCtx[aoiEntityId]
+		local sceneObj = sceneInst.objMgr[sceneObjUid]
+		table.insert(result,sceneObj)
+	end
+
+	return result
+end
+
+function cSceneObj:getWitnessCid()
+	local result = {}
+	local sceneInst = self.scene
+
+	for aoiEntityId in pairs(self.witnessCtx) do
+		local sceneObjUid = sceneInst.witnessCtx[aoiEntityId]
+		local sceneObj = sceneInst.objMgr[sceneObjUid]
+		if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+			table.insert(result,sceneObj.cid)
+		end
+	end
+
+	return result
+end
+
+function cSceneObj:getSceneObjInLine()
+
+end
+
+function cSceneObj:getSceneObjInRectangle()
+
+end
+
+function cSceneObj:getSceneObjInCircle()
+
+end
+
+function cSceneObj:getSceneObjInSector()
+
+end
