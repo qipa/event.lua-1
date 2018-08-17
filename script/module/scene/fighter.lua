@@ -20,7 +20,6 @@ function cSceneObj:sceneObjType()
 	return sceneConst.eSCENEOBJ_TYPE.FIGHTER
 end
 
-
 function cFighter:enterScene(scene,x,z)
 	sceneobj.cSceneObj.enterScene(self,scene,x,z)
 end
