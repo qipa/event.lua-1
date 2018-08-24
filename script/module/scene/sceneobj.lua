@@ -125,3 +125,4 @@ end
 function cSceneObj:getSceneObjInSector()
 
 end
+

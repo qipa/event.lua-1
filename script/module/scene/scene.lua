@@ -1,17 +1,22 @@
 local toweraoi = require "toweraoi.core"
 local nav_core = require "nav.core"
 local cjson = require "cjson"
+local timer = require "timer"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
 cScene = object.cls_base:inherit("scene")
+
+local kUPDATE_INTERVAL = 0.1
+local kCOMMON_UPDATE_INTERVAL = 1
 
 function cScene:create(sceneId,sceneUid)
 	self.sceneId = sceneId
 	self.sceneUid = sceneUid
 
 	self.objMgr = {}
-
+	self.objTypeMgr = {}
+	
 	self.aoi = aoi_core.new(self.sceneId,1000,1000,4)
 	self.aoiEntityMgr = {}
 	self.aoiTriggerMgr = {}
@@ -28,6 +33,29 @@ function cScene:create(sceneId,sceneUid)
 	nav:load_tile(cjson.decode(tile_info))
 
 	self.nav = nav
+	
+	timer.callout(kUPDATE_INTERVAL,self,"update")
+	timer.callout(kCOMMON_UPDATE_INTERVAL,self,"commonUpdate")
+end
+
+function cScene:destroy()
+	timer.removeAll(self)
+	self:cleanSceneObj()
+end
+
+function cScene:cleanSceneObj()
+	for _,sceneObj in pairs(self.objMgr) do
+		sceneObj:release()
+	end 
+end
+
+function cScene:getObj(uid)
+	return self.objMgr[uid]
+end
+
+function cScene:getAllObjByType(sceneObjType)
+	local typeMgr = self.objTypeMgr[sceneObjType]
+	return typeMgr
 end
 
 function cScene:enter(sceneObj,pos)
@@ -43,7 +71,17 @@ function cScene:enter(sceneObj,pos)
 	
 	self.objMgr[sceneObj.uid] = sceneObj
 	
-	if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+	local objType = sceneObj:sceneObjType()
+	
+	local typeMgr = self.objTypeMgr[objType]
+	if not typeMgr then
+		typeMgr = {}
+		self.objTypeMgr[objType] = typeMgr
+	end 
+	typeMgr[sceneObj.uid] = sceneObj
+
+
+	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 		self:onUserEnter(sceneObj)
 	else
 		self:onObjEnter(sceneobj)
@@ -62,6 +100,10 @@ function cScene:leave(sceneObj)
 	end
 
 	self.objMgr[sceneObj.uid] = nil
+
+	local objType = sceneObj:sceneObjType()
+	local typeMgr = self.objTypeMgr[objType]
+	typeMgr[sceneObj.uid] = nil
 
 	if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 		self:onUserLeave(sceneObj)
@@ -89,12 +131,12 @@ function cScene:onObjLeave(obj)
 
 end
 
-function cScene:findPath(from_x,from_z,to_x,to_z)
-	return self.nav:find(from_x,from_z,to_x,to_z)
+function cScene:findPath(fromX,fromZ,toX,toZ)
+	return self.nav:find(fromX,fromZ,toX,toZ)
 end
 
-function cScene:raycast(from_x,from_z,to_x,to_z)
-	return self.nav:raycast(from_x,from_z,to_x,to_z)
+function cScene:raycast(fromX,fromZ,toX,toZ)
+	return self.nav:raycast(fromX,fromZ,toX,toZ)
 end
 
 function cScene:posMovable(x,z)
