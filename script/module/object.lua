@@ -119,9 +119,10 @@ end
 
 function cls_base:new(...)
 	local object = { __dirty = {},
-				 	 __name = self.__name,
-				 	 __alive = true,
-				 	 __event = {}}
+			 __name = self.__name,
+		         __alive = true,
+			 __event = {},
+		 	 __timer = {}}
 	local self = class_ctx[self.__name]
 	new_object(self,object)
 

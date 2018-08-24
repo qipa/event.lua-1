@@ -34,6 +34,7 @@ function _M.import(file)
 	
 	ctx.env = setmetatable({},{__index = _G})
 	ctx.env.__name = fullfile
+	ctx.env.__timer = {}
 	
 	ctx.change = loadfile(file,ctx.env.__name,ctx.env)
 
