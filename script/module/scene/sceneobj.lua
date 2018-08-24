@@ -34,7 +34,8 @@ function cSceneObj:enterScene(scene,x,z)
 end
 
 function cSceneObj:leaveScene()
-
+	assert(self.scene ~= nil)
+	self.scene:leave(self)
 end
 
 function cSceneObj:onEnterScene(scene)
@@ -58,9 +59,14 @@ function cSceneObj:onObjLeave(objList)
 
 end
 
-function cSceneObj:onUpdate(Now)
+function cSceneObj:onUpdate(now)
 
 end
+
+function cSceneObj:onCommonUpdate(now)
+
+end
+
 
 function cSceneObj:getViewer(range)
 	local result = {}

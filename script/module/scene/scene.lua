@@ -2,6 +2,7 @@ local toweraoi = require "toweraoi.core"
 local nav_core = require "nav.core"
 local cjson = require "cjson"
 local object = import "module.object"
+local sceneConst = import "module.scene.scene_const"
 
 cScene = object.cls_base:inherit("scene")
 
@@ -39,22 +40,53 @@ function cScene:enter(sceneObj,pos)
 		local other = self.objMgr[otherUid]
 		other:onObjEnter({sceneObj})
 	end
+	
+	self.objMgr[sceneObj.uid] = sceneObj
+	
+	if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+		self:onUserEnter(sceneObj)
+	else
+		self:onObjEnter(sceneobj)
+	end
 
 	sceneObj:onEnterScene(self)
 
-	self.objMgr[sceneObj.uid] = sceneObj
 end
 
-function cScene:leave(fighter)
-	fighter:do_leave()
-	local set = self.aoi:leave(fighter.aoi_id)
+function cScene:leave(sceneObj)
+	local set = self.aoi:leave(sceneObj.aoi_id)
 	for _,aoi_id in pairs(set) do
 		local uid = self.aoi_ctx[aoi_id]
 		local other = self.objMgr[uid]
-		other:object_leave({fighter})
+		other:onObjLeave({sceneObj})
 	end
 
-	self.objMgr[fighter.uid] = nil
+	self.objMgr[sceneObj.uid] = nil
+
+	if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+		self:onUserLeave(sceneObj)
+	else
+		self:onObjLeave(sceneobj)
+	end
+	
+	sceneObj:onLeaveScene(self)
+
+end
+
+function cScene:onUserEnter(user)
+
+end
+
+function cScene:onUserLeave(user)
+
+end
+
+function cScene:onObjEnter(obj)
+
+end
+
+function cScene:onObjLeave(obj)
+
 end
 
 function cScene:findPath(from_x,from_z,to_x,to_z)
@@ -168,8 +200,15 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 end
 
 function cScene:update(now)
-	for _,fighter in pairs(self.objMgr) do
-		fighter:update()
+	for _,sceneObj in pairs(self.objMgr) do
+		sceneObj:onUpdate()
+	end
+
+end
+
+function cScene:commonUpdate(now)
+	for _,sceneObj in pairs(self.objMgr) do
+		sceneObj:onCommonUpdate()
 	end
 
 end
