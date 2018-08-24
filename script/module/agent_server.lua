@@ -5,6 +5,7 @@ local route = require "route"
 local cjson = require "cjson"
 local protocol = require "protocol"
 local channel = require "channel"
+local timer = require "timer"
 local client_manager = import "module.client_manager"
 local server_manager = import "module.server_manager"
 local module_object = import "module.object"
@@ -21,24 +22,10 @@ function __init__(self)
 end
 
 function start(self)
-	self.db_timer = event.timer(30,function ()
-		local all = model.fetch_agent_user()
-		for _,user in pairs(all) do
-			user:save()
-		end
-	end)
+	
+	timer.callout(30,self,"flush")
 
-	self.auth_timer = event.timer(1,function ()
-		local login_channel = model.get_login_channel()
-		local now = util.time()
-		for token,info in pairs(_user_token) do
-			if now - info.time >= 60 * 100 then
-				_user_token[token] = nil
-				login_channel:send("handler.login_handler","rpc_timeout_agent",{account = info.account})
-				event.error(string.format("%s:%d auth timeout",info.account,info.uid))
-			end
-		end
-	end)
+	timer.callout(1,self,"authTimer")
 
 	import "handler.agent_handler"
 	import "handler.cmd_handler"
@@ -48,6 +35,18 @@ function flush(self)
 	local all = model.fetch_agent_user()
 	for _,user in pairs(all) do
 		user:save()
+	end
+end
+
+function authTimer(self)
+	local now = util.time()
+	for token,info in pairs(_user_token) do
+		if now - info.time >= 60 * 100 then
+			_user_token[token] = nil
+			server_manager:send_login("handler.login_handler","rpc_timeout_agent",{account = info.account})
+			event.error(string.format("%s:%d auth timeout",info.account,info.uid))
+		end
+
 	end
 end
 
@@ -93,7 +92,11 @@ function leave(self,cid)
 	if not user then
 		return
 	end
-
+	user.cid = nil
+	user.status = eUSER_STATUS.DEAD	
+	if user.hookTime then
+		return
+	end
 	event.fork(function ()
 		enter_info.mutex(user_leave,self,user)
 	end)

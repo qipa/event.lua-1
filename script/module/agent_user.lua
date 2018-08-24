@@ -10,6 +10,9 @@ local database_object = import "module.database_object"
 local module_item_mgr = import "module.item_manager"
 local task_manager = import "module.task_manager"
 
+local eUSER_STATUS = {
+	ALIVE = 1,
+	DEAD = 2 }
 
 cls_agent_user = database_object.cls_database:inherit("agent_user","uid","cid")
 
@@ -25,6 +28,9 @@ end
 function cls_agent_user:create(cid,uid,account)
 	self.cid = cid
 	self.uid = uid
+	self.status = eUSER_STATUS.ALIVE 
+	self.hookTime = nil 
+
 	self.account = account
 	model.bind_agent_user_with_uid(uid,self)
 	model.bind_agent_user_with_cid(cid,self)
