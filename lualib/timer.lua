@@ -10,7 +10,7 @@ function _M.callout(interval,inst,method,...)
 
 end
 
-function _M.callout_once(interval,inst,method,...)
+function _M.calloutAfter(interval,inst,method,...)
 
 
 end

@@ -30,12 +30,12 @@ function _M.import(file)
 	local fullfile,change = string.format("./script/%s.lua",string.gsub(file,"%.","/"))
 
 	local ctx = {}
-	ctx.env = setmetatable({},{__index = _G})
-	ctx.fullfile = fullfile
-	ctx.name = file
 	_script_ctx[file] = ctx
-
-	ctx.change = loadfile(file,fullfile,ctx.env)
+	
+	ctx.env = setmetatable({},{__index = _G})
+	ctx.env.__name = fullfile
+	
+	ctx.change = loadfile(file,ctx.env.__name,ctx.env)
 
 	if ctx.env["__init__"] then
 		ctx.env["__init__"](ctx.env)
@@ -50,7 +50,7 @@ function _M.reload(file)
 		return
 	end
 
-	ctx.change = loadfile(file,ctx.fullfile,ctx.env)
+	ctx.change = loadfile(file,ctx.__name,ctx.env)
 
 	if ctx.env["__init__"] then
 		ctx.env["__init__"](ctx.env)
