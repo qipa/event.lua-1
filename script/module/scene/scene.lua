@@ -210,5 +210,4 @@ function cScene:commonUpdate(now)
 	for _,sceneObj in pairs(self.objMgr) do
 		sceneObj:onCommonUpdate()
 	end
-
 end
