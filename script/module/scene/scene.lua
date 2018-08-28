@@ -1,5 +1,5 @@
-local toweraoi = require "toweraoi.core"
-local nav_core = require "nav.core"
+local aoiCore = require "toweraoi.core"
+local navCore= require "nav.core"
 local cjson = require "cjson"
 local timer = require "timer"
 local object = import "module.object"
@@ -17,20 +17,20 @@ function cScene:create(sceneId,sceneUid)
 	self.objMgr = {}
 	self.objTypeMgr = {}
 	
-	self.aoi = aoi_core.new(self.sceneId,1000,1000,4)
+	self.aoi = aoiCore.new(self.sceneId,1000,1000,4)
 	self.aoiEntityMgr = {}
 	self.aoiTriggerMgr = {}
 
-	local FILE = io.open(string.format("./config/%d.mesh",scene_id),"r")
-	local mesh_info = FILE:read("*a")
+	local FILE = io.open(string.format("./config/%d.mesh",sceneId),"r")
+	local meshInfo = FILE:read("*a")
 	FILE:close()
 
-	local FILE = io.open(string.format("./config/%d.tile",scene_id),"r")
-	local tile_info = FILE:read("*a")
+	local FILE = io.open(string.format("./config/%d.tile",sceneId),"r")
+	local tileInfo = FILE:read("*a")
 	FILE:close()
 
-	local nav = nav_core.create(scene_id,cjson.decode(mesh_info))
-	nav:load_tile(cjson.decode(tile_info))
+	local nav = navCore.create(sceneId,cjson.decode(meshInfo))
+	nav:load_tile(cjson.decode(tileInfo))
 
 	self.nav = nav
 	

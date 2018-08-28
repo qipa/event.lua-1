@@ -10,22 +10,22 @@ local login_server = import "module.login_server"
 _server_status = _server_status or nil
 
 function __init__()
-	protocol.handler["c2s_login_auth"] = req_enter
-	protocol.handler["c2s_login_enter"] = req_enter_game
-	protocol.handler["c2s_create_role"] = req_create_role
+	protocol.handler["c2s_login_auth"] = reqAuth 
+	protocol.handler["c2s_login_enter"] = reqEnterGame 
+	protocol.handler["c2s_create_role"] = reqCreateRole 
 end
 
-function req_enter(cid,args)
+function reqAuth(cid,args)
 	event.fork(function ()
 		login_server:user_auth(cid,args.account)
 	end)
 end
 
-function req_create_role(cid,args)
+function reqCreateRole(cid,args)
 	login_server:user_create_role(cid,args.career)
 end
 
-function req_enter_game(cid,args)
+function reqEnterGame(cid,args)
 	login_server:user_enter_agent(cid,args.uid)
 end
 
