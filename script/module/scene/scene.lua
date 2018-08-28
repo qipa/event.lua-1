@@ -218,7 +218,7 @@ function cScene:removeAoiTrigger(sceneObj)
 end
 
 function cScene:moveAoiTrigger(sceneObj,x,z)
-	local enterSet,LeaveSet = self.aoi:move_entity(sceneObj.triggerId,x,z)
+	local enterSet,LeaveSet = self.aoi:move_trigger(sceneObj.triggerId,x,z)
 
 	local list = {}
 	for _,otherAoiId in pairs(enterSet) do
