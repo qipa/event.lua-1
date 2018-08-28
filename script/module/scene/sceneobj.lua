@@ -27,6 +27,11 @@ function cSceneObj:sceneObjType()
 	assert(false)
 end
 
+function cSceneObj:getSeeInfo()
+
+
+end
+
 function cSceneObj:enterScene(scene,x,z)
 	self.pox[1] = x
 	self.pox[2] = z
@@ -51,11 +56,11 @@ function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
 end
 
-function cSceneObj:onObjEnter(objList)
+function cSceneObj:onObjEnter(sceneObjList)
 
 end
 
-function cSceneObj:onObjLeave(objList)
+function cSceneObj:onObjLeave(sceneObjList)
 
 end
 

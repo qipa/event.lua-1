@@ -1,13 +1,15 @@
 local event = require "event"
 local model = require "model"
 
-local scene = import "module.scene"
+local scene = import "module.scene.scene"
 local scene_user = import "module.scene_user"
 local id_builder = import "module.id_builder"
 import "handler.cmd_handler"
 
-_scene_ctx = _scene_ctx or {}
-_scene_uid2id = _scene_uid2id or {}
+
+_sceneCtx = _sceneCtx or {}
+
+_sceneMap = _sceneMap or {}
 
 function __init__(self)
 	self.timer = event.timer(0.1,function ()
@@ -41,89 +43,83 @@ function dispatch_client(_,args)
 
 end
 
-function create_scene(self,scene_id,scene_uid)
-	local scene_info = _scene_ctx[scene_id]
-	if not scene_info then
-		scene_info = {}
-		_scene_ctx[scene_id] = scene_info
+function createScene(self,sceneId,sceneUid)
+	local sceneInfo = _sceneCtx[sceneId]
+	if not sceneInfo then
+		sceneInfo = {}
+		_sceneCtx[sceneId] = sceneInfo 
 	end
 
-	local scene = scene.cls_scene:new(scene_id,scene_uid)
-	scene_info[scene_uid] = scene
-	_scene_uid2id[scene_uid] = scene_id
+	local scene = scene.cScene:new(sceneId,sceneUid)
+	sceneInfo[sceneUid] = scene
+	_sceneCtx[sceneUid] = scene	
 end
 
-function delete_scene(self,scene_uid)
-	local scene_id = _scene_uid2id[scene_uid]
-	if not scene_id then
-		return
-	end
-
-	local scene_info = _scene_ctx[scene_id]
-	local scene = scene_info[scene_uid]
+function deleteScene(self,sceneUid)
+	local scene = _sceneMap[sceneUid]
 	scene:release()
-	scene_info[scene_uid] = nil
-	_scene_uid2id[scene_uid] = nil
+	_sceneMap[sceneUid] = nil	
+
+	local sceneInfo = _sceneCtx[scene.sceneId]
+	sceneInfo[sceneUid] = nil
 end
 
-function get_scene(self,scene_uid)
-	local scene_id = _scene_uid2id[scene_uid]
-	if not scene_id then
-		return
+function getScene(self,sceneUid)
+	return _sceneMap[sceneUid]	
+end
+
+function enterScene(self,userData,sceneUid,pos,switch)
+	local sceneUser = class.instance_from("scene_user",table.decode(userData))
+	sceneUser:init()
+	if not switch then
+		sceneUser:load()
 	end
-	local scene_info = _scene_ctx[scene_id]
-	return scene_info[scene_uid]
-end
-
-function enter_scene(self,fighter_data,user_agent,scene_uid,pos)
-	local fighter = class.instance_from("scene_user",table.decode(fighter_data))
-	fighter:init()
-	fighter.user_agent = user_agent
 
 	model.bind_scene_user_with_uid(fighter.uid,fighter)
 
-	local scene = self:get_scene(scene_uid)
-	assert(scene ~= nil,scene_uid)
+	local scene = self:getScene(sceneUid)
+	assert(scene ~= nil,sceneUid)
+
+	local fighter = fighter.cFighter:new(sceneUser.Uid,sceneUser.pos[1],sceneUid.pos[2])
+	fighter.sceneUser = sceneUser
 	scene:enter(fighter,pos)
 end
 
-function leave_scene(self,user_uid,switch)
-	local fighter = model.fetch_scene_user_with_uid(user_uid)
-	model.unbind_scene_user_with_uid(user_uid)
+function leaveScene(self,userUid,switch)
+	local sceneUser = model.fetch_scene_user_with_uid(userUid)
+	model.unbind_scene_user_with_uid(sceneUser)
 
-	local scene = self:get_scene(fighter.scene_info.scene_uid)
+	local fighter = sceneUid.fighter
+	local scene = self:getScene(fighter.sceneUid)
 	scene:leave(fighter)
-
-	fighter:dirty_field("scene_info")
+	sceneUser:save()
 	
-	fighter:save()
+	local dbChannel = model.get_db_channel()
+	local updater = {}
+	updater["$inc"] = {version = 1}
+	updater["$set"] = {time = os.time()}
+	dbChannel:findAndModify("scene_user","save_version",{query = {uid = sceneUid.uid},update = updater,upsert = true})
 
-	local db_channel = model.get_db_channel()
-	if not switch then
-		local updater = {}
-		updater["$inc"] = {version = 1}
-		updater["$set"] = {time = os.time()}
-		db_channel:findAndModify("scene_user","save_version",{query = {uid = fighter.uid},update = updater,upsert = true})
-	end
-
-	local fighter_data
+	local sceneUserData 
 	if switch then
-		fighter_data = fighter:pack()
+		sceneUserData = sceneUser:pack()
 	end
-	
-	fighter:release()
 
-	return fighter_data
+
+	fighter:release()
+	sceneUser:release()
+
+	return sceneUserData 
 end
 
-function transfer_scene_inside(self,user_uid,to_scene_uid,pos)
-	local fighter = model.fetch_scene_user_with_uid(user_uid)
+function transferInside(self,userUid,sceneUid,pos)
+	local sceneUser = model.fetch_scene_user_with_uid(userUid)
 
-	local scene = self:get_scene(fighter.scene_info.scene_uid)
-	scene:leave(fighter)
+	local scene = self:getScene(sceneUser.fighter.sceneUid)
+	scene:leave(sceneUser.fighter)
 
-	local scene = self:get_scene(to_scene_uid)
-	scene:enter(fighter,pos)
+	local scene = self:getScene(sceneUid)
+	scene:enter(sceneUser.fighter,pos)
 end
 
 function launch_transfer_scene(self,fighter,scene_id,scene_uid,x,z)
@@ -132,7 +128,7 @@ function launch_transfer_scene(self,fighter,scene_id,scene_uid,x,z)
 end
 
 function update()
-	for _,scene_info in pairs(_scene_ctx) do
+	for _,scene_info in pairs(_sceneCtx) do
 		for _,scene in pairs(scene_info) do
 			scene:update()
 		end

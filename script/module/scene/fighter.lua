@@ -43,12 +43,22 @@ function cFighter:move(x,z)
 	self.scene:moveAoiTrigger(x,z)
 end
 
-function cFighter:onObjEnter(objList)
-
+function cFighter:onObjEnter(sceneObjList)
+	sceneobj.cSceneObj.onObjEnter(self,sceneObjList)
+	local list = {}
+	for _,sceneObj in pairs(sceneObjList) do
+		table.insert(list,sceneObj:getSeeInfo())
+	end
+	send_client(self.cid,"s_sceneObj_create",msg)
 end
 
-function cFighter:onObjLeave(objList)
-
+function cFighter:onObjLeave(sceneObjList)
+	sceneobj.cSceneObj.onObjLeave(self,sceneObjList)
+	local list = {}
+	for _,sceneObj in pairs(sceneObjList) do
+		table.insert(list,sceneObj.uid)
+	end 
+	send_client(self.cid,"s_sceneObj_delete",list)
 end
 
 function cFighter:onUpdate(now)
