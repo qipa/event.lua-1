@@ -27,8 +27,21 @@ function server_channel:disconnect()
 	_event_listener:fire_event("SERVER_DOWN",self.name,self.id)
 end
 
-local function channel_accept()
+function server_channel:dispatch(message,size)
+	channel.countor = channel.countor + 1
+	if channel.countor == 1 then
+		channel.dispatch(self,message,size)
+	else
+		if not channel.id then
+			event.error(string.format("channle:%s not register,drop message",channel))
+		else
+			channel.dispatch(self,message,size)
+		end
+	end
+end
 
+local function channel_accept(_,channel)
+	channel.countor = 0
 end
 
 function __init__(self)
