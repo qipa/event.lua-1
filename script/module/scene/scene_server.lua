@@ -79,10 +79,7 @@ function enterScene(self,userData,sceneUid,pos,switch)
 
 	local scene = self:getScene(sceneUid)
 	assert(scene ~= nil,sceneUid)
-
-	local fighter = fighter.cFighter:new(sceneUser.Uid,sceneUser.pos[1],sceneUid.pos[2])
-	fighter.sceneUser = sceneUser
-	scene:enter(fighter,pos)
+	scene:enter(sceneUser.fighter,pos)
 end
 
 function leaveScene(self,userUid,switch)

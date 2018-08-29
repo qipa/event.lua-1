@@ -5,7 +5,7 @@ local util = require "util"
 local model = require "model"
 
 
-local login_server = import "module.login_server"
+local loginServer = import "module.login.login_server"
 
 _server_status = _server_status or nil
 
@@ -17,35 +17,35 @@ end
 
 function reqAuth(cid,args)
 	event.fork(function ()
-		login_server:user_auth(cid,args.account)
+		loginServer:userAuth(cid,args.account)
 	end)
 end
 
-function reqCreateRole(cid,args)
-	login_server:user_create_role(cid,args.career)
+function reqCreateRole(loginUser,args)
+	loginUser:createRole(args.career,args.name)
 end
 
-function reqEnterGame(cid,args)
-	login_server:user_enter_agent(cid,args.uid)
+function reqEnterGame(loginUser,args)
+	loginUser:enterAgent(args.uid)
 end
 
 function rpc_leave_agent(self,args)
 	print("account 1",args.account)
-	login_server:user_leave_agent(args.account)
+	loginServer:user_leave_agent(args.account)
 end
 
 function rpc_kick_agent(self,args)
 	print("account 2",args.account)
-	login_server:user_leave_agent(args.account)
+	loginServer:user_leave_agent(args.account)
 end
 
 function rpc_timeout_agent(self,args)
 	print("account 3",args.account)
-	login_server:user_leave_agent(args.account)
+	loginServer:user_leave_agent(args.account)
 end
 
 function req_stop_server()
-	login_server:server_stop()
+	loginServer:server_stop()
 	if _server_status == "stop" then
 		return false
 	end

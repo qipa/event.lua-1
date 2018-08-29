@@ -1,8 +1,8 @@
 local aoi_core = require "simpleaoi.core"
 local sceneConst = import "module.scene.scene_const"
-local dbObject = import "module.database_object"
+local object = import "module.object"
 
-cSceneObj = dbObject.cls_database:inherit("sceneobj")
+cSceneObj = object.cls_object:inherit("sceneobj")
 
 function __init__(self)
 	self.cSceneObj:pack_field("uid")
