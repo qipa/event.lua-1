@@ -40,7 +40,7 @@ function _M.import(file)
 	local ctx = {}
 	_script_ctx[file] = ctx
 	
-	ctx.env = setmetatable({},{__index = _G,__pairs = function (self) return env_pairs,self  end})
+	ctx.env = setmetatable({},{__index = _G,__pairs = function (self) return env_pairs,self end})
 	ctx.env.__name = fullfile
 	ctx.env.__timer = {}
 	

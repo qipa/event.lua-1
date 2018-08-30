@@ -104,6 +104,12 @@ function cls_base:get_type()
 end
 
 local function new_object(self,obj)
+	object.__name = self.__name
+	object.__alive = true
+	object.__dirty = {}
+	object.__event = {}
+	object.__timer = {}
+
 	setmetatable(obj,{__index = self})
 
 	local object_type = self:get_type()
@@ -118,11 +124,7 @@ end
 
 
 function cls_base:new(...)
-	local object = { __dirty = {},
-			 __name = self.__name,
-		         __alive = true,
-			 __event = {},
-		 	 __timer = {}}
+	local object = {}
 	local self = class_ctx[self.__name]
 	new_object(self,object)
 
@@ -134,10 +136,6 @@ end
 function cls_base:instance_from(object)
 	local object_type = self:get_type()
 	local class = class_ctx[object_type]
-	object.__dirty = {}
-	object.__name = self.__name
-	object.__alive = true
-	object.__event = {}
 	new_object(class,object)
 	return object
 end
