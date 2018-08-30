@@ -16,9 +16,7 @@ function __init__()
 end
 
 function reqAuth(cid,args)
-	event.fork(function ()
-		loginServer:userAuth(cid,args.account)
-	end)
+	loginServer:userAuth(cid,args.account)
 end
 
 function reqCreateRole(loginUser,args)

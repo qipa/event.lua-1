@@ -9,6 +9,7 @@ local database_object = import "module.database_object"
 local serverMgr = import "module.server_manager"
 local agentMgr = import "module.login.agent_manager"
 local clientMgr = import "module.client_manager"
+local loginServer = import "module.login.login_server"
 
 cLoginUser = database_object.cls_database:inherit("login_user","account","cid")
 
@@ -92,12 +93,13 @@ function cLoginUser:enterAgent(uid)
 	local json = cjson.encode({account = self.account,uid = uid})
 	local token = util.authcode(json,tostring(time),1)
 
-	serverMgr:send_agent(agentId,"handler.agent_handler","user_register",{token = token,time = time,uid = uid,account = self.account},function ()
+	serverMgr:send_agent(agentId,"handler.agent_handler","userRegister",{token = token,time = time,uid = uid,account = self.account},function ()
 		local user = model.fetch_login_user_with_cid(info.cid)
 		if not user then
 			return
 		end
-		send_client(user.cid,"s2c_login_enter",{token = token,ip = agent_addr.ip,port = agent_addr.port})
+		loginServer:userEnterAgent(user.account,user.uid,agentId)
+		send_client(user.cid,"s2c_login_enter",{token = token,ip = agentAddr.ip,port = agentAddr.port})
 		clientMgr:close(user.cid)
 	end)
 

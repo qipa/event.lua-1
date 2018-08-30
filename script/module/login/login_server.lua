@@ -3,7 +3,7 @@ local model = require "model"
 local route = require "route"
 local timer = require "timer"
 local login_user = import "module.login_user"
-local server_manager = import "module.server_manager"
+local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
 
 _loginCtx = _loginCtx or {}
@@ -26,7 +26,7 @@ function start(self)
 		end
 	end
 
-	server_manager:listen("AGENT_DOWN",self,"agentDown")
+	serverMgr:listen("AGENT_DOWN",self,"agentDown")
 	import "handler.login_handler"
 	import "handler.cmd_handler"
 end
@@ -38,8 +38,9 @@ function flush(self)
 	end
 end
 
-function set_enter_user(self,enter_user)
-	_agentUser = enter_user
+function userEnterAgent(self,account,userUid,agentId)
+	local info = {userUid = userUid,agentId = agentId,time = os.time()}
+	_agentUser[account] = info
 end
 
 function agentDown(self,listener,agentId)
@@ -81,6 +82,21 @@ function dispatch_client(self,cid,message_id,data,size)
 	end
 end
 
+local function _userDoAuth(self,cid,account)
+	local info = _loginCtx[cid]
+	info.account = account
+	local user = model.fetch_login_user_with_account(info.account)
+	if user then
+		if _loginCtx[user.cid] then
+			clientMgr:close(user.cid)
+		end
+		user:leave()
+	end
+	user = login_user.cls_login_user:new(cid,account)
+	user:load()
+	user:auth()
+end
+
 function userAuth(self,cid,account)
 	local info = _loginCtx[cid]
 	assert(info ~= nil,cid)
@@ -88,57 +104,36 @@ function userAuth(self,cid,account)
 
 	local agentUserInfo = _agentUser[account]
 	if agentUserInfo then
-		server_manager:send_agent(agentUserInfo.agent_server,"handler.agent_handler","user_kick",{uid = agentUserInfo.uid})
 		local queue = _accountQueue[account]
 		if not queue then
 			queue = {}
 			_accountQueue[account] = queue
 		end
 		table.insert(queue,cid)
+
+		serverMgr:send_agent(agentUserInfo.agentId,"handler.agent_handler","userKick",{uid = agentUserInfo.uid},function (ok)
+			_agentUser[account] = nil
+			_accountQueue[account] = nil
+			local count = #queue
+			for i = 1,count-1 do
+				local cid = queue[i]
+				if _loginCtx[cid] then
+					clientMgr:close(cid)
+					_loginCtx[cid] = nil
+				end
+			end
+			local lastCid = queue[count]
+			if not _loginCtx[lastCid] then 
+				return
+			end
+			event.fork(_userDoAuth,self,lastCid,account)
+		end)
 		return
 	end
 
-	info.account = account
-	local user = model.fetch_login_user_with_account(info.account)
-	if user then
-		clientMgr:close(user.cid)
-		user:leave()
-	end
-	local user = login_user.cls_login_user:new(cid,account)
-	user:auth()
+	event.fork(_userDoAuth,self,cid,account)
 end
 
-function user_leave_agent(self,account)
-	local enter_info = _enter_agent_user[account]
-	_enter_agent_user[account] = nil
-	assert(enter_info ~= nil,account)
-	server_manager:agent_count_add(enter_info.agent_server)
-	
-	local queue = _account_queue[account]
-	if not queue then
-		return
-	end
-	_account_queue[account] = nil
-
-	local client_manager = model.get_client_manager()
-
-	local count = #queue
-	for i = 1,count-1 do
-		local cid = queue[i]
-		if _login_ctx[cid] then
-			client_manager:close(cid)
-			_login_ctx[cid] = nil
-		end
-	end
-
-	local last_cid = queue[count]
-	local info = _login_ctx[last_cid]
-	if info then
-		info.account = account
-		local user = login_user.cls_login_user:new(last_cid,account)
-		user:auth()
-	end
-end
 
 function server_stop(self)
 	local client_manager = model.get_client_manager()

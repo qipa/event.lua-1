@@ -13,7 +13,9 @@ local agent_user = import "module.agent_user"
 local scene_user = import "module.scene_user"
 local common = import "common.common"
 
-_user_token = _user_token or {}
+local kAUTH_TIME = 60
+
+_tokenMgr = _tokenMgr or {}
 _enter_user = _enter_user or {}
 _server_stop = _server_stop or false
 
@@ -40,10 +42,9 @@ end
 
 function authTimer(self)
 	local now = util.time()
-	for token,info in pairs(_user_token) do
-		if now - info.time >= 60 * 100 then
-			_user_token[token] = nil
-			server_manager:send_login("handler.login_handler","rpc_timeout_agent",{account = info.account})
+	for token,info in pairs(_tokenMgr) do
+		if now - info.time >= kAUTH_TIME then
+			_tokenMgr[token] = nil
 			event.error(string.format("%s:%d auth timeout",info.account,info.uid))
 		end
 
@@ -102,31 +103,24 @@ function leave(self,cid)
 	end)
 end
 
-function user_register(self,account,uid,token,time)
-	_user_token[token] = {time = time,uid = uid,account = account}
+function userRegister(self,account,uid,token,time)
+	_tokenMgr[token] = {time = time,uid = uid,account = account}
 end
 
-function user_kick(self,uid)
+function userKick(self,uid)
 	local user = model.fetch_agent_user_with_uid(uid)
 	if not user then
-		for token,info in pairs(_user_token) do
-			if info.uid == uid then
-				_user_token[token] = nil
-				local login_channel = model.get_login_channel()
-				login_channel:send("handler.login_handler","rpc_kick_agent",{account = info.account})
-				return
-			end
-		end
-		return
+		return false
 	end
 
 	local enter_info = _enter_user[user.cid]
 	_enter_user[user.cid] = nil
 	if not enter_info then
-		return
+		return false
 	end
 	client_manager:close(user.cid)
 	_enter_user.mutex(user_leave,user)
+	return true
 end
 
 function user_auth(self,cid,token)
