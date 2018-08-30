@@ -39,7 +39,7 @@ function flush(self)
 end
 
 function timeout(self)
-	print("timeout")
+	table.print(self)
 end
 
 function userEnterAgent(self,account,userUid,agentId)

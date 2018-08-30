@@ -21,6 +21,14 @@ local function loadfile(file,fullfile,env)
 	return attr.change
 end
 
+local function env_pairs(self,key)
+	local key,value = next(self,key)
+	if key == "__name" or key == "__timer" then
+		return next(self,key)
+	end
+	return key,value
+end
+
 function _M.import(file)
 	local ctx = _script_ctx[file]
 	if ctx then
@@ -32,7 +40,7 @@ function _M.import(file)
 	local ctx = {}
 	_script_ctx[file] = ctx
 	
-	ctx.env = setmetatable({},{__index = _G})
+	ctx.env = setmetatable({},{__index = _G,__pairs = function (self) return env_pairs,self  end})
 	ctx.env.__name = fullfile
 	ctx.env.__timer = {}
 	
