@@ -11,11 +11,7 @@ end
 function cls_collection:dirty_field(field)
 	self.__dirty[field] = true
 	self.__dirty["__name"] = true
-	self.__parent:dirty_collection(self)
-end
-
-function cls_collection:attach_db(parent)
-	self.__parent = parent
+	self.__parent:dirty_field(self)
 end
 
 function cls_collection:load(parent,db_channel,db,db_index)
@@ -24,7 +20,7 @@ function cls_collection:load(parent,db_channel,db,db_index)
 	if result then
 		assert(name == result.__name)
 		local obj = class.instance_from(name,result)
-		obj:attach_db(parent)
+		obj.__parent = parent
 		return obj
 	end
 end
@@ -49,7 +45,7 @@ function cls_collection:save(db_channel,db,db_index)
 			end
 		end
 	end
-
+	self.__dirty = {}
 	local updater = {}
 	if set then
 		updater["$set"] = set
@@ -58,17 +54,13 @@ function cls_collection:save(db_channel,db,db_index)
 		updater["$unset"] = unset
 	end
 
-	db_channel:update(db,self:get_type(),db_index,updater,true)
+	db_channel:update(db,self.__name,db_index,updater,true)
 end
 
 
 function cls_collection_set:dirty_field(field)
 	self.__dirty[field] = true
-	self.__parent:dirty_collection(self)
-end
-
-function cls_collection_set:attach_db(parent)
-	self.__parent = parent
+	self.__parent:dirty_field(self)
 end
 
 function cls_collection_set:load(parent,db_channel,db,db_index)
@@ -82,7 +74,7 @@ function cls_collection_set:load(parent,db_channel,db,db_index)
 			local obj = class.instance_from(tbl.__name,tbl)
 			instance.slots[obj.uid] = obj
 		end
-		instance:attach_db(parent)
+		instance.__parent = parent
 		return instance
 	end
 end
@@ -98,4 +90,5 @@ function cls_collection_set:save(db_channel,db,db_index)
 			db_channel:delete(db,data.__name,{uid = field})
 		end
 	end
+	self.__dirty = {}
 end

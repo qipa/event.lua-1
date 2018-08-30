@@ -7,8 +7,8 @@ cls_database = object.cls_base:inherit("database_object")
 local pairs = pairs
 local type = type
 
-function cls_database:dirty_collection(obj)
-	self.__dirty[obj:get_type()] = true
+function cls_database:dirty_field(obj)
+	self.__dirty[obj.__name] = true
 end
 
 --子类重写,返回保存数据库的索引
