@@ -288,7 +288,7 @@ wb_table(lua_State *L, struct write_block *wb, int index, int depth) {
 	lua_rawget(L, index);
 	if (lua_type(L, -1) != LUA_TNIL) {
 		lua_pop(L, 1);
-		lua_getfield(L, index, "pack");
+		lua_getfield(L, index, "pack_data");
 		if (lua_type(L, -1) == LUA_TFUNCTION) {
 			lua_pushvalue(L, index);
 			if (lua_pcall(L, 1, 1, 0) == LUA_OK) {

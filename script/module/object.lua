@@ -162,13 +162,25 @@ function cls_base:destroy()
 
 end
 
-function cls_base:pack()
+function cls_base:pack_data()
 	local cls = class.get(self:get_type())
 	local pack_fields = cls.__pack_fields
 	local save_fields = cls.__save_fields
 	local result = {}
 	for k,v in pairs(self) do
 		if pack_fields[k] or save_fields[k] then
+			result[k] = v
+		end
+	end
+	return result
+end
+
+function cls_base:save_data()
+	local cls = class.get(self:get_type())
+	local save_fields = cls.__save_fields
+	local result = {}
+	for k,v in pairs(self) do
+		if save_fields[k] then
 			result[k] = v
 		end
 	end
@@ -183,6 +195,7 @@ function cls_base:pack_field(field)
 	self.__pack_fields[field] = true
 end
 
+function cls_base:get_
 function cls_base:register_event(ev,inst,method)
 	local ev_list = self.__event[ev]
 	if not ev_list then
