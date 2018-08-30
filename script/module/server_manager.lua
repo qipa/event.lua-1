@@ -28,12 +28,12 @@ function server_channel:disconnect()
 end
 
 function server_channel:dispatch(message,size)
-	channel.countor = channel.countor + 1
-	if channel.countor == 1 then
+	self.countor = self.countor + 1
+	if self.countor == 1 then
 		channel.dispatch(self,message,size)
 	else
-		if not channel.id then
-			event.error(string.format("channle:%s not register,drop message",channel))
+		if not self.id then
+			event.error(string.format("channle:%s not register,drop message",self))
 		else
 			channel.dispatch(self,message,size)
 		end
@@ -66,6 +66,8 @@ function register_server(channel,args)
 	_server_channel[args.id] = channel
 	_server_name_ctx[args.name] = args.id
 	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
+
+
 	return env.dist_id
 end
 
@@ -129,7 +131,6 @@ function connect_server(self,name,reconnect,try,addr)
 		channel.monitor = event.gen_session()
 
 		local id = channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
-
 		channel.id = id
 		channel.name = name
 

@@ -41,11 +41,13 @@ event.fork(function ()
 			os.exit(1)
 			return
 		end
-
+		
 		for db,info in pairs(mongo_indexes) do
-			for name,indexes in pairs(info) do
-				print(string.format("build db:%s,%s index",db,name))
-				table.print(channel:ensureIndex(db,name,indexes))
+			if db ~= "__timer" and db ~= "__name" then
+				for name,indexes in pairs(info) do
+					print(string.format("build db:%s,%s index",db,name))
+					table.print(channel:ensureIndex(db,name,indexes))
+				end
 			end
 		end
 

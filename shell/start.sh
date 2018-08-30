@@ -95,21 +95,21 @@ echo "login server start"
 ./event server/world &
 echo "world server start"
 
-i=0
-while [ $i -lt $scene_num ]
-do
-	./event server/scene &
-	echo "scene server start"
-	let i++
-done
+#i=0
+#while [ $i -lt $scene_num ]
+#do
+#	./event server/scene &
+#	echo "scene server start"
+#	let i++
+#done
 
-i=0
-while [ $i -lt $agent_num ]
-do
-	./event server/agent &
-	echo "agent server start"
-	let i++
-done
+#i=0
+#while [ $i -lt $agent_num ]
+#do
+#	./event server/agent &
+#	echo "agent server start"
+#	let i++
+#done
 
 
 # gdb --args ./event server/logger  server/world  server/login server/agent server/agent server/scene server/scene server/scene 

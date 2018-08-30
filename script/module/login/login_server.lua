@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 local route = require "route"
 local timer = require "timer"
-local login_user = import "module.login_user"
+local login_user = import "module.login.login_user"
 local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
 
@@ -16,7 +16,7 @@ _uidAccount = _uidAccount or {}
 function start(self)
 	
 	timer.callout(30,self,"flush")
-
+	timer.callout(1,self,"timeout")
 	local dbChannel = model.get_db_channel()
 	local result = dbChannel:findAll("event","accountInfo")
 	for _,info in pairs(result) do
@@ -26,7 +26,7 @@ function start(self)
 		end
 	end
 
-	serverMgr:listen("AGENT_DOWN",self,"agentDown")
+	serverMgr:register_event("AGENT_DOWN",self,"agentDown")
 	import "handler.login_handler"
 	import "handler.cmd_handler"
 end
@@ -36,6 +36,10 @@ function flush(self)
 	for _,user in pairs(all) do
 		user:save()
 	end
+end
+
+function timeout(self)
+	print("timeout")
 end
 
 function userEnterAgent(self,account,userUid,agentId)

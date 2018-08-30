@@ -5,18 +5,20 @@ local _M = {}
 
 
 function _M.callout(interval,inst,method,...)
+	local args = {...}
 	local __timer = rawget(inst,"__timer")
 	local timer = event.timer(interval,function ()
-		inst[method](inst,...)
+		inst[method](inst,table.unpack(args))
 	end)
 	__timer[timer] = true 
 	return timer
 end
 
 function _M.calloutAfter(interval,inst,method,...)
+	local args = {...}
 	local __timer = rawget(inst,"__timer")
 	local timer = event.timer(interval,function ()
-		inst[method](inst,...)
+		inst[method](inst,table.unpack(args))
 		__timer[timer] = nil
 	end)
 	__timer[timer] = false 
