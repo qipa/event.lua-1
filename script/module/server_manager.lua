@@ -67,7 +67,6 @@ function register_server(channel,args)
 	_server_name_ctx[args.name] = args.id
 	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
 
-
 	return env.dist_id
 end
 

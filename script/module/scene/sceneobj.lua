@@ -50,10 +50,14 @@ end
 
 function cSceneObj:onLeaveScene(scene)
 	scene:removeEntity(self)
+	self.aoiEntityId = nil
+	self.scene = nil
 end
 
 function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
+	self.pos[1] = x
+	self.pos[2] = z
 end
 
 function cSceneObj:onObjEnter(sceneObjList)

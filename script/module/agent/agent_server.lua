@@ -152,34 +152,16 @@ function user_auth(self,cid,token)
 end
 
 function user_enter(self,cid,uid,account)
-	local db_channel = model.get_db_channel()
-	local user = agent_user.cls_agent_user:new(cid,uid,account)
-	
-	user:load(db_channel)
+	local agent_user = agent_user.cls_agent_user:new(cid,uid,account)
+	agent_user:load()
 
-	user:enter_game()
+	agent_user:enter_game()
 
-	local world = model.get_world_channel()
-	world:send("handler.world_handler","enter_world",{user_uid = user.uid,user_agent = env.dist_id})
+	local msg = {user_id = agent_user.uid,agent_id = env.dist_id}
+	server_manager:send_world("handler.world_handler","enter_world",msg)
 
-	local fighter = scene_user.cls_scene_user:new(uid)
-	fighter:load(db_channel)
-
-	if not fighter.attr then
-		fighter.attr = {atk = 100,def = 100}
-	end
-	if not fighter.scene_info then
-		fighter.scene_info = {scene_id = 1001,scene_pos = {x = 100,z = 100}}
-	end
-
-	local world_channel = model.get_world_channel()
-	world_channel:send("module.scene_manager","enter_scene",{uid = user.uid,
-															  scene_id = fighter.scene_info.scene_id,
-															  scene_uid = fighter.scene_info.scene_uid,
-															  scene_pos = fighter.scene_info.scene_pos,
-															  agent = env.dist_id,
-															  fighter_data = table.tostring(fighter)})
-	fighter:release()
+	local msg = {user_uid = agent_user.uid,agent_id = env.dist_id,location_info = agent_user.location_info}
+	server_manager:send_world("module.scene_manager","enter_scene",msg)
 end
 
 function user_leave(self,user)

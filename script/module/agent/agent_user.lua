@@ -19,7 +19,7 @@ cls_agent_user = database_object.cls_database:inherit("agent_user","uid","cid")
 
 function __init__(self)
 	self.cls_agent_user:save_field("base_info")
-	self.cls_agent_user:save_field("scene_info")
+	self.cls_agent_user:save_field("location_info")
 	self.cls_agent_user:save_field("item_mgr")
 	self.cls_agent_user:save_field("task_mgr")
 end

@@ -36,6 +36,7 @@ end
 function cFighter:onLeaveScene()
 	sceneobj.cSceneObj.onLeaveScene(self)
 	self.scene:removeTrigger(self)
+	self.aoiTriggerId = nil
 end
 
 function cFighter:move(x,z)
