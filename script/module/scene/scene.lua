@@ -19,8 +19,8 @@ function cScene:create(sceneId,sceneUid)
 	
 	self.aoi = aoiCore.create(self.sceneId,1000,1000,4)
 
-	local nav = navCore.create(string.format("./config/%d.mesh",sceneId))
-	nav:load_tile(string.format("./config/%d.tile",sceneId))
+	local nav = navCore.create(string.format("./config/%d.nav",sceneId))
+	nav:load_tile(string.format("./config/%d.nav.tile",sceneId))
 
 	self.nav = nav
 	
@@ -162,14 +162,20 @@ end
 function cScene:createAoiTrigger(sceneObj)
 	local triggerId,aoiSet = self.aoi:create_trigger(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2],3)
 
+	local empty = true 
 	local enterList = {}
 	for _,otherUid in pairs(aoiSet) do
-		local other = self.objMgr[otherUid]
-		table.insert(enterList,other)
-		sceneObj.viewerCtx[otherUid] = true
+		if otherUid ~= sceneObj.uid then
+			empty = false
+			local other = self.objMgr[otherUid]
+			table.insert(enterList,other)
+			sceneObj.viewerCtx[otherUid] = true
+		end
 	end
-
-	sceneObj:onObjEnter({enterList})
+	
+	if not empty then
+		sceneObj:onObjEnter(enterList)
+	end
 
 	return triggerId
 end
@@ -183,9 +189,11 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 
 	local list = {}
 	for _,otherUid in pairs(enterSet) do
-		local other = self.objMgr[otherUid]
-		table.insert(list,other)
-		sceneObj.viewerCtx[otherUid] = true
+		if otherUid ~= sceneObj.uid then
+			local other = self.objMgr[otherUid]
+			table.insert(list,other)
+			sceneObj.viewerCtx[otherUid] = true
+		end
 	end
 
 	sceneObj:onObjEnter(list)

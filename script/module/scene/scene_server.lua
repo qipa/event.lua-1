@@ -39,7 +39,7 @@ function createScene(self,sceneId,sceneUid)
 
 	local scene = scene.cScene:new(sceneId,sceneUid)
 	sceneInfo[sceneUid] = scene
-	_sceneCtx[sceneUid] = scene	
+	_sceneMap[sceneUid] = scene	
 end
 
 function deleteScene(self,sceneUid)
@@ -57,8 +57,7 @@ end
 
 function enterScene(self,userData,sceneUid,pos,switch)
 	local fighter = class.instance_from("fighter",table.decode(userData))
-	fighter:init()
-
+	fighter:create(fighter.uid,fighter.pos[1],fighter.pos[2])
 	model.bind_fighter_with_uid(fighter.uid,fighter)
 
 	local scene = self:getScene(sceneUid)

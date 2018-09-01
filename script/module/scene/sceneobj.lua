@@ -10,6 +10,7 @@ function __init__(self)
 end
 
 function cSceneObj:create(uid,x,z,face)
+	print("cSceneObj:create")
 	self.uid = uid
 	self.pos = {x,z}
 	self.face = face
@@ -44,7 +45,7 @@ function cSceneObj:leaveScene()
 end
 
 function cSceneObj:onEnterScene(scene)
-	self.aoiEntityId = scene:createEntity(self)
+	self.aoiEntityId = scene:createAoiEntity(self)
 	self.scene = scene
 end
 
@@ -69,13 +70,12 @@ function cSceneObj:onObjLeave(sceneObjList)
 end
 
 function cSceneObj:onUpdate(now)
-
+	print("cSceneObj:onUpdate")
 end
 
 function cSceneObj:onCommonUpdate(now)
 
 end
-
 
 function cSceneObj:getViewer(range)
 	local result = {}

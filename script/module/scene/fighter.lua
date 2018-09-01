@@ -2,13 +2,14 @@ local aoi_core = require "simpleaoi.core"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 
-cFighter = sceneobj.cSceneObj:inherit("fighter")
+cFighter = sceneobj.cSceneObj:inherit("fighter","uid")
 
 function __init__(self)
 	
 end
 
 function cFighter:create(uid,x,z)
+	print("cFighter:create")
 	sceneobj.cSceneObj.create(self,uid,x,z)
 end
 
@@ -16,7 +17,7 @@ function cFighter:destroy()
 	sceneobj.cSceneObj.destroy(self)
 end
 
-function cSceneObj:sceneObjType()
+function cFighter:sceneObjType()
 	return sceneConst.eSCENEOBJ_TYPE.FIGHTER
 end
 
@@ -30,7 +31,7 @@ end
 
 function cFighter:onEnterScene(scene)
 	sceneobj.cSceneObj.onEnterScene(self,scene)
-	self.aoiTriggerId = scene:createTrigger(self)
+	self.aoiTriggerId = scene:createAoiTrigger(self)
 end
 
 function cFighter:onLeaveScene()
@@ -63,5 +64,6 @@ function cFighter:onObjLeave(sceneObjList)
 end
 
 function cFighter:onUpdate(now)
+	print("cFighter:onUpdate")
 	sceneobj.cSceneObj.onUpdate(self,now)
 end
