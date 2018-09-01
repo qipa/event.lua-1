@@ -69,7 +69,7 @@ function getScene(self,sceneUid)
 end
 
 function enterScene(self,userData,sceneUid,pos,switch)
-	local sceneUser = class.instance_from("scene_user",table.decode(userData))
+	local sceneUser = class.instance_from("fighter",table.decode(userData))
 	sceneUser:init()
 	if not switch then
 		sceneUser:load()
