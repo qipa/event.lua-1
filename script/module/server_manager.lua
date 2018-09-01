@@ -70,6 +70,16 @@ function register_server(channel,args)
 	return env.dist_id
 end
 
+function increase_agent()
+	assert(env.name == "world")
+	env.agent_num = env.agent_num + 1
+end
+
+function increase_scene()
+	assert(env.name == "world")
+	env.scene_num = env.scene_num + 1
+end
+
 function agent_amount()
 	assert(env.name == "world")
 	local amount = 0
@@ -78,7 +88,7 @@ function agent_amount()
 			amount = amount + 1
 		end
 	end
-	return amount
+	return amount,env.agent_num
 end
 
 function scene_amount()
@@ -89,7 +99,7 @@ function scene_amount()
 			amount = amount + 1
 		end
 	end
-	return amount
+	return amount,env.scene_num
 end
 
 function find_server(self,name)

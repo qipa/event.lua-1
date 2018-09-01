@@ -5,8 +5,8 @@ local protocol = require "protocol"
 local http = require "http"
 local route = require "route"
 local channel = require "channel"
-local client_manager = require "client_manager"
-
+local clientMgr = require "client_manager"
+local serverMgr = require "server_manager"
 local startup = import "server.startup"
 local id_builder = import "module.id_builder"
 local agent_server = import "module.agent_server"
@@ -19,12 +19,37 @@ local traceback = debug.traceback
 event.fork(function ()
 	env.dist_id = startup.reserve_id()
 
-	server_manager:connect_server("logger")
+	serverMgr:connect_server("logger")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 	
-	server_manager:connect_server("login")
-	server_manager:connect_server("world")
+	serverMgr:connect_server("world")
+
+	local currentNum,expectNum
+	while true do
+		currentNum,expectNum = serverMgr:call_world("server_manager","scene_num")
+		if currentNum == expectNum then
+			break
+		end
+		event.sleep(1)
+	end
+
+	local sceneServerInfo
+	while true do
+		sceneServerInfo = serverMgr:call_world("scene_manager","sceneServerInfo")
+		if #sceneServerInfo == currentNum then
+			break
+		end
+		event.sleep(1)
+	end
+
+	for _,info in pairs(sceneServerInfo) do
+		serverMgr:connect_server_with_addr()
+	end
+
+
+	serverMgr:connect_server("login")
+	
 
 	id_builder:init(env.dist_id)
 
@@ -35,9 +60,9 @@ event.fork(function ()
 		accept = agent_server.enter,
 		close = agent_server.leave
 	}
-	local port = client_manager.start(gate_conf)
+	local port = clientMgr.start(gate_conf)
 
-	server_manager:send_login("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
+	serverMgr:send_login("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
 
 	event.error("start success")
 end)

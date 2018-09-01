@@ -8,6 +8,7 @@ _scene_addr = _scene_addr or {}
 _scene_ctx = _scene_ctx or {}
 _user_ctx = _user_ctx or {}
 _agent_server_status = _agent_server_status or {}
+_sceneServerCtx = _sceneServerCtx or {}
 
 function __init__(self)
 	server_manager:register_event("SERVER_DOWN",self,"server_down")
@@ -59,11 +60,11 @@ function scene_down(self,listener,server_id)
 	end
 end
 
-function register_scene_server(channel,args)
-	_scene_server_status[args.id] = {
-		user_amount = 0,
+function registerSceneServer(channel,args)
+	_sceneServerCtx[args.id] = {
+		userAmount = 0,
 		addr = args.addr,
-		scene_info = {}
+		sceneInfo = {}
 	}
 
 	local list = server_manager:find_server("agent")
@@ -81,10 +82,10 @@ function register_agent_server(_,args)
 	agent_info[args.scene_server_id] = true
 end
 
-function scene_server_info()
+function sceneServerInfo()
 	local result = {}
-	for srv_id,srv_info in pairs(_scene_server_status) do
-		table.insert(result,{id = srv_id,addr = srv_info.addr})
+	for serverId,serverInfo in pairs(_sceneServerCtx) do
+		table.insert(result,{id = serverId,addr = serverInfo.addr})
 	end
 	return result
 end

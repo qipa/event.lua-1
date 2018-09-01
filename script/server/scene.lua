@@ -12,15 +12,7 @@ local server_manager = import "module.server_manager"
 local id_builder = import "module.id_builder"
 local mongo_indexes = import "common.mongo_indexes"
 
-local agent_channel = channel:inherit()
-function agent_channel:disconnect()
 
-end
-
-local function agent_accept(_,channel)
-
-
-end
 
 event.fork(function ()
 	env.dist_id = startup.reserve_id()
