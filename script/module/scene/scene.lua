@@ -17,13 +17,13 @@ function cScene:create(sceneId,sceneUid)
 	self.objMgr = {}
 	self.objTypeMgr = {}
 	
-	self.aoi = aoiCore.new(self.sceneId,1000,1000,4)
+	self.aoi = aoiCore.create(self.sceneId,1000,1000,4)
 
-	local FILE = io.open(string.format("./config/%d.mesh",sceneId),"r")
+	local FILE = assert(io.open(string.format("./config/%d.mesh",sceneId),"r"))
 	local meshInfo = FILE:read("*a")
 	FILE:close()
 
-	local FILE = io.open(string.format("./config/%d.tile",sceneId),"r")
+	local FILE = assert(io.open(string.format("./config/%d.tile",sceneId),"r"))
 	local tileInfo = FILE:read("*a")
 	FILE:close()
 

@@ -103,14 +103,14 @@ function cls_base:get_type()
 	return self.__name
 end
 
-local function new_object(self,obj)
+local function new_object(self,object)
 	object.__name = self.__name
 	object.__alive = true
 	object.__dirty = {}
 	object.__event = {}
 	object.__timer = {}
 
-	setmetatable(obj,{__index = self})
+	setmetatable(object,{__index = self})
 
 	local object_type = self:get_type()
 	local object_set = object_ctx[object_type]
@@ -119,7 +119,7 @@ local function new_object(self,obj)
 		object_ctx[object_type] = object_set
 	end
 
-	object_set[obj] = {time = os.time()}
+	object_set[object] = {time = os.time()}
 end
 
 
