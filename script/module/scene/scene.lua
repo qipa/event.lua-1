@@ -188,24 +188,32 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 	local enterSet,LeaveSet = self.aoi:move_trigger(sceneObj.triggerId,x,z)
 
 	local list = {}
+	local empty = true
 	for _,otherUid in pairs(enterSet) do
 		if otherUid ~= sceneObj.uid then
+			empty = false
 			local other = self.objMgr[otherUid]
 			table.insert(list,other)
 			sceneObj.viewerCtx[otherUid] = true
 		end
 	end
-
-	sceneObj:onObjEnter(list)
+	
+	if not empty then
+		sceneObj:onObjEnter(list)
+	end
 
 	local list = {}
+	local empty = true
 	for _,otherUid in pairs(LeaveSet) do
+		empty = false
 		local other = self.objMgr[otherUid]
 		table.insert(list,other)
 		sceneObj.viewerCtx[otherUid] = nil
 	end
-
-	sceneObj:onObjLeave(list)
+	
+	if not empty then
+		sceneObj:onObjLeave(list)
+	end
 end
 
 function cScene:update(now)
