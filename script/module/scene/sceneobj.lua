@@ -29,8 +29,7 @@ function cSceneObj:sceneObjType()
 end
 
 function cSceneObj:getSeeInfo()
-
-
+	return {}
 end
 
 function cSceneObj:enterScene(scene,x,z)

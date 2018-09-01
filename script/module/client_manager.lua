@@ -110,6 +110,7 @@ else
 end
 
 function send_client(cid,pto,message)
+	assert(protocol.encode[pto] ~= nil,string.format("no such pto:%s",pto))
 	local mid,data = protocol.encode[pto](message)
 	do_send_client(cid,mid,data)
 end
