@@ -19,16 +19,8 @@ function cScene:create(sceneId,sceneUid)
 	
 	self.aoi = aoiCore.create(self.sceneId,1000,1000,4)
 
-	local FILE = assert(io.open(string.format("./config/%d.mesh",sceneId),"r"))
-	local meshInfo = FILE:read("*a")
-	FILE:close()
-
-	local FILE = assert(io.open(string.format("./config/%d.tile",sceneId),"r"))
-	local tileInfo = FILE:read("*a")
-	FILE:close()
-
-	local nav = navCore.create(sceneId,cjson.decode(meshInfo))
-	nav:load_tile(cjson.decode(tileInfo))
+	local nav = navCore.create(string.format("./config/%d.mesh",sceneId))
+	nav:load_tile(string.format("./config/%d.tile",sceneId))
 
 	self.nav = nav
 	
