@@ -489,17 +489,19 @@ function cScene:commonUpdate(now)
 		end
 	end
 
-	for _,sceneObj in pairs(self.objMgr) do
-		local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
-		if not ok then
-			event.error(err)
+	if self.phase == sceneConst.eSCENE_PHASE.START then
+		for _,sceneObj in pairs(self.objMgr) do
+			local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
+			if not ok then
+				event.error(err)
+			end
 		end
-	end
 
-	for areaId,areaInfo in pairs(self.areaMonster) do
-		if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
-			if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
-				self:spawnMonsterArea(areaId)
+		for areaId,areaInfo in pairs(self.areaMonster) do
+			if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
+				if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
+					self:spawnMonsterArea(areaId)
+				end
 			end
 		end
 	end
