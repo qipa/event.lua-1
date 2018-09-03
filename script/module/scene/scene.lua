@@ -293,12 +293,16 @@ function cScene:spawnMonsterArea(areaId)
 		areaInfo = {waveIndex = 1,waveMax = 3,monsterAmount = 0,miniSurvive = 5}
 		self.areaMonster[areaId] = areaInfo
 	end
-	if areaInfo.waveIndex >= areaInfo.waveMax then
+	if areaInfo.waveMax ~= 0 and areaInfo.waveIndex >= areaInfo.waveMax then
 		return
 	end
 	areaInfo.waveIndex = areaInfo.waveIndex + 1
 	areaInfo.time = os.time()
 	
+	for i = 1,10 do
+		self:spawnMonster(101,{1,1},180)
+		areaInfo.monsterAmount = areaInfo.monsterAmount + 1
+	end
 end
 
 function cScene:initArea(areaId)
@@ -358,7 +362,7 @@ function cScene:onMonsterDead(monster,killer)
 	local areaId = monster.areaId
 	if areaId then
 		local areaInfo = self.areaMonster[areaId]
-		if areaInfo.waveIndex < areaInfo.waveMax then
+		if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
 			if areaInfo.monsterAmount <= areaInfo.miniSurvive then
 				areaInfo.waveIndex = areaInfo.waveIndex + 1
 				self:spawnMonsterArea(areaId)
@@ -484,7 +488,7 @@ function cScene:commonUpdate(now)
 	end
 
 	for areaId,areaInfo in pairs(self.areaMonster) do
-		if areaInfo.waveIndex < areaInfo.waveMax then
+		if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
 			if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
 				self:spawnMonsterArea(areaId)
 			end
