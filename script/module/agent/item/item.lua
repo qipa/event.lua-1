@@ -1,8 +1,8 @@
 local id_builder = import "module.id_builder"
-local database_document = import "module.database_document"
+local dbCollection = import "module.database_collection"
 
 
-cItem = database_document.cls_document:inherit("item_base")
+cItem = dbCollection.cls_collection:inherit("item_base")
 
 function __init__(self)
 	self.cItem:save_field("uid")
@@ -10,12 +10,9 @@ function __init__(self)
 	self.cItem:save_field("amount")
 end
 
-local id = 1
 function cItem:create(cid,amount)
 	self.cid = cid
 	self.amount = amount
-	self.uid = id
-	id = id + 1
 end
 
 function cItem:init()

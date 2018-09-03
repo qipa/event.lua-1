@@ -5,22 +5,23 @@ function __init__(self)
 
 end
 
-local category_creator = {
-	equipment = import "moudle.item.equipment".cls_equipment,
-	currency = import "moudle.item.currency".cls_currency,
-	material = import "moudle.item.material".cls_material,
+local categoryCreator = {
+	item = import "module.agent.item.item".cItem,
+	equipment = import "module.agent.item.equipment".cEquipment,
+	currency = import "module.agent.item.currency".cCurrency,
+	material = import "module.agent.item.material".cMaterial,
 }
 
-function create_item(cid,amount)
-	local item_conf = config.item[cid]
+function createItem(cid,amount)
+	local itemConf = config.item[cid]
 
-	local creator = category_creator[item_conf.category]
+	local creator = categoryCreator[itemConf.category]
 
 	local result = {}
 
 	local left = amount
 	while left > 0 do
-		local count = item_conf.overlap
+		local count = itemConf.overlap
 		if count > left then
 			count = count - left
 		end

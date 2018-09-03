@@ -1,14 +1,14 @@
 local id_builder = import "module.id_builder"
-local module_item = import "module.item.item"
+local item = import "module.agent.item.item"
 
 
-cls_material = module_item.cls_item_base:inherit("material")
+cMaterial = item.cItem:inherit("material")
 
 
-function cls_material:init()
+function cMaterial:init()
 
 end
 
-function cls_material:destroy()
+function cMaterial:destroy()
 
 end

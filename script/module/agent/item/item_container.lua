@@ -1,6 +1,6 @@
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 local database_collection = import "module.database_collection"
-local item_factory = import "module.item.item_factory"
+local item_factory = import "module.agent.item.item_factory"
 
 
 cItemMgr = database_collection.cls_collection_set:inherit("item_mgr")
@@ -31,6 +31,9 @@ function cItemMgr:destroy()
 end
 
 local function _addItem(self,item)
+	if not item.uid then
+		item.uid = idBuilder:alloc_item_uid()
+	end
 	self.slots[item.uid] = item
 	local info = self.helper[item.cid]
 	if not info then
@@ -52,6 +55,9 @@ end
 function cItemMgr:insertItemByCid(cid,amount)
 
 	local itemConf = config.item[cid]
+	if not itemConf then
+		error(string.format("no such item:%d",cid))
+	end
 
 	local left = amount
 	local helperInfo = self.helper[cid]

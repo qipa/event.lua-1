@@ -1,14 +1,14 @@
 local id_builder = import "module.id_builder"
-local module_item = import "module.item.item"
+local item = import "module.agent.item.item"
 
 
-cls_currency = module_item.cls_item_base:inherit("currency")
+cCurrency = item.cItem:inherit("currency")
 
 
-function cls_currency:init()
+function cCurrency:init()
 
 end
 
-function cls_currency:destroy()
+function cCurrency:destroy()
 
 end
