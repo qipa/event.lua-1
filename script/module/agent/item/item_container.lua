@@ -38,6 +38,7 @@ local function _addItem(self,item)
 		self.helper[item.cid] = info
 	end
 	info[item.uid] = true
+	self:dirty_field(item.uid)
 end
 
 local function _delItem(self,item)
@@ -45,6 +46,7 @@ local function _delItem(self,item)
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	item:destroy()
+	self:dirty_field(item.uid)
 end
 
 function cItemMgr:insertItemByCid(cid,amount)
@@ -59,10 +61,12 @@ function cItemMgr:insertItemByCid(cid,amount)
 			local space = itemConf.overlap - oItem.amount
 			if left < space then
 				oItem.amount = oItem.amount + left
+				self:dirty_field(oItem.uid)
 				left = 0
 				break
 			else
 				oItem.amount = itemConf.overlap
+				self:dirty_field(oItem.uid)
 				left = left - space
 			end
 		end
@@ -70,7 +74,6 @@ function cItemMgr:insertItemByCid(cid,amount)
 
 	if left > 0 then
 		local items = item_factory:create_item(cid,left)
-
 		for _,item in pairs(items) do
 			_addItem(self,item)
 		end
@@ -109,6 +112,7 @@ function cItemMgr:deleteItemByCid(cid,amount)
 		local oItem = self.slots[uid]
 		if oItem.amount > left then
 			oItem.amount = oItem.amount - left
+			self:dirty_field(oItem.uid)
 			left = 0
 		else
 			left = left - oItem.amount
