@@ -6,3 +6,10 @@ eSCENEOBJ_TYPE = {
 	PET = 3,
 	ITEM = 4
 }
+
+eSCENE_PHASE = {
+	CREATE = 1,
+	START = 2,
+	OVER = 3,
+	DESTROY = 4
+}

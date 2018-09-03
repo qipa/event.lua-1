@@ -9,6 +9,7 @@ cScene = object.cls_base:inherit("scene")
 
 local kUPDATE_INTERVAL = 0.1
 local kCOMMON_UPDATE_INTERVAL = 1
+local kDESTROY_TIME = 10
 
 function cScene:create(sceneId,sceneUid)
 	self.sceneId = sceneId
@@ -26,6 +27,13 @@ function cScene:create(sceneId,sceneUid)
 	
 	timer.callout(kUPDATE_INTERVAL,self,"update")
 	timer.callout(kCOMMON_UPDATE_INTERVAL,self,"commonUpdate")
+
+	self.phase = sceneConst.eSCENE_PHASE.CREATE
+	self.lifeTime = 0
+	self.timeoutResult = false
+
+	self.passEvent = {}
+	self.failEvent = {}
 end
 
 function cScene:destroy()
@@ -78,7 +86,7 @@ function cScene:leave(sceneObj)
 	local typeMgr = self.objTypeMgr[objType]
 	typeMgr[sceneObj.uid] = nil
 
-	if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 		self:onUserLeave(sceneObj)
 	else
 		self:onObjLeave(sceneobj)
@@ -216,6 +224,44 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 	end
 end
 
+function cScene:addPassEvent(ev,args)
+
+end
+
+function cScene:addFailEvent(ev,args)
+
+end
+
+function cScene:enterTrigger(triggerId)
+
+end
+
+function cScene:leaveTrigger(triggerId)
+
+end
+
+function cScene:start()
+	self.phase = sceneConst.eSCENE_PHASE.START
+	self.startTime = os.time()
+end
+
+function cScene:over()
+	self.phase = sceneConst.eSCENE_PHASE.OVER
+	self.overTime = os.time()
+end
+
+function cScene:onWin()
+
+end
+
+function cScene:onFail()
+
+end
+
+function cScene:kickUser(user)
+
+end
+
 function cScene:update(now)
 	for _,sceneObj in pairs(self.objMgr) do
 		sceneObj:onUpdate()
@@ -223,6 +269,31 @@ function cScene:update(now)
 end
 
 function cScene:commonUpdate(now)
+	local phase = self.phase
+	if phase == sceneConst.eSCENE_PHASE.START then
+		if self.lifeTime ~= 0 then
+			if now - self.startTime >= self.lifeTime then
+				self:over()
+				if self.timeoutResult then
+					self:onWin()
+				else
+					self:onFail()
+				end
+			end
+		end
+	elseif phase == sceneConst.eSCENE_PHASE.OVER then
+		if now - self.overTime >= kDESTROY_TIME then
+			local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
+			if next(allUser) then
+				for _,user in pairs(allUser) do
+					self:kickUser(user)
+				end
+			else
+				self:release()
+			end
+		end
+	end
+
 	for _,sceneObj in pairs(self.objMgr) do
 		sceneObj:onCommonUpdate()
 	end
