@@ -7,10 +7,6 @@ local sceneConst = import "module.scene.scene_const"
 
 cScene = object.cls_base:inherit("scene")
 
-local kUPDATE_INTERVAL = 0.1
-local kCOMMON_UPDATE_INTERVAL = 1
-local kDESTROY_TIME = 10
-
 function cScene:create(sceneId,sceneUid)
 	self.sceneId = sceneId
 	self.sceneUid = sceneUid
@@ -25,8 +21,8 @@ function cScene:create(sceneId,sceneUid)
 
 	self.nav = nav
 	
-	timer.callout(kUPDATE_INTERVAL,self,"update")
-	timer.callout(kCOMMON_UPDATE_INTERVAL,self,"commonUpdate")
+	timer.callout(sceneConst.kUPDATE_INTERVAL,self,"update")
+	timer.callout(sceneConst.kCOMMON_UPDATE_INTERVAL,self,"commonUpdate")
 
 	self.phase = sceneConst.eSCENE_PHASE.CREATE
 	self.lifeTime = 0
@@ -405,7 +401,7 @@ function cScene:onUserDead(user,killer)
 
 	if self.failEvent[eSCEHE_PASS_EVENT.USER_DIE] then
 		self:over()
-		self.onFail()
+		self:onFail()
 		return
 	end
 
@@ -417,7 +413,7 @@ function cScene:onUserDead(user,killer)
 			end
 		end
 		self:over()
-		self.onFail()
+		self:onFail()
 		return
 	end
 end
@@ -477,7 +473,7 @@ function cScene:commonUpdate(now)
 			end
 		end
 	elseif phase == sceneConst.eSCENE_PHASE.OVER then
-		if now - self.overTime >= kDESTROY_TIME then
+		if now - self.overTime >= sceneConst.kDESTROY_TIME then
 			local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
 			if next(allUser) then
 				for _,user in pairs(allUser) do
