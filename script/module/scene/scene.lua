@@ -34,6 +34,10 @@ function cScene:create(sceneId,sceneUid)
 
 	self.passEvent = {}
 	self.failEvent = {}
+
+	self.areaMgr = {}
+	self.areaEnter = {}
+	self.areaActive = {}
 end
 
 function cScene:destroy()
@@ -224,20 +228,134 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 	end
 end
 
-function cScene:addPassEvent(ev,args)
+function cScene:addPassEvent(ev,...)
+	if ev == eSCEHE_PASS_EVENT.TIMEOUT then
+		local time = ...
+		self.timeoutResult = true
+		self.lifeTime = time
+	elseif ev == eSCEHE_PASS_EVENT.MONSTER_DIE then
+		local monsterId = ...
+		local evInfo = self.passEvent[ev]
+		if not evInfo then
+			evInfo = {}
+			self.passEvent[ev] = evInfo
+		end
+		evInfo[monsterId] = true
+	elseif ev == eSCEHE_PASS_EVENT.MONSTER_AREA_DONE then
+		local areaId = ...
+		local evInfo = self.passEvent[ev]
+		if not evInfo then
+			evInfo = {}
+			self.passEvent[ev] = evInfo
+		end
+		evInfo[areaId] = true
+	end
+end
+
+function cScene:addFailEvent(ev,...)
+	if ev == eSCEHE_PASS_EVENT.TIMEOUT then
+		local time = ...
+		self.timeoutResult = false
+		self.lifeTime = time
+	elseif ev == eSCEHE_PASS_EVENT.USER_DIE then
+		self.failEvent[ev] = true
+	elseif ev == eSCEHE_PASS_EVENT.USER_ACE then
+		self.failEvent[ev] = true
+	elseif ev == eSCEHE_PASS_EVENT.MONSTER_DIE then
+		local monsterId = ...
+		local evInfo = self.failEvent[ev]
+		if not evInfo then
+			evInfo = {}
+			self.failEvent[ev] = evInfo
+		end
+		evInfo[monsterId] = true
+	end
+end
+
+function cScene:spawnMonster(id,pos,face,...)
 
 end
 
-function cScene:addFailEvent(ev,args)
+function cScene:spawnMonsterArea(areaId)
 
 end
 
-function cScene:enterTrigger(triggerId)
+function cScene:initMonsterArea(areaId,trigger)
 
 end
 
-function cScene:leaveTrigger(triggerId)
+function cScene:enterArea(areaId)
+	self.areaEnter[areaId] = true
+end
 
+function cScene:leaveArea(areaId)
+	self.areaEnter[areaId] = false
+end
+
+function cScene:onMonsterAreaDone(areaId)
+	if self.phase ~= sceneConst.eSCENE_PHASE.START then
+		return
+	end
+	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_AREA_DONE]
+	if not evInfo then
+		return
+	end
+	if not evInfo[areaId] then
+		return
+	end
+	self:over()
+	self.onWin()
+end
+
+function cScene:onMonsterCreate(monster)
+
+end
+
+function cScene:onMonsterDead(monster,killer)
+	if self.phase ~= sceneConst.eSCENE_PHASE.START then
+		return
+	end
+	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_DIE]
+	if evInfo then
+		if evInfo[monster.id] then
+			self:over()
+			self.onWin()
+			return
+		end
+	end
+	
+	local evInfo = self.failEvent[eSCEHE_PASS_EVENT.MONSTER_DIE]
+	if evInfo then
+		if evInfo[monster.id] then
+			self:over()
+			self.onFail()
+			return
+		end
+	end
+end
+
+function cScene:onUserDead(user,killer)
+	if self.phase ~= sceneConst.eSCENE_PHASE.START then
+		return
+	end
+
+	if self.failEvent[eSCEHE_PASS_EVENT.USER_DIE] then
+		self:over()
+		self.onFail()
+		return
+	end
+
+	if self.failEvent[eSCEHE_PASS_EVENT.USER_ACE] then
+		local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
+		for _,user in pairs(allUser) do
+			if not user:isDead() then
+				return
+			end
+		end
+		self:over()
+		self.onFail()
+		return
+	end
 end
 
 function cScene:start()
