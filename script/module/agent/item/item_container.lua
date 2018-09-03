@@ -46,7 +46,7 @@ local function del_item(self,item)
 	item:destroy()
 end
 
-function cls_item_container:insert_item_by_cid(cid,amount)
+function cls_item_container:insertItemByCid(cid,amount)
 
 	local item_conf = config.item[cid]
 
@@ -79,7 +79,7 @@ end
 function cls_item_container:insert_item(item)
 	local item_conf = config.item[item.cid]
 	if item_conf.overlap > 1 then
-		self:insert_item_by_cid(item.cid,item.amount)
+		self:insertItemByCid(item.cid,item.amount)
 		item:destroy()
 		return
 	end

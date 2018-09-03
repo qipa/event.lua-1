@@ -26,10 +26,10 @@ function cItem:destroy()
 
 end
 
-function cItem:get_base_info()
+function cItem:getBaseInfo()
 	return {cid = self.cid,uid = self.uid,amount = self.amount}
 end
 
-function cItem:get_extra_info()
+function cItem:getExtraInfo()
 
 end

@@ -72,15 +72,13 @@ function cScene:enter(sceneObj,pos)
 	end 
 	typeMgr[sceneObj.uid] = sceneObj
 
+	sceneObj:onEnterScene(self)
 
 	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 		self:onUserEnter(sceneObj)
 	else
 		self:onObjEnter(sceneobj)
 	end
-
-	sceneObj:onEnterScene(self)
-
 end
 
 function cScene:leave(sceneObj)
@@ -90,22 +88,33 @@ function cScene:leave(sceneObj)
 	local typeMgr = self.objTypeMgr[objType]
 	typeMgr[sceneObj.uid] = nil
 
+	sceneObj:onLeaveScene(self)
+
 	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 		self:onUserLeave(sceneObj)
 	else
 		self:onObjLeave(sceneobj)
 	end
-	
-	sceneObj:onLeaveScene(self)
-
 end
 
 function cScene:onUserEnter(user)
-
+	local locationInfo = user.locationInfo
+	locationInfo.enter = {
+		sceneId = self.id,
+		sceneUid = self.uid,
+		face = user.face,
+		pos = {user.pos[1],user.pos[2]}
+	}
 end
 
 function cScene:onUserLeave(user)
-
+	local locationInfo = user.locationInfo
+	locationInfo.leave = {
+		sceneId = self.id,
+		sceneUid = self.uid,
+		face = user.face,
+		pos = {user.pos[1],user.pos[2]}
+	}
 end
 
 function cScene:onObjEnter(obj)
@@ -280,16 +289,34 @@ function cScene:spawnMonsterArea(areaId)
 
 end
 
-function cScene:initMonsterArea(areaId,trigger)
-
+function cScene:initArea(areaId)
+	local areaInfo = {areaId = areaId,fired = false}
+	self.areaMgr[areaId] = areaInfo
 end
 
 function cScene:enterArea(areaId)
 	self.areaEnter[areaId] = true
+	local areaInfo = self.areaMgr[areaId]
+	if not areaInfo then
+		return
+	end
+
+	if areaInfo.fired then
+		return
+	end
+	areaInfo.fired = true
 end
 
 function cScene:leaveArea(areaId)
-	self.areaEnter[areaId] = false
+	self.areaEnter[areaId] = nil
+	local areaInfo = self.areaMgr[areaId]
+	if not areaInfo then
+		return
+	end
+end
+
+function cScene:fireAreaEvent(areaId,...)
+
 end
 
 function cScene:onMonsterAreaDone(areaId)
@@ -361,11 +388,21 @@ end
 function cScene:start()
 	self.phase = sceneConst.eSCENE_PHASE.START
 	self.startTime = os.time()
+	self:onStart()
 end
 
 function cScene:over()
 	self.phase = sceneConst.eSCENE_PHASE.OVER
 	self.overTime = os.time()
+	self:onOver()
+end
+
+function cScene:onStart()
+
+end
+
+function cScene:onOver()
+
 end
 
 function cScene:onWin()
@@ -382,7 +419,10 @@ end
 
 function cScene:update(now)
 	for _,sceneObj in pairs(self.objMgr) do
-		sceneObj:onUpdate()
+		local ok,err = xpcall(sceneObj.onUpdate,debug.traceback,sceneObj,now)
+		if not ok then
+			event.error(err)
+		end
 	end
 end
 
@@ -413,6 +453,9 @@ function cScene:commonUpdate(now)
 	end
 
 	for _,sceneObj in pairs(self.objMgr) do
-		sceneObj:onCommonUpdate()
+		local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
+		if not ok then
+			event.error(err)
+		end
 	end
 end
