@@ -1,5 +1,10 @@
 
 
+eSCENE_TYPE = {
+	CITY = 1,
+	STAGE = 2	
+}
+
 eSCENEOBJ_TYPE = {
 	FIGHTER = 1,
 	MONSTER = 2,

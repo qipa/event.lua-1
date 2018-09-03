@@ -74,6 +74,11 @@ function cScene:enter(sceneObj,pos)
 	end 
 	typeMgr[sceneObj.uid] = sceneObj
 
+	pos[1],pos[2] = self:posAroundMovable(pos[1],pos[2],2)
+
+	sceneObj.pos[1] = pos[1]
+	sceneObj.pos[2] = pos[2]
+
 	sceneObj:onEnterScene(self)
 
 	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
@@ -117,6 +122,11 @@ function cScene:onUserLeave(user)
 		face = user.face,
 		pos = {user.pos[1],user.pos[2]}
 	}
+
+	local sceneCfg = config.scene[self.id]
+	if sceneCfg.type == sceneConst.eSCENE_TYPE.CITY then
+		locationInfo.lastCity = location.leave
+	end
 end
 
 function cScene:onObjEnter(obj)
@@ -179,7 +189,6 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 		other:onObjLeave({sceneObj})
 		sceneObj.witnessCtx[otherUid] = nil
 	end
-
 end
 
 function cScene:createAoiTrigger(sceneObj)
