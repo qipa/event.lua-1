@@ -71,7 +71,7 @@ function leaveScene(self,userUid,switch)
 
 	local scene = self:getScene(fighter.sceneUid)
 	scene:leave(fighter)
-	sceneUser:save()
+	fighter:save()
 	
 	local dbChannel = model.get_db_channel()
 	local updater = {}
@@ -81,7 +81,7 @@ function leaveScene(self,userUid,switch)
 
 	local fighterData 
 	if switch then
-		fighterData = fighter:pack()
+		fighterData = fighter:pack_data()
 	end
 
 	fighter:release()

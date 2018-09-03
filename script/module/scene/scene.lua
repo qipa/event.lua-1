@@ -35,6 +35,8 @@ function cScene:create(sceneId,sceneUid)
 	self.passEvent = {}
 	self.failEvent = {}
 
+	self.areaMonster = {}
+
 	self.areaMgr = {}
 	self.areaEnter = {}
 	self.areaActive = {}
@@ -286,7 +288,17 @@ function cScene:spawnMonster(id,pos,face,...)
 end
 
 function cScene:spawnMonsterArea(areaId)
-
+	local areaInfo = self.areaMonster[areaId]
+	if not areaInfo then
+		areaInfo = {waveIndex = 1,waveMax = 3,monsterAmount = 0,miniSurvive = 5}
+		self.areaMonster[areaId] = areaInfo
+	end
+	if areaInfo.waveIndex >= areaInfo.waveMax then
+		return
+	end
+	areaInfo.waveIndex = areaInfo.waveIndex + 1
+	areaInfo.time = os.time()
+	
 end
 
 function cScene:initArea(areaId)
@@ -342,6 +354,18 @@ function cScene:onMonsterDead(monster,killer)
 	if self.phase ~= sceneConst.eSCENE_PHASE.START then
 		return
 	end
+
+	local areaId = monster.areaId
+	if areaId then
+		local areaInfo = self.areaMonster[areaId]
+		if areaInfo.waveIndex < areaInfo.waveMax then
+			if areaInfo.monsterAmount <= areaInfo.miniSurvive then
+				areaInfo.waveIndex = areaInfo.waveIndex + 1
+				self:spawnMonsterArea(areaId)
+			end
+		end
+	end
+
 	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_DIE]
 	if evInfo then
 		if evInfo[monster.id] then
@@ -456,6 +480,14 @@ function cScene:commonUpdate(now)
 		local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
 		if not ok then
 			event.error(err)
+		end
+	end
+
+	for areaId,areaInfo in pairs(self.areaMonster) do
+		if areaInfo.waveIndex < areaInfo.waveMax then
+			if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
+				self:spawnMonsterArea(areaId)
+			end
 		end
 	end
 end
