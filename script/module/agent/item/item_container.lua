@@ -1,225 +1,138 @@
 local idBuilder = import "module.id_builder"
+local common = import "common.common"
 local dbCollection = import "module.database_collection"
 local itemFactory = import "module.agent.item.item_factory"
 
 
-cItemMgr = dbCollection.cls_collection:inherit("item_mgr")
+cItemContainer = dbCollection.cls_collection:inherit("item_container")
 
 function __init__(self)
-	self.cItemMgr:save_field("gridCount")
-	self.cItemMgr:save_field("itemSlot")
-end
-
-
-function cItemMgr:create()
+	self.cItemContainer:save_field("currencyMgr")
+	self.cItemContainer:save_field("bagMgr")
+	self.cItemContainer:save_field("petMgr")
+	self.cItemContainer:save_field("equipmentMgr")
 
 end
 
-function cItemMgr:destroy()
+
+function cItemContainer:create()
 
 end
 
-function cItemMgr:dirtyItem(itemUid)
-	if not self.__dirtyItem then
-		self.__dirtyItem = {}
-	end
-	self.__dirtyItem[itemUid] = true
+function cItemContainer:destroy()
+
 end
 
-function cItemMgr:load(parent,dbChannel,db,dbIndex)
-	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
-	local itemSlot = {}
-	self.helper = {}
-	if self.itemSlot then
-		for itemUid,item in pairs(self.itemSlot) do
-			itemSlot[tonumber(itemUid)] = item
-			local info = self.helper[item.cid]
-			if not info then
-				info = {}
-				self.helper[item.cid] = info
-			end
-			info[item.uid] = true
-		end
-	end
-	self.itemSlot = itemSlot
+function cItemContainer:dirty_field(obj)
+	self.__dirty[obj.__name] = true
+	self.__parentObj:dirty_field(self)
 end
 
-function cItemMgr:save(dbChannel,db,dbIndex)
-	if self.__dirty["itemSlot"] then
-		self.__dirty["itemSlot"] = nil
-	end
-	dbCollection.cls_collection.save(self,dbChannel,db,dbIndex)
-
-	local set
-	local unset 
-	for itemUid in pairs(self.__dirtyItem) do
-		if self.itemSlot[itemUid] then
-			if not set then
-				set = {}
-			end
-			set[string.format("itemSlot.%d",itemUid)] = self.itemSlot[itemUid]
+function cItemContainer:load(parent,dbChannel,db,dbIndex)
+	local inst = self:new()
+	for field in pairs(self.__save_fields) do
+		local result
+		local cls = class.get(field)
+		assert(cls ~= nil,field)
+		local result = cls:load(inst,dbChannel,db,dbIndex)
+		if result then
+			inst[field] = result
 		else
-			if not unset then
-				unset = {}
-			end
-			unset[string.format("itemSlot.%d",itemUid)] = true
+			inst[field] = cls:new()
 		end
 	end
-	self.__dirtyItem = {}
-
-	local updater = {}
-	local dirty = false
-	if set then
-		dirty = true
-		updater["$set"] = set
-	end
-	if unset then
-		dirty = true
-		updater["$unset"] = unset
-	end
-	
-	if dirty then
-		dbChannel:update(db,self.__name,dbIndex,updater,true)
-	end
+	inst.__parentObj = parent
+	return inst
 end
 
-function cItemMgr:onEnterGame(user)
-
-end
-
-function cItemMgr:onLeaveGame()
-
-end
-
-function cItemMgr:onOverride(user)
-
-end
-
-function cItemMgr:onSyncInfo()
-
-end
-
-local function _addItem(self,item)
-	if not item.uid then
-		item.uid = idBuilder:alloc_item_uid()
+function cItemContainer:save(dbChannel,db,dbIndex)
+	for field in pairs(self.__dirty) do
+		if save_fields[field] ~= nil then
+			local inst = save_fields[field]
+			inst:save(dbChannel,db,dbIndex)
+		end
 	end
-	self.itemSlot[item.uid] = item
-	local info = self.helper[item.cid]
-	if not info then
-		info = {}
-		self.helper[item.cid] = info
-	end
-	info[item.uid] = true
-	self:dirtyItem(item.uid)
+	self.__dirty = {}
 end
 
-local function _delItem(self,item)
-	self.itemSlot[item.uid] = nil
-	local helperInfo = self.helper[item.cid]
-	helperInfo[item.uid] = nil
-	item:destroy()
-	self:dirtyItem(item.uid)
+function cItemContainer:onEnterGame(user)
+	self.currencyMgr:onEnterGame(user)
+	self.bagMgr:onEnterGame(user)
+	self.petMgr:onEnterGame(user)
+	self.equipmentMgr:onEnterGame(user)
 end
 
-function cItemMgr:insertItemByCid(cid,amount)
-	self:dirty_field("itemSlot")
-	local itemConf = config.item[cid]
-	if not itemConf then
-		error(string.format("no such item:%d",cid))
-	end
-	if itemConf.attr then
-		self.__user:addAttr(itemConf.attr,amount)
-		return
-	end
-
-	local items = itemFactory:createItem(cid,amount)
-
-	for _,item in pairs(items) do
-		self:insertItem(item)
-	end
+function cItemContainer:onLeaveGame()
+	self.currencyMgr:onLeaveGame()
+	self.bagMgr:onLeaveGame()
+	self.petMgr:onLeaveGame()
+	self.equipmentMgr:onLeaveGame()
 end
 
-function cItemMgr:insertItem(item)
-	local itemConf = config.item[item.cid]
-	if itemConf.useRightnow then
-		item:use()
-		item:release()
-		return
-	end
+function cItemContainer:onOverride(user)
+	self.currencyMgr:onOverride(user)
+	self.bagMgr:onOverride(user)
+	self.petMgr:onOverride(user)
+	self.equipmentMgr:onOverride(user)
+end
 
-	if itemConf.overlap > 1 then
+function cItemContainer:onSyncInfo()
+	self.currencyMgr:onSyncInfo()
+	self.bagMgr:onSyncInfo()
+	self.petMgr:onSyncInfo()
+	self.equipmentMgr:onSyncInfo()
+end
 
-		local helperInfo = self.helper[cid]
-		if helperInfo then
-			for uid in pairs(helperInfo) do
-				local oItem = self.itemSlot[uid]
-				if oItem:canOverlapBy(item) then
-					oItem:overlapBy(item)
-					self:dirtyItem(oItem.uid)
-					if item.amount == 0 then
-						break
-					end
-				end
+
+function cItemContainer:getItem(itemUid)
+	for field in pairs(self.__save_fields) do
+		local inst = self[field]
+		if inst then
+			local item = inst:getItem(itemUid)
+			if item then
+				return item
 			end
 		end
-
-		if item.amount > 0 then
-			_addItem(self,item)
-		else
-			item:release()
-		end
-		return
-	end
-
-	_addItem(self,item)
-end
-
-function cItemMgr:deleteItem(item)
-	return self:deleteItemByUid(item.uid,item.amount)
-end
-
-function cItemMgr:deleteItemByCid(cid,amount)
-	if not self:itemEnough(cid,amount) then
-		return false
-	end
-
-	local helperInfo = self.helper[cid]
-
-	local left = amount
-
-	for uid in pairs(helperInfo) do
-		if left == 0 then
-			break
-		end
-
-		local oItem = self.itemSlot[uid]
-		if oItem.amount > left then
-			oItem.amount = oItem.amount - left
-			self:dirtyItem(oItem.uid)
-			left = 0
-		else
-			left = left - oItem.amount
-			_delItem(self,oItem)
-		end
 	end
 end
 
-function cItemMgr:deleteItemByUid(uid,amount)
-	local item = self.itemSlot[uid]
-	if item.amount > amount then
-		item.amount = item.amount - amount
-		self:dirtyItem(uid)
-	else
-		_delItem(self,item)
-	end
+function cItemContainer:insertItemByCid(cid,amount)
+	local cfg = config.item[cid]
+	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
+	local bagInst = self[bagType]
+	bagInst:insertItemByCid(cid,amount)
 end
 
-function cItemMgr:itemEnough(cid,amount)
-	local helperInfo = self.helper[cid]
-	local total = 0
-	for uid in pairs(helperInfo) do
-		local item = self.itemSlot[uid]
-		total = total + item.amount
-	end
-	return total >= amount
+function cItemContainer:insertItem(item)
+	local cfg = config.item[item.cid]
+	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
+	local bagInst = self[bagType]
+	bagInst:insertItem(item)
+end
+
+function cItemContainer:deleteItem(item)
+	local cfg = config.item[item.cid]
+	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
+	local bagInst = self[bagType]
+	bagInst:deleteItem(item)
+end
+
+function cItemContainer:deleteItemByCid(cid,amount)
+	local cfg = config.item[cid]
+	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
+	local bagInst = self[bagType]
+	bagInst:deleteItemByCid(cid,amount)
+end
+
+function cItemContainer:deleteItemByUid(uid,amount)
+	local item = self:getItem(uid)
+	self:deleteItem(item,amount)
+end
+
+function cItemContainer:itemEnough(cid,amount)
+
+end
+
+function cItemContainer:useItem(itemUid,amount)
+
 end

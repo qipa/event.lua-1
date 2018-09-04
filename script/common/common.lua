@@ -41,8 +41,18 @@ FIGHTER_STATE = {
 	SKILL = 3,
 }
 
-ITEM_TYPE = {
+eITEM_CATETORY = {
 	CURRENCY = 1,
 	EQUIPMENT = 2,
-	MATERIAL = 3
+	MATERIAL = 3,
+	PROP = 4,
+	PET = 5,
+}
+
+eITEM_CATEGORY_BAG = {
+	[eITEM_CATETORY.CURRENCY] = "currencyMgr",
+	[eITEM_CATETORY.EQUIPMENT] = "bagMgr",
+	[eITEM_CATETORY.MATERIAL] = "bagMgr",
+	[eITEM_CATETORY.PROP] = "bagMgr",
+	[eITEM_CATETORY.PET] = "petMgr",
 }

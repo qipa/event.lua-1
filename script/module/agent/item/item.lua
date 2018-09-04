@@ -27,28 +27,42 @@ function cItem:canUse()
 
 end
 
-function cItem:beforeUse()
-
-end
-
-function cItem:afterUse()
-
-end
-
-function cItem:use()
-
+function cItem:use(user)
+	
 end
 
 function cItem:canOverlapBy(item)
-
+	local more = self:overlapMore()
+	if more == 0 then
+		return false
+	end
+	if self.cid ~= item.cid then
+		return false
+	end
+	return true
 end
 
 function cItem:overlapBy(item)
+	if not self:canOverlapBy(item) then
+		return
+	end
 
+	local more = self:overlapMore()
+	if item.amount > more then
+		self.amount = self.amount + more
+		item.amount = item.amount - more
+	else
+		self.amount = self.amount + item.amount
+		item.amount = 0
+	end
 end
 
 function cItem:overlapMore()
-
+	local cfg = config.item[self.cid]
+	if cfg.overlap == 1 then
+		return 0
+	end
+	return cfg.overlap - self.amount
 end
 
 function cItem:getBaseInfo()
