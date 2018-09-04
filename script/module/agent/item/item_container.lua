@@ -1,6 +1,6 @@
 local idBuilder = import "module.id_builder"
 local dbCollection = import "module.database_collection"
-local item_factory = import "module.agent.item.item_factory"
+local itemFactory = import "module.agent.item.item_factory"
 
 
 cItemMgr = dbCollection.cls_collection:inherit("item_mgr")
@@ -13,18 +13,6 @@ end
 
 function cItemMgr:create()
 
-end
-
-function cItemMgr:init()
-	self.helper = {}
-	for uid,item in pairs(self.slots) do
-		local info = self.helper[item.cid]
-		if not info then
-			info = {}
-			self.helper[item.cid] = info
-		end
-		info[item.uid] = true
-	end
 end
 
 function cItemMgr:destroy()
@@ -41,8 +29,15 @@ end
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
 	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
+	self.helper = {}
 	for itemUid,item in pairs(self.itemSlot) do
 		itemSlot[tonumber(itemUid)] = item
+		local info = self.helper[item.cid]
+		if not info then
+			info = {}
+			self.helper[item.cid] = info
+		end
+		info[item.uid] = true
 	end
 	self.itemSlot = itemSlot
 end
@@ -86,6 +81,22 @@ function cItemMgr:save(dbChannel,db,dbIndex)
 	end
 end
 
+function cItemMgr:onEnterGame(user)
+
+end
+
+function cItemMgr:onLeaveGame()
+
+end
+
+function cItemMgr:onOverride(user)
+
+end
+
+function cItemMgr:onSyncInfo()
+
+end
+
 local function _addItem(self,item)
 	if not item.uid then
 		item.uid = idBuilder:alloc_item_uid()
@@ -114,39 +125,45 @@ function cItemMgr:insertItemByCid(cid,amount)
 	if not itemConf then
 		error(string.format("no such item:%d",cid))
 	end
-
-	local left = amount
-	local helperInfo = self.helper[cid]
-	for uid in pairs(helperInfo) do
-		local oItem = self.slots[uid]
-		if itemConf.overlap > oItem.amount then
-			local space = itemConf.overlap - oItem.amount
-			if left < space then
-				oItem.amount = oItem.amount + left
-				self:dirtyItem(oItem.uid)
-				left = 0
-				break
-			else
-				oItem.amount = itemConf.overlap
-				self:dirtyItem(oItem.uid)
-				left = left - space
-			end
-		end
+	if itemConf.attr then
+		self.__user:addAttr(itemConf.attr,amount)
+		return
 	end
 
-	if left > 0 then
-		local items = item_factory:create_item(cid,left)
-		for _,item in pairs(items) do
-			_addItem(self,item)
-		end
+	local items = itemFactory:createItem(cid,left)
+
+	for _,item in pairs(items) do
+		self:insertItem(item)
 	end
 end
 
 function cItemMgr:insertItem(item)
 	local itemConf = config.item[item.cid]
-	if itemConf.overlap > 1 then
-		self:insertItemByCid(item.cid,item.amount)
+	if itemConf.useRightnow then
+		item:use()
 		item:release()
+		return
+	end
+
+	if itemConf.overlap > 1 then
+
+		local helperInfo = self.helper[cid]
+		for uid in pairs(helperInfo) do
+			local oItem = self.slots[uid]
+			if oItem:canOverlapBy(item) then
+				oItem:overlapBy(item)
+				self:dirtyItem(oItem.uid)
+				if item.amount == 0 then
+					break
+				end
+			end
+		end
+
+		if item.amount > 0 then
+			_addItem(self,item)
+		else
+			item:release()
+		end
 		return
 	end
 

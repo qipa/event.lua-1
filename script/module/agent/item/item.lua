@@ -23,6 +23,34 @@ function cItem:destroy()
 
 end
 
+function cItem:canUse()
+
+end
+
+function cItem:beforeUse()
+
+end
+
+function cItem:afterUse()
+
+end
+
+function cItem:use()
+
+end
+
+function cItem:canOverlapBy(item)
+
+end
+
+function cItem:overlapBy(item)
+
+end
+
+function cItem:overlapMore()
+
+end
+
 function cItem:getBaseInfo()
 	return {cid = self.cid,uid = self.uid,amount = self.amount}
 end
