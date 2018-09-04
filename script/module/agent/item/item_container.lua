@@ -1,12 +1,13 @@
 local idBuilder = import "module.id_builder"
-local database_collection = import "module.database_collection"
+local dbCollection = import "module.database_collection"
 local item_factory = import "module.agent.item.item_factory"
 
 
-cItemMgr = database_collection.cls_collection_set:inherit("item_mgr")
+cItemMgr = dbCollection.cls_collection:inherit("item_mgr")
 
 function __init__(self)
-	
+	self.cItemMgr:save_field("gridCount")
+	self.cItemMgr:save_field("itemSlot")
 end
 
 
@@ -30,6 +31,61 @@ function cItemMgr:destroy()
 
 end
 
+function cItemMgr:dirtyItem(itemUid)
+	if not self.__dirtyItem then
+		self.__dirtyItem = {}
+	end
+	self.__dirtyItem[itemUid] = true
+end
+
+function cItemMgr:load(parent,dbChannel,db,dbIndex)
+	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
+	local itemSlot = {}
+	for itemUid,item in pairs(self.itemSlot) do
+		itemSlot[tonumber(itemUid)] = item
+	end
+	self.itemSlot = itemSlot
+end
+
+function cItemMgr:save(dbChannel,db,dbIndex)
+	if self.__dirty["itemSlot"] then
+		self.__dirty["itemSlot"] = nil
+	end
+	dbCollection.cls_collection.save(self,dbChannel,db,dbIndex)
+
+	local set
+	local unset 
+	for itemUid in pairs(self.__dirtyItem) do
+		if self.itemSlot[itemUid] then
+			if not set then
+				set = {}
+			end
+			set[string.format("itemSlot.%d",itemUid)] = self.itemSlot[itemUid]
+		else
+			if not unset then
+				unset = {}
+			end
+			unset[string.format("itemSlot.%d",itemUid)] = true
+		end
+	end
+	self.__dirtyItem = {}
+
+	local updater = {}
+	local dirty = false
+	if set then
+		dirty = true
+		updater["$set"] = set
+	end
+	if unset then
+		dirty = true
+		updater["$unset"] = unset
+	end
+	
+	if dirty then
+		dbChannel:update(db,self.__name,dbIndex,updater,true)
+	end
+end
+
 local function _addItem(self,item)
 	if not item.uid then
 		item.uid = idBuilder:alloc_item_uid()
@@ -41,7 +97,7 @@ local function _addItem(self,item)
 		self.helper[item.cid] = info
 	end
 	info[item.uid] = true
-	self:dirty_field(item.uid)
+	self:dirtyItem(item.uid)
 end
 
 local function _delItem(self,item)
@@ -49,7 +105,7 @@ local function _delItem(self,item)
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	item:destroy()
-	self:dirty_field(item.uid)
+	self:dirtyItem(item.uid)
 end
 
 function cItemMgr:insertItemByCid(cid,amount)
@@ -67,12 +123,12 @@ function cItemMgr:insertItemByCid(cid,amount)
 			local space = itemConf.overlap - oItem.amount
 			if left < space then
 				oItem.amount = oItem.amount + left
-				self:dirty_field(oItem.uid)
+				self:dirtyItem(oItem.uid)
 				left = 0
 				break
 			else
 				oItem.amount = itemConf.overlap
-				self:dirty_field(oItem.uid)
+				self:dirtyItem(oItem.uid)
 				left = left - space
 			end
 		end
@@ -118,7 +174,7 @@ function cItemMgr:deleteItemByCid(cid,amount)
 		local oItem = self.slots[uid]
 		if oItem.amount > left then
 			oItem.amount = oItem.amount - left
-			self:dirty_field(oItem.uid)
+			self:dirtyItem(oItem.uid)
 			left = 0
 		else
 			left = left - oItem.amount
@@ -131,7 +187,7 @@ function cItemMgr:deleteItemByUid(uid,amount)
 	local item = self.slots[uid]
 	if item.amount > amount then
 		item.amount = item.amount - amount
-		self:dirty_field(uid)
+		self:dirtyItem(uid)
 	else
 		_delItem(self,item)
 	end

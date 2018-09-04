@@ -17,6 +17,7 @@ end
 function cls_collection:load(parent,db_channel,db,db_index)
 	local name = self.__name
 	local result = db_channel:findOne(db,name,{query = db_index})
+	table.print(result)
 	if result then
 		assert(name == result.__name)
 		local obj = class.instance_from(name,result)
@@ -47,14 +48,19 @@ function cls_collection:save(db_channel,db,db_index)
 	end
 	self.__dirty = {}
 	local updater = {}
+	local dirty = false
 	if set then
+		dirty = true
 		updater["$set"] = set
 	end
 	if unset then
+		dirty = true
 		updater["$unset"] = unset
 	end
-
-	db_channel:update(db,self.__name,db_index,updater,true)
+	
+	if dirty then
+		db_channel:update(db,self.__name,db_index,updater,true)
+	end
 end
 
 

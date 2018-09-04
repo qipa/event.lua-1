@@ -31,17 +31,9 @@ if not db_channel then
 end
 
 
-for i = 1,1000 do
-	local item = {cid = 100,amount = 1000,uid = i,userUid = 2,__name = "item"}
-	db_channel:insert("user","item_mgr",item)
-end
-
-
-local itemMgr = itemMgr.cItemMgr:new()
 
 event.fork(function ()
-
-
-itemMgr:load(nil,db_channel,"user",{userUid = 2})
-itemMgr:insertItemByCid(100,100)
+local itemMgr = itemMgr.cItemMgr:new()
+itemMgr:load(nil,db_channel,"user",{userUid = 4})
+table.print(itemMgr)
 end)
