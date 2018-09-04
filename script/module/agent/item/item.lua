@@ -1,8 +1,8 @@
 local id_builder = import "module.id_builder"
-local dbCollection = import "module.database_collection"
+local object = import "module.object"
 
 
-cItem = dbCollection.cls_collection:inherit("item_base")
+cItem = object.cls_object:inherit("item")
 
 function __init__(self)
 	self.cItem:save_field("uid")

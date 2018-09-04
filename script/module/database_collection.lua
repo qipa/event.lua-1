@@ -17,7 +17,6 @@ end
 function cls_collection:load(parent,db_channel,db,db_index)
 	local name = self.__name
 	local result = db_channel:findOne(db,name,{query = db_index})
-	table.print(result)
 	if result then
 		assert(name == result.__name)
 		local obj = class.instance_from(name,result)
