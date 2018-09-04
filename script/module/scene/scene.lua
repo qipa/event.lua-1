@@ -59,6 +59,7 @@ function cScene:getAllObjByType(sceneObjType)
 end
 
 function cScene:enter(sceneObj,pos)
+	assert(self.objMgr[sceneObj.uid] == nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = sceneObj
 	
 	local objType = sceneObj:sceneObjType()
@@ -85,6 +86,7 @@ function cScene:enter(sceneObj,pos)
 end
 
 function cScene:leave(sceneObj)
+	assert(self.objMgr[sceneObj.uid] ~= nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = nil
 
 	local objType = sceneObj:sceneObjType()
@@ -245,6 +247,8 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 end
 
 function cScene:addPassEvent(ev,...)
+	local eSCEHE_PASS_EVENT = sceneConst.eSCEHE_PASS_EVENT
+
 	if ev == eSCEHE_PASS_EVENT.TIMEOUT then
 		local time = ...
 		self.timeoutResult = true
@@ -269,15 +273,17 @@ function cScene:addPassEvent(ev,...)
 end
 
 function cScene:addFailEvent(ev,...)
-	if ev == eSCEHE_PASS_EVENT.TIMEOUT then
+	local eSCEHE_FAIL_EVENT = sceneConst.eSCEHE_FAIL_EVENT
+
+	if ev == eSCEHE_FAIL_EVENT.TIMEOUT then
 		local time = ...
 		self.timeoutResult = false
 		self.lifeTime = time
-	elseif ev == eSCEHE_PASS_EVENT.USER_DIE then
+	elseif ev == eSCEHE_FAIL_EVENT.USER_DIE then
 		self.failEvent[ev] = true
-	elseif ev == eSCEHE_PASS_EVENT.USER_ACE then
+	elseif ev == eSCEHE_FAIL_EVENT.USER_ACE then
 		self.failEvent[ev] = true
-	elseif ev == eSCEHE_PASS_EVENT.MONSTER_DIE then
+	elseif ev == eSCEHE_FAIL_EVENT.MONSTER_DIE then
 		local monsterId = ...
 		local evInfo = self.failEvent[ev]
 		if not evInfo then
@@ -344,6 +350,9 @@ function cScene:onMonsterAreaDone(areaId)
 	if self.phase ~= sceneConst.eSCENE_PHASE.START then
 		return
 	end
+
+	local eSCEHE_PASS_EVENT = sceneConst.eSCEHE_PASS_EVENT
+
 	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_AREA_DONE]
 	if not evInfo then
 		return
@@ -375,7 +384,7 @@ function cScene:onMonsterDead(monster,killer)
 		end
 	end
 
-	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_DIE]
+	local evInfo = self.passEvent[sceneConst.eSCEHE_PASS_EVENT.MONSTER_DIE]
 	if evInfo then
 		if evInfo[monster.id] then
 			self:over()
@@ -384,7 +393,7 @@ function cScene:onMonsterDead(monster,killer)
 		end
 	end
 	
-	local evInfo = self.failEvent[eSCEHE_PASS_EVENT.MONSTER_DIE]
+	local evInfo = self.failEvent[sceneConst.eSCEHE_PASS_EVENT.MONSTER_DIE]
 	if evInfo then
 		if evInfo[monster.id] then
 			self:over()
@@ -399,13 +408,15 @@ function cScene:onUserDead(user,killer)
 		return
 	end
 
-	if self.failEvent[eSCEHE_PASS_EVENT.USER_DIE] then
+	local eSCEHE_FAIL_EVENT = sceneConst.eSCEHE_FAIL_EVENT
+
+	if self.failEvent[eSCEHE_FAIL_EVENT.USER_DIE] then
 		self:over()
 		self:onFail()
 		return
 	end
 
-	if self.failEvent[eSCEHE_PASS_EVENT.USER_ACE] then
+	if self.failEvent[eSCEHE_FAIL_EVENT.USER_ACE] then
 		local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
 		for _,user in pairs(allUser) do
 			if not user:isDead() then
