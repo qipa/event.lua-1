@@ -126,7 +126,18 @@ function cItemMgr:getItem(itemUid)
 	return self.itemSlot[itemUid]
 end
 
-function cItemMgr:insertItemByCid(cid,amount)
+function cItemMgr:insertItemByCidList(list)
+	local insertMap = {}
+	for _,info in pairs(list) do
+		insertMap[info.cid] = (insertMap[info.cid] or 0) + info.amount
+	end
+	local insertLog = {}
+	for cid,amount in pairs(insertMap) do
+		self:insertItemByCid(cid,amount,insertLog)
+	end
+end
+
+function cItemMgr:insertItemByCid(cid,amount,insertLog)
 	self:dirty_field("itemSlot")
 	local itemConf = config.item[cid]
 	if not itemConf then
@@ -140,11 +151,11 @@ function cItemMgr:insertItemByCid(cid,amount)
 	local items = itemFactory:createItem(cid,amount)
 
 	for _,item in pairs(items) do
-		self:insertItem(item)
+		self:insertItem(item,insertLog)
 	end
 end
 
-function cItemMgr:insertItem(item)
+function cItemMgr:insertItem(item,insertLog)
 	local itemConf = config.item[item.cid]
 	if itemConf.useRightnow then
 		item:use()
@@ -160,6 +171,7 @@ function cItemMgr:insertItem(item)
 				local oItem = self.itemSlot[uid]
 				if oItem:canOverlapBy(item) then
 					oItem:overlapBy(item)
+					insertLog[oItem.uid] = oItem.amount
 					self:dirtyItem(oItem.uid)
 					if item.amount == 0 then
 						break
@@ -170,20 +182,35 @@ function cItemMgr:insertItem(item)
 
 		if item.amount > 0 then
 			_addItem(self,item)
+			insertLog[item.uid] = item.amount
 		else
 			item:release()
 		end
-		return
+	else
+		_addItem(self,item)
+	end
+	
+	insertLog[item.uid] = item.amount
+end
+
+function cItemMgr:deleteItemByCidList(list)
+	local ok,cid = self:itemEnoughList(list)
+	if not ok then
+		return false,cid
 	end
 
-	_addItem(self,item)
+	local deleteMap = {}
+	for _,info in pairs(list) do
+		deleteMap[info.cid] = (deleteMap[info.cid] or 0) + info.amount
+	end
+
+	local deleteLog = {}
+	for cid,amount in pairs(deleteMap) do
+		self:deleteItemByCid(cid,amount,deleteLog)
+	end
 end
 
-function cItemMgr:deleteItem(item)
-	return self:deleteItemByUid(item.uid,item.amount)
-end
-
-function cItemMgr:deleteItemByCid(cid,amount)
+function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 	if not self:itemEnough(cid,amount) then
 		return false
 	end
@@ -200,10 +227,12 @@ function cItemMgr:deleteItemByCid(cid,amount)
 		local oItem = self.itemSlot[uid]
 		if oItem.amount > left then
 			oItem.amount = oItem.amount - left
+			deleteLog[oItem.uid] = oItem.amount
 			self:dirtyItem(oItem.uid)
 			left = 0
 		else
 			left = left - oItem.amount
+			deleteLog[oItem.uid] = 0
 			_delItem(self,oItem)
 		end
 	end
@@ -217,6 +246,24 @@ function cItemMgr:deleteItemByUid(uid,amount)
 	else
 		_delItem(self,item)
 	end
+end
+
+function cItemMgr:deleteItem(item,amount)
+	return self:deleteItemByUid(item.uid,amount or item.amount)
+end
+
+function cItemMgr:itemEnoughList(list)
+	local map = {}
+	for _,info in pairs(list) do
+		map[info.cid] = (map[info.cid] or 0) + info.amount
+	end
+
+	for cid,amount in pairs(map) do
+		if not self:itemEnough(cid,amount) then
+			return false,cid
+		end
+	end
+	return true
 end
 
 function cItemMgr:itemEnough(cid,amount)

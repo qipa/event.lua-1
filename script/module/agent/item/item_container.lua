@@ -110,7 +110,7 @@ function cItemContainer:insertItem(item)
 	bagInst:insertItem(item)
 end
 
-function cItemContainer:deleteItem(item)
+function cItemContainer:deleteItem(item,amount)
 	local cfg = config.item[item.cid]
 	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
 	local bagInst = self[bagType]
@@ -130,7 +130,10 @@ function cItemContainer:deleteItemByUid(uid,amount)
 end
 
 function cItemContainer:itemEnough(cid,amount)
-
+	local cfg = config.item[cid]
+	local bagType = common.eITEM_CATEGORY_BAG[cfg.category]
+	local bagInst = self[bagType]
+	return bagInst:itemEnough(cid,amount)
 end
 
 function cItemContainer:useItem(itemUid,amount)
