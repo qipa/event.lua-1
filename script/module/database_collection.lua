@@ -11,7 +11,9 @@ end
 function cls_collection:dirty_field(field)
 	self.__dirty[field] = true
 	self.__dirty["__name"] = true
-	self.__parent:dirty_field(self)
+	if self.__parent then
+		self.__parent:dirty_field(self)
+	end
 end
 
 function cls_collection:load(parent,db_channel,db,db_index)

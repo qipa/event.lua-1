@@ -6,15 +6,15 @@ function __init__(self)
 end
 
 local categoryCreator = {
-	item = import "module.agent.item.item".cItem,
-	equipment = import "module.agent.item.equipment".cEquipment,
-	currency = import "module.agent.item.currency".cCurrency,
-	material = import "module.agent.item.material".cMaterial,
+	[1] = import "module.agent.item.item".cItem,
+	[2] = import "module.agent.item.equipment".cEquipment,
+	[3] = import "module.agent.item.currency".cCurrency,
+	[4] = import "module.agent.item.material".cMaterial,
 }
 
-function createItem(cid,amount)
+function createItem(self,cid,amount)
 	local itemConf = config.item[cid]
-
+	assert(itemConf ~= nil,cid)
 	local creator = categoryCreator[itemConf.category]
 
 	local result = {}

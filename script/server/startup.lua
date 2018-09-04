@@ -21,6 +21,7 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 	
 	local runtime_logger = logger:create("runtime",5)
 	event.error = function (...)
+		print(...)
 		runtime_logger:ERROR(...)
 	end
 
@@ -34,14 +35,13 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 		local list = util.list_dir(config_path,true,"lua",true)
 
 		for _,path in pairs(list) do
-
+			print("load config",path)
 			local file = table.remove(path:split("/"))
 			local name = file:match("%S[^%.]+")
 			local data = loadfile(path)()
 			_G.config[name] = data
 		end
 	end
-
 	if protocol_path then
 		local list = util.list_dir(protocol_path,true,"protocol",true)
 		for _,file in pairs(list) do

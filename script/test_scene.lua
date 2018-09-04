@@ -1,5 +1,7 @@
 local event = require "event"
 local mongo = require "mongo"
+local idBuilder = import "module.id_builder"
+local startup = import "server.startup"
 local clientMgr = import "module.client_manager"
 local fighter = import "module.scene.fighter"
 local monster = import "module.scene.monster"
@@ -30,10 +32,17 @@ if not db_channel then
 	os.exit()
 end
 
-
-
 event.fork(function ()
-local itemMgr = itemMgr.cItemMgr:new()
-itemMgr:load(nil,db_channel,"user",{userUid = 4})
+	startup.run(false,env.mongodb,env.config)
+	idBuilder:init(1)
+local itemMgrInst = itemMgr.cItemMgr:load(nil,db_channel,"user",{userUid = 5})
+if not itemMgrInst then
+	itemMgrInst = itemMgr.cItemMgr:new()
+end
+
+itemMgrInst:insertItemByCid(100,1)
+itemMgrInst:save(db_channel,"user",{userUid = 5})
 table.print(itemMgr)
+
 end)
+

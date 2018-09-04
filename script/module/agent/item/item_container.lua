@@ -30,14 +30,16 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
 	self.helper = {}
-	for itemUid,item in pairs(self.itemSlot) do
-		itemSlot[tonumber(itemUid)] = item
-		local info = self.helper[item.cid]
-		if not info then
-			info = {}
-			self.helper[item.cid] = info
+	if self.itemSlot then
+		for itemUid,item in pairs(self.itemSlot) do
+			itemSlot[tonumber(itemUid)] = item
+			local info = self.helper[item.cid]
+			if not info then
+				info = {}
+				self.helper[item.cid] = info
+			end
+			info[item.uid] = true
 		end
-		info[item.uid] = true
 	end
 	self.itemSlot = itemSlot
 end
@@ -101,7 +103,7 @@ local function _addItem(self,item)
 	if not item.uid then
 		item.uid = idBuilder:alloc_item_uid()
 	end
-	self.slots[item.uid] = item
+	self.itemSlot[item.uid] = item
 	local info = self.helper[item.cid]
 	if not info then
 		info = {}
@@ -112,7 +114,7 @@ local function _addItem(self,item)
 end
 
 local function _delItem(self,item)
-	self.slots[item.uid] = nil
+	self.itemSlot[item.uid] = nil
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	item:destroy()
@@ -120,7 +122,7 @@ local function _delItem(self,item)
 end
 
 function cItemMgr:insertItemByCid(cid,amount)
-
+	self:dirty_field("itemSlot")
 	local itemConf = config.item[cid]
 	if not itemConf then
 		error(string.format("no such item:%d",cid))
@@ -130,7 +132,7 @@ function cItemMgr:insertItemByCid(cid,amount)
 		return
 	end
 
-	local items = itemFactory:createItem(cid,left)
+	local items = itemFactory:createItem(cid,amount)
 
 	for _,item in pairs(items) do
 		self:insertItem(item)
@@ -148,13 +150,15 @@ function cItemMgr:insertItem(item)
 	if itemConf.overlap > 1 then
 
 		local helperInfo = self.helper[cid]
-		for uid in pairs(helperInfo) do
-			local oItem = self.slots[uid]
-			if oItem:canOverlapBy(item) then
-				oItem:overlapBy(item)
-				self:dirtyItem(oItem.uid)
-				if item.amount == 0 then
-					break
+		if helperInfo then
+			for uid in pairs(helperInfo) do
+				local oItem = self.itemSlot[uid]
+				if oItem:canOverlapBy(item) then
+					oItem:overlapBy(item)
+					self:dirtyItem(oItem.uid)
+					if item.amount == 0 then
+						break
+					end
 				end
 			end
 		end
@@ -188,7 +192,7 @@ function cItemMgr:deleteItemByCid(cid,amount)
 			break
 		end
 
-		local oItem = self.slots[uid]
+		local oItem = self.itemSlot[uid]
 		if oItem.amount > left then
 			oItem.amount = oItem.amount - left
 			self:dirtyItem(oItem.uid)
@@ -201,7 +205,7 @@ function cItemMgr:deleteItemByCid(cid,amount)
 end
 
 function cItemMgr:deleteItemByUid(uid,amount)
-	local item = self.slots[uid]
+	local item = self.itemSlot[uid]
 	if item.amount > amount then
 		item.amount = item.amount - amount
 		self:dirtyItem(uid)
@@ -214,7 +218,7 @@ function cItemMgr:itemEnough(cid,amount)
 	local helperInfo = self.helper[cid]
 	local total = 0
 	for uid in pairs(helperInfo) do
-		local item = self.slots[uid]
+		local item = self.itemSlot[uid]
 		total = total + item.amount
 	end
 	return total >= amount
