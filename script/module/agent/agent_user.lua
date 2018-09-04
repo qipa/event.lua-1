@@ -44,16 +44,6 @@ function cAgentUser:db_index()
 	return {uid = self.uid}
 end
 
-function cAgentUser:send_client(proto,args)
-	local message_id,data = protocol.encode[proto](args)
-	self:forward_client(message_id,data)
-end
-
-function cAgentUser:forward_client(message_id,data)
-	local client_manager = model.get_client_manager()
-	client_manager:send(self.cid,message_id,data)
-end
-
 function cAgentUser:enterGame()
 	
 	self.itemMgr:onEnterGame(self)
@@ -67,11 +57,6 @@ function cAgentUser:leaveGame()
 	self.itemMgr:onLeaveGame(self)
 	self:fire_event("LEAVE_GAME")
 	event.error(string.format("user:%d leave agent:%d",self.uid,env.dist_id))
-end
-
-function cAgentUser:forward_world(message_id,message)
-	local world_channel = model.get_world_channel()
-	world_channel:send("handler.world_handler","forward",{uid = self.uid, message_id = message_id, message = message})
 end
 
 function cAgentUser:forward_scene(message_id,message)
