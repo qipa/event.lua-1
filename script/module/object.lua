@@ -280,6 +280,13 @@ function class.objectInfo(name,objectId,...)
 	if not object then
 		return
 	end
+
+	local result = object
+	for i = 1, select('#',...) do
+		local member = select(i,...)
+		result = result[member]
+	end
+	return result
 end
 
 function class.countObject(name)
