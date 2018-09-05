@@ -14,7 +14,7 @@ local eUSER_STATUS = {
 	ALIVE = 1,
 	DEAD = 2 }
 
-cAgentUser = database_object.cls_database:inherit("agent_user","uid","cid")
+cAgentUser = database_object.cDatabase:inherit("agent_user","uid","cid")
 
 
 function __init__(self)
@@ -40,7 +40,7 @@ function cAgentUser:destroy()
 	model.unbind_agent_user_with_cid(self.cid)
 end
 
-function cAgentUser:db_index()
+function cAgentUser:dbIndex()
 	return {uid = self.uid}
 end
 

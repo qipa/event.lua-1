@@ -12,7 +12,7 @@ end
 function cBagMgr:create(...)
 	itemMgr.cItemMgr.create(self)
 	self.gridMax = 30
-	self:dirty_field("gridMax")
+	self:dirtyField("gridMax")
 end
 
 function cBagMgr:destroy()

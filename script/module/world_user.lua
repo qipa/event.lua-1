@@ -6,7 +6,7 @@ local protocol = require "protocol"
 local server_manager = import "module.server_manager"
 local database_object = import "module.database_object"
 
-cls_world_user = database_object.cls_database:inherit("world_user","uid")
+cls_world_user = database_object.cDatabase:inherit("world_user","uid")
 
 function __init__(self)
 	self.cls_world_user:save_field("base_info")
@@ -26,7 +26,7 @@ function cls_world_user:destroy()
 	model.unbind_world_user_with_uid(self.uid)
 end
 
-function cls_world_user:db_index()
+function cls_world_user:dbIndex()
 	return {uid = self.uid}
 end
 

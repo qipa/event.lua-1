@@ -12,7 +12,7 @@ end
 function init(self,user)
 	if not user.task_mgr then
 		user.task_mgr = {uid = user.uid,task_info = {}}
-		user:dirty_field("task_mgr")
+		user:dirtyField("task_mgr")
 	end
 	
 	user:register_event("ENTER_GAME",self,"enter_game")

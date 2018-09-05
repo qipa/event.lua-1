@@ -27,10 +27,10 @@ function cItemContainer:destroy()
 
 end
 
-function cItemContainer:dirty_field(obj)
+function cItemContainer:dirtyField(obj)
 	self.__dirty[obj.__name] = true
 	if self.__parentObj then
-		self.__parentObj:dirty_field(self)
+		self.__parentObj:dirtyField(self)
 	end
 end
 

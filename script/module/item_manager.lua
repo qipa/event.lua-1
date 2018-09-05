@@ -12,7 +12,7 @@ local module_currency = import "module.item.currency"
 
 
 
-cls_item_mgr = database_collection.cls_collection:inherit("item_mgr")
+cls_item_mgr = database_collection.cCollection:inherit("item_mgr")
 
 function __init__(self)
 	self.cls_item_mgr:save_field("uid")
@@ -27,8 +27,8 @@ function cls_item_mgr:create(user)
 	self.cid_ctx = {}
 	self.slot_count = 0
 
-	self:dirty_field("uid")
-	self:dirty_field("mgr")
+	self:dirtyField("uid")
+	self:dirtyField("mgr")
 end
 
 function cls_item_mgr:init(user)
@@ -37,7 +37,7 @@ function cls_item_mgr:init(user)
 	user:register_event("ENTER_GAME",self,"enter_game")
 	user:register_event("LEAVE_GAME",self,"leave_game")
 	self.mgr = {}
-	self:dirty_field("mgr")
+	self:dirtyField("mgr")
 end
 
 function cls_item_mgr:destroy()

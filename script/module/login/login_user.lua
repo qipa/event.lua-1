@@ -11,7 +11,7 @@ local agentMgr = import "module.login.agent_manager"
 local clientMgr = import "module.client_manager"
 local loginServer = import "module.login.login_server"
 
-cLoginUser = database_object.cls_database:inherit("login_user","account","cid")
+cLoginUser = database_object.cDatabase:inherit("login_user","account","cid")
 
 function __init__(self)
 	self.cLoginUser:save_field("accountInfo")
@@ -24,7 +24,7 @@ function cLoginUser:create(cid,account)
 	
 end
 
-function cLoginUser:db_index()
+function cLoginUser:dbIndex()
 	return {account = self.account}
 end
 
@@ -38,7 +38,7 @@ function cLoginUser:auth()
 
 	if not self.accountInfo then
 		self.accountInfo = {list = {}}
-		self:dirty_field("accountInfo")
+		self:dirtyField("accountInfo")
 	end
 
 	local result = {}
@@ -55,7 +55,7 @@ end
 function cLoginUser:createRole(career,name)
 	local role = {career = career,name = "mrq",uid = id_builder:alloc_user_uid()}
 	table.insert(self.accountInfo.list,role)
-	self:dirty_field("accountInfo")
+	self:dirtyField("accountInfo")
 
 	local result = {}
 	for _,role in pairs(self.accountInfo.list) do

@@ -4,7 +4,7 @@ local dbCollection = import "module.database_collection"
 local itemFactory = import "module.agent.item.item_factory"
 
 
-cItemMgr = dbCollection.cls_collection:inherit("item_mgr")
+cItemMgr = dbCollection.cCollection:inherit("item_mgr")
 
 function __init__(self)
 	self.cItemMgr:save_field("itemSlot")
@@ -29,11 +29,11 @@ function cItemMgr:dirtyItem(itemUid)
 		self.__dirtyItem = {}
 	end
 	self.__dirtyItem[itemUid] = true
-	self:dirty_field("itemSlot")
+	self:dirtyField("itemSlot")
 end
 
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
-	local inst = dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
+	local inst = dbCollection.cCollection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
 	inst.helper = {}
 	inst.gridCount = 0
@@ -58,7 +58,7 @@ function cItemMgr:save(dbChannel,db,dbIndex)
 	if self.__dirty["itemSlot"] then
 		self.__dirty["itemSlot"] = nil
 	end
-	dbCollection.cls_collection.save(self,dbChannel,db,dbIndex)
+	dbCollection.cCollection.save(self,dbChannel,db,dbIndex)
 
 	local set
 	local unset 
@@ -226,7 +226,7 @@ function cItemMgr:insertItem(item,insertLog)
 		return false
 	end
 	
-	self:dirty_field("itemSlot")
+	self:dirtyField("itemSlot")
 
 	local helperInfo = self.helper[item.cid]
 	if helperInfo then
@@ -272,7 +272,7 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 		return false
 	end
 
-	self:dirty_field("itemSlot")
+	self:dirtyField("itemSlot")
 
 	local helperInfo = self.helper[cid]
 
@@ -298,7 +298,7 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 end
 
 function cItemMgr:deleteItemByUid(uid,amount)
-	self:dirty_field("itemSlot")
+	self:dirtyField("itemSlot")
 	local item = self.itemSlot[uid]
 	if item.amount > amount then
 		item.amount = item.amount - amount
