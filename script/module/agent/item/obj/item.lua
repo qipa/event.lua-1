@@ -31,6 +31,22 @@ function cItem:use(user)
 	
 end
 
+function cItem:canOverlapByCid(cid,amount)
+	if self.cid ~= cid then
+		return false,amount
+	end
+	local cfg = config.item[cid]
+	if not cfg.overlap or cfg.overlap == 0 then
+		return true
+	end
+
+	local total = self.amount + amount
+	if total > cfg.overlap then
+		return false,total - cfg.overlapBy
+	end
+	return true
+end
+
 function cItem:canOverlapBy(item)
 	local more = self:overlapMore()
 	if more == 0 then

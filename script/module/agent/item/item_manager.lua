@@ -34,6 +34,7 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
 	self.helper = {}
+	self.gridCount = 0
 	if self.itemSlot then
 		for itemUid,item in pairs(self.itemSlot) do
 			itemSlot[tonumber(itemUid)] = item
@@ -44,6 +45,7 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 				self.helper[item.cid] = info
 			end
 			info[item.uid] = true
+			self.gridCount = self.gridCount + 1
 		end
 	end
 	self.itemSlot = itemSlot
@@ -117,6 +119,7 @@ local function _addItem(self,item)
 		self.helper[item.cid] = info
 	end
 	info[item.uid] = true
+	self.gridCount = self.gridCount + 1
 	self:dirtyItem(item.uid)
 end
 
@@ -126,22 +129,60 @@ local function _delItem(self,item)
 
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
+	self.gridCount = self.gridCount - 1
 	item:destroy()
 	self:dirtyItem(item.uid)
+end
+
+local function _calcGridCount(cid,amount,cfg)
+	if not cfg then
+		cfg = config.item[cid]
+	end
+	local cfg = config.item[cid]
+	if not cfg.overlap or cfg.overlap == 0 then
+		return 1
+	end
+	return math.ceil(amount / cfg.overlap)
 end
 
 function cItemMgr:getItem(itemUid)
 	return self.itemSlot[itemUid]
 end
 
-function cItemMgr:insertItemByCidList(list)
-	if not self:canInsertList(list) then
-		return false
+function cItemMgr:getGridCount()
+	return self.gridCount
+end
+
+function cItemMgr:needGridCount(cid,amount)
+	local cfg = config.item[cid]
+	local info = self.helper[cid]
+	if not info then
+		return _calcGridCount(cid,amount,cfg)
 	end
+
+	local gridCount = 0
+	for itemUid in pairs(info) do
+		local item = self.itemSlot[itemUid]
+		local ok,left = item:canOverlapByCid(cid,amount)
+		if not ok then
+			gridCount = gridCount + 1
+			amount = left
+		end
+	end
+	gridCount = gridCount + _calcGridCount(cid,amount,cfg)
+	return gridCount
+end
+
+function cItemMgr:insertItemByCidList(list)
 	local insertMap = {}
 	for _,info in pairs(list) do
 		insertMap[info.cid] = (insertMap[info.cid] or 0) + info.amount
 	end
+
+	if not self:canInsertList(insertMap) then
+		return false
+	end
+
 	local insertLog = {}
 	for cid,amount in pairs(insertMap) do
 		self:insertItemByCid(cid,amount,insertLog)
@@ -295,7 +336,7 @@ function cItemMgr:itemEnough(cid,amount)
 	return total >= amount
 end
 
-function cItemMgr:canInsert(list)
+function cItemMgr:canInsertList(list)
 	return true
 end
 
