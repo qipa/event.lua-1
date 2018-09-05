@@ -7,7 +7,7 @@ local fighter = import "module.scene.fighter"
 local monster = import "module.scene.monster"
 local sceneServer = import "module.scene.scene_server"
 local itemFactory = import "module.agent.item.item_factory"
-local itemMgr = import "module.agent.item.item_container"
+local itemContainer = import "module.agent.item.item_container"
 -- sceneServer:createScene(1001,1)
 
 -- local userData = table.tostring({uid = 1,pos = {1,1}})
@@ -35,14 +35,14 @@ end
 event.fork(function ()
 	startup.run(false,env.mongodb,env.config)
 	idBuilder:init(1)
-local itemMgrInst = itemMgr.cItemMgr:load(nil,db_channel,"user",{userUid = 5})
-if not itemMgrInst then
-	itemMgrInst = itemMgr.cItemMgr:new()
-end
+	local container = itemContainer.cItemContainer:load(nil,db_channel,"user",{userUid = 5})
+	if not container then
+		container = itemContainer.cItemContainer:new()
+	end
 
-itemMgrInst:insertItemByCid(100,1)
-itemMgrInst:save(db_channel,"user",{userUid = 5})
-table.print(itemMgr)
+	container:insertItemByCid(100,1)
+	container:save(db_channel,"user",{userUid = 5})
+	table.print(container)
 
 end)
 

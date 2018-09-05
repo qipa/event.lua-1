@@ -12,7 +12,9 @@ end
 
 
 function cItemMgr:create()
-
+	self.helper = {}
+	self.itemSlot = {}
+	self.gridCount = 0
 end
 
 function cItemMgr:destroy()
@@ -52,6 +54,7 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 end
 
 function cItemMgr:save(dbChannel,db,dbIndex)
+	print("save item mgr")
 	if self.__dirty["itemSlot"] then
 		self.__dirty["itemSlot"] = nil
 	end
@@ -190,6 +193,9 @@ function cItemMgr:insertItemByCidList(list)
 end
 
 function cItemMgr:insertItemByCid(cid,amount,insertLog)
+	if not insertLog then
+		insertLog = {}
+	end
 	local itemConf = config.item[cid]
 	if not itemConf then
 		error(string.format("no such item:%d",cid))
@@ -198,53 +204,47 @@ function cItemMgr:insertItemByCid(cid,amount,insertLog)
 		self.__user:addAttr(itemConf.attr,amount)
 		return
 	end
-
 	local items = itemFactory:createItem(cid,amount)
-
 	for _,item in pairs(items) do
 		self:insertItem(item,insertLog)
 	end
 end
 
 function cItemMgr:insertItem(item,insertLog)
+	if not insertLog then
+		insertLog = {}
+	end
 	local itemConf = config.item[item.cid]
 	if itemConf.useRightnow then
 		item:use()
 		item:release()
 		return
 	end
-
 	if not self:canInsert(item.cid,item.amount) then
 		return false
 	end
-
+	
 	self:dirty_field("itemSlot")
 
-	if itemConf.overlap > 1 then
-
-		local helperInfo = self.helper[cid]
-		if helperInfo then
-			for uid in pairs(helperInfo) do
-				local oItem = self.itemSlot[uid]
-				if oItem:canOverlapBy(item) then
-					oItem:overlapBy(item)
-					insertLog[oItem.uid] = oItem.amount
-					self:dirtyItem(oItem.uid)
-					if item.amount == 0 then
-						break
-					end
+	local helperInfo = self.helper[cid]
+	if helperInfo then
+		for uid in pairs(helperInfo) do
+			local oItem = self.itemSlot[uid]
+			if oItem:canOverlapBy(item) then
+				oItem:overlapBy(item)
+				insertLog[oItem.uid] = oItem.amount
+				self:dirtyItem(oItem.uid)
+				if item.amount == 0 then
+					break
 				end
 			end
 		end
-
-		if item.amount > 0 then
-			_addItem(self,item)
-			insertLog[item.uid] = item.amount
-		else
-			item:release()
-		end
-	else
+	end
+	if item.amount > 0 then
 		_addItem(self,item)
+		insertLog[item.uid] = item.amount
+	else
+		item:release()
 	end
 
 	insertLog[item.uid] = item.amount

@@ -1,6 +1,6 @@
 local idBuilder = import "module.id_builder"
 local itemFactory = import "module.agent.item.item_factory"
-local itemMgr = import "module.agent.item.item_mgr"
+local itemMgr = import "module.agent.item.item_manager"
 
 cEquipmentMgr = itemMgr.cItemMgr:inherit("equipmentMgr")
 
@@ -9,7 +9,7 @@ end
 
 
 function cEquipmentMgr:create()
-
+	itemMgr.cItemMgr:create()
 end
 
 function cEquipmentMgr:destroy()

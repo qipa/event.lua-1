@@ -2,7 +2,10 @@ local idBuilder = import "module.id_builder"
 local common = import "common.common"
 local dbCollection = import "module.database_collection"
 local itemFactory = import "module.agent.item.item_factory"
-
+local currencyMgr = import "module.agent.item.currency_manager"
+local bagMgr = import "module.agent.item.bag_manager"
+local petMgr = import "module.agent.item.pet_manager"
+local equipmentMgr = import "module.agent.item.equipment_manager"
 
 cItemContainer = dbCollection.cls_collection:inherit("item_container")
 
@@ -31,14 +34,16 @@ end
 function cItemContainer:load(parent,dbChannel,db,dbIndex)
 	local inst = self:new()
 	for field in pairs(self.__save_fields) do
-		local result
-		local cls = class.get(field)
-		assert(cls ~= nil,field)
-		local result = cls:load(inst,dbChannel,db,dbIndex)
-		if result then
-			inst[field] = result
-		else
-			inst[field] = cls:new()
+		if field ~= "__name" then
+			local result
+			local cls = class.get(field)
+			assert(cls ~= nil,field)
+			local result = cls:load(inst,dbChannel,db,dbIndex)
+			if result then
+				inst[field] = result
+			else
+				inst[field] = cls:new()
+			end
 		end
 	end
 	inst.__parentObj = parent
@@ -46,8 +51,10 @@ function cItemContainer:load(parent,dbChannel,db,dbIndex)
 end
 
 function cItemContainer:save(dbChannel,db,dbIndex)
+	table.print(self.__dirty)
 	for field in pairs(self.__dirty) do
 		if save_fields[field] ~= nil then
+			print("save",field)
 			local inst = save_fields[field]
 			inst:save(dbChannel,db,dbIndex)
 		end

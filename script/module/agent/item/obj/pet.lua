@@ -1,5 +1,5 @@
 local id_builder = import "module.id_builder"
-local item = import "module.agent.item.item"
+local item = import "module.agent.item.obj.item"
 
 
 cPet = item.cItem:inherit("pet")

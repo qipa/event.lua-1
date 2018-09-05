@@ -2,7 +2,7 @@ local id_builder = import "module.id_builder"
 local object = import "module.object"
 
 
-cItem = object.cls_base:inherit("item")
+cItem = object.cls_base:inherit("item","uid")
 
 function __init__(self)
 	self.cItem:save_field("uid")

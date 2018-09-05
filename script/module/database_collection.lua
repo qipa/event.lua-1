@@ -24,6 +24,10 @@ function cls_collection:load(parent,db_channel,db,db_index)
 		local obj = class.instance_from(name,result)
 		obj.__parentObj = parent
 		return obj
+	else
+		local obj = class.new(name)
+		obj.__parentObj = parent
+		return obj
 	end
 end
 

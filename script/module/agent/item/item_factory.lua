@@ -1,8 +1,6 @@
 
 
-
 function __init__(self)
-
 end
 
 local categoryCreator = {
@@ -25,11 +23,17 @@ function createItem(self,cid,amount)
 
 	local left = amount
 	while left > 0 do
-		local count = itemConf.overlap
-		if count > left then
-			count = count - left
+		local count
+		if not itemConf.overlap or itemConf.overlap == 0 then
+			left = 0
+			count = amount
+		else
+			count = itemConf.overlap
+			if count > left then
+				count = count - left
+			end
+			left = left - count
 		end
-		left = left - count
 		local item = creator:new(cid,count)
 		item:init()
 		table.insert(result,item)
