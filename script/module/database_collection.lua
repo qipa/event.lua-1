@@ -16,9 +16,9 @@ function cls_collection:dirty_field(field)
 	end
 end
 
-function cls_collection:load(parent,db_channel,db,db_index)
+function cls_collection:load(parent,dbChannel,db,dbIndex)
 	local name = self.__name
-	local result = db_channel:findOne(db,name,{query = db_index})
+	local result = dbChannel:findOne(db,name,{query = dbIndex})
 	if result then
 		assert(name == result.__name)
 		local obj = class.instance_from(name,result)
@@ -31,7 +31,7 @@ function cls_collection:load(parent,db_channel,db,db_index)
 	end
 end
 
-function cls_collection:save(db_channel,db,db_index)
+function cls_collection:save(dbChannel,db,dbIndex)
 	local save_fields = self.__save_fields
 	local set
 	local unset
@@ -64,6 +64,6 @@ function cls_collection:save(db_channel,db,db_index)
 	end
 	
 	if dirty then
-		db_channel:update(db,self.__name,db_index,updater,true)
+		dbChannel:update(db,self.__name,dbIndex,updater,true)
 	end
 end

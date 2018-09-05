@@ -1,8 +1,8 @@
 local id_builder = import "module.id_builder"
-local object = import "module.object"
+local item = import "module.agent.item.obj.item"
 
 
-cProps = object.cls_base:inherit("props")
+cProps = item.cItem:inherit("pet")
 
 function __init__(self)
 

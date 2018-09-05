@@ -9,7 +9,7 @@ end
 
 
 function cPetMgr:create()
-	itemMgr.cItemMgr:create()
+	itemMgr.cItemMgr.create(self)
 end
 
 function cPetMgr:destroy()

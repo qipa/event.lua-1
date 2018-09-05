@@ -33,28 +33,28 @@ function cItemMgr:dirtyItem(itemUid)
 end
 
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
-	dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
+	local inst = dbCollection.cls_collection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
-	self.helper = {}
-	self.gridCount = 0
-	if self.itemSlot then
-		for itemUid,item in pairs(self.itemSlot) do
+	inst.helper = {}
+	inst.gridCount = 0
+	if inst.itemSlot then
+		for itemUid,item in pairs(inst.itemSlot) do
 			itemSlot[tonumber(itemUid)] = item
 			model.bind_item_with_uid(itemUid,item)
-			local info = self.helper[item.cid]
+			local info = inst.helper[item.cid]
 			if not info then
 				info = {}
-				self.helper[item.cid] = info
+				inst.helper[item.cid] = info
 			end
 			info[item.uid] = true
-			self.gridCount = self.gridCount + 1
+			inst.gridCount = inst.gridCount + 1
 		end
 	end
-	self.itemSlot = itemSlot
+	inst.itemSlot = itemSlot
+	return inst
 end
 
 function cItemMgr:save(dbChannel,db,dbIndex)
-	print("save item mgr")
 	if self.__dirty["itemSlot"] then
 		self.__dirty["itemSlot"] = nil
 	end
@@ -205,6 +205,7 @@ function cItemMgr:insertItemByCid(cid,amount,insertLog)
 		return
 	end
 	local items = itemFactory:createItem(cid,amount)
+	table.print(items)
 	for _,item in pairs(items) do
 		self:insertItem(item,insertLog)
 	end
@@ -215,6 +216,7 @@ function cItemMgr:insertItem(item,insertLog)
 		insertLog = {}
 	end
 	local itemConf = config.item[item.cid]
+	assert(itemConf ~= nil,item.cid)
 	if itemConf.useRightnow then
 		item:use()
 		item:release()
@@ -226,7 +228,7 @@ function cItemMgr:insertItem(item,insertLog)
 	
 	self:dirty_field("itemSlot")
 
-	local helperInfo = self.helper[cid]
+	local helperInfo = self.helper[item.cid]
 	if helperInfo then
 		for uid in pairs(helperInfo) do
 			local oItem = self.itemSlot[uid]
@@ -246,8 +248,6 @@ function cItemMgr:insertItem(item,insertLog)
 	else
 		item:release()
 	end
-
-	insertLog[item.uid] = item.amount
 end
 
 function cItemMgr:deleteItemByCidList(list)

@@ -9,7 +9,7 @@ end
 
 
 function cEquipmentMgr:create()
-	itemMgr.cItemMgr:create()
+	itemMgr.cItemMgr.create(self)
 end
 
 function cEquipmentMgr:destroy()

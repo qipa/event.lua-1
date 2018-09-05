@@ -8,6 +8,7 @@ function __init__(self)
 	self.cItem:save_field("uid")
 	self.cItem:save_field("cid")
 	self.cItem:save_field("amount")
+	self.cItem:save_field("__name")
 end
 
 function cItem:create(cid,amount)
@@ -42,7 +43,7 @@ function cItem:canOverlapByCid(cid,amount)
 
 	local total = self.amount + amount
 	if total > cfg.overlap then
-		return false,total - cfg.overlapBy
+		return false,total - cfg.overlap
 	end
 	return true
 end

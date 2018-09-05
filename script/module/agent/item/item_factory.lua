@@ -1,15 +1,15 @@
-
+local common = import "common.common"
 
 function __init__(self)
 end
 
 local categoryCreator = {
-	[1] = import "module.agent.item.obj.item".cItem,
-	[2] = import "module.agent.item.obj.equipment".cEquipment,
-	[3] = import "module.agent.item.obj.currency".cCurrency,
-	[4] = import "module.agent.item.obj.material".cMaterial,
-	[5] = import "module.agent.item.obj.props".cProps,
-	[6] = import "module.agent.item.obj.pet".cPet,
+	[common.eITEM_CATETORY.ITEM] = import "module.agent.item.obj.item".cItem,
+	[common.eITEM_CATETORY.CURRENCY] = import "module.agent.item.obj.currency".cCurrency,
+	[common.eITEM_CATETORY.EQUIPMENT] = import "module.agent.item.obj.equipment".cEquipment,
+	[common.eITEM_CATETORY.MATERIAL] = import "module.agent.item.obj.material".cMaterial,
+	[common.eITEM_CATETORY.PROPS] = import "module.agent.item.obj.props".cProps,
+	[common.eITEM_CATETORY.PET] = import "module.agent.item.obj.pet".cPet,
 }
 
 
@@ -28,11 +28,13 @@ function createItem(self,cid,amount)
 			left = 0
 			count = amount
 		else
-			count = itemConf.overlap
-			if count > left then
-				count = count - left
+			if left > itemConf.overlap then
+				count = itemConf.overlap
+				left = left - itemConf.overlap
+			else
+				count = left
+				left = 0
 			end
-			left = left - count
 		end
 		local item = creator:new(cid,count)
 		item:init()

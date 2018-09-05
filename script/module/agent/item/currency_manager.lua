@@ -9,7 +9,7 @@ end
 
 
 function cCurrencyMgr:create()
-	itemMgr.cItemMgr:create()
+	itemMgr.cItemMgr.create(self)
 end
 
 function cCurrencyMgr:destroy()

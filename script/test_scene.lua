@@ -41,8 +41,10 @@ event.fork(function ()
 	end
 
 	container:insertItemByCid(100,1)
+	container:insertItemByCid(1000,1)
+	container:insertItemByCid(2000,1)
 	container:save(db_channel,"user",{userUid = 5})
-	table.print(container)
+	-- table.print(container)
 
 end)
 
