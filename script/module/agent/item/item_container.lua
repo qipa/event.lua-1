@@ -85,15 +85,18 @@ end
 
 
 function cItemContainer:getItem(itemUid)
-	for field in pairs(self.__save_fields) do
-		local inst = self[field]
-		if inst then
-			local item = inst:getItem(itemUid)
-			if item then
-				return item
-			end
-		end
-	end
+	local item = model.fetch_item_with_uid(itemUid)
+
+	-- for field in pairs(self.__save_fields) do
+	-- 	local inst = self[field]
+	-- 	if inst then
+	-- 		local item = inst:getItem(itemUid)
+	-- 		if item then
+	-- 			return item
+	-- 		end
+	-- 	end
+	-- end
+	return item
 end
 
 function cItemContainer:insertItemByCid(cid,amount)

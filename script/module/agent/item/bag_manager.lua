@@ -9,7 +9,7 @@ function __init__(self)
 end
 
 
-function cBagMgr:create()
+function cBagMgr:create(...)
 
 end
 

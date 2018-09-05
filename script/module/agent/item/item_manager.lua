@@ -1,3 +1,4 @@
+local model = require "model"
 local idBuilder = import "module.id_builder"
 local dbCollection = import "module.database_collection"
 local itemFactory = import "module.agent.item.item_factory"
@@ -6,7 +7,6 @@ local itemFactory = import "module.agent.item.item_factory"
 cItemMgr = dbCollection.cls_collection:inherit("item_mgr")
 
 function __init__(self)
-	self.cItemMgr:save_field("gridCount")
 	self.cItemMgr:save_field("itemSlot")
 end
 
@@ -16,7 +16,10 @@ function cItemMgr:create()
 end
 
 function cItemMgr:destroy()
-
+	for _,item in pairs(self.itemSlot) do
+		item:release()
+		model.unbind_item_with_uid(item.uid)
+	end
 end
 
 function cItemMgr:dirtyItem(itemUid)
@@ -34,6 +37,7 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 	if self.itemSlot then
 		for itemUid,item in pairs(self.itemSlot) do
 			itemSlot[tonumber(itemUid)] = item
+			model.bind_item_with_uid(itemUid,item)
 			local info = self.helper[item.cid]
 			if not info then
 				info = {}
@@ -105,6 +109,8 @@ local function _addItem(self,item)
 		item.uid = idBuilder:alloc_item_uid()
 	end
 	self.itemSlot[item.uid] = item
+	model.bind_item_with_uid(item.uid,item)
+
 	local info = self.helper[item.cid]
 	if not info then
 		info = {}
@@ -116,6 +122,8 @@ end
 
 local function _delItem(self,item)
 	self.itemSlot[item.uid] = nil
+	model.unbind_item_with_uid(item.uid)
+
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	item:destroy()
@@ -127,6 +135,9 @@ function cItemMgr:getItem(itemUid)
 end
 
 function cItemMgr:insertItemByCidList(list)
+	if not self:canInsertList(list) then
+		return false
+	end
 	local insertMap = {}
 	for _,info in pairs(list) do
 		insertMap[info.cid] = (insertMap[info.cid] or 0) + info.amount
@@ -138,7 +149,6 @@ function cItemMgr:insertItemByCidList(list)
 end
 
 function cItemMgr:insertItemByCid(cid,amount,insertLog)
-	self:dirty_field("itemSlot")
 	local itemConf = config.item[cid]
 	if not itemConf then
 		error(string.format("no such item:%d",cid))
@@ -162,6 +172,12 @@ function cItemMgr:insertItem(item,insertLog)
 		item:release()
 		return
 	end
+
+	if not self:canInsert(item.cid,item.amount) then
+		return false
+	end
+
+	self:dirty_field("itemSlot")
 
 	if itemConf.overlap > 1 then
 
@@ -189,7 +205,7 @@ function cItemMgr:insertItem(item,insertLog)
 	else
 		_addItem(self,item)
 	end
-	
+
 	insertLog[item.uid] = item.amount
 end
 
@@ -215,6 +231,8 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 		return false
 	end
 
+	self:dirty_field("itemSlot")
+
 	local helperInfo = self.helper[cid]
 
 	local left = amount
@@ -239,6 +257,7 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 end
 
 function cItemMgr:deleteItemByUid(uid,amount)
+	self:dirty_field("itemSlot")
 	local item = self.itemSlot[uid]
 	if item.amount > amount then
 		item.amount = item.amount - amount
@@ -274,6 +293,14 @@ function cItemMgr:itemEnough(cid,amount)
 		total = total + item.amount
 	end
 	return total >= amount
+end
+
+function cItemMgr:canInsert(list)
+	return true
+end
+
+function cItemMgr:canInsert(cid,amount)
+	return true
 end
 
 function cItemMgr:useItem(itemUid,amount)

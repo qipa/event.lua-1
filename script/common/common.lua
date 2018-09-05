@@ -42,17 +42,18 @@ FIGHTER_STATE = {
 }
 
 eITEM_CATETORY = {
-	CURRENCY = 1,
-	EQUIPMENT = 2,
-	MATERIAL = 3,
-	PROP = 4,
-	PET = 5,
+	ITEM = 1,
+	CURRENCY = 2,
+	EQUIPMENT = 3,
+	MATERIAL = 4,
+	PROPS = 5,
+	PET = 6,
 }
 
 eITEM_CATEGORY_BAG = {
 	[eITEM_CATETORY.CURRENCY] = "currencyMgr",
 	[eITEM_CATETORY.EQUIPMENT] = "bagMgr",
 	[eITEM_CATETORY.MATERIAL] = "bagMgr",
-	[eITEM_CATETORY.PROP] = "bagMgr",
+	[eITEM_CATETORY.PROPS] = "bagMgr",
 	[eITEM_CATETORY.PET] = "petMgr",
 }
