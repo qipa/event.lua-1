@@ -6,6 +6,8 @@ local pairs = pairs
 local setmetatable = setmetatable
 local type = type
 
+objectId = objectId or 1
+
 classCtx = classCtx or {}
 
 objectCtx = objectCtx or {}
@@ -32,22 +34,24 @@ local function _resetObjectMeta(name)
 	if not objectSet then
 		return
 	end
-	for obj in pairs(objectSet) do
-		setmetatable(obj,{__index = cls})
+	for _,info in pairs(objectSet) do
+		setmetatable(info.object,{__index = cls})
 	end
 end
 
 function cObject:inherit(name,...)
 	local parent = classCtx[self.__name]
 
-	local old_cls = classCtx[name]
+	
 
 	local cls = {}
 	cls.__name = name
 	cls.__parent = parent.__name
 	cls.__childs = {}
+	cls.__method = {}
 	cls.__saveFields = {}
 	cls.__packFields = {}
+
 	if parent.__saveFields then
 		for f in pairs(parent.__saveFields) do
 			cls.__saveFields[f] = true
@@ -58,7 +62,7 @@ function cObject:inherit(name,...)
 			cls.__packFields[f] = true
 		end
 	end
-	cls.__method = {}
+
 	cls.__packFields["__name"] = true
 
 	assert(name ~= parent.__name)
@@ -70,9 +74,8 @@ function cObject:inherit(name,...)
 		return func
 	end}
 
-	local cls = setmetatable(cls,meta)
-	
-	classCtx[name] = cls
+	local oCls = classCtx[name]
+	classCtx[name] = setmetatable(cls,meta)
 
 	if oCls ~= nil then
 		--热更
@@ -104,22 +107,26 @@ function cObject:getType()
 end
 
 local function _newObject(self,object)
+	object.__objectId = objectId
 	object.__name = self.__name
+	object.__parent = self.__parent
 	object.__alive = true
 	object.__dirty = {}
 	object.__event = {}
 	object.__timer = {}
+
+	objectId = objectId + 1
 
 	setmetatable(object,{__index = self})
 
 	local objectType = self:getType()
 	local objectSet = objectCtx[objectType]
 	if objectSet == nil then
-		objectSet = setmetatable({},{__mode = "k"})
+		objectSet = setmetatable({},{__mode = "v"})
 		objectCtx[objectType] = objectSet
 	end
 
-	objectSet[object] = {time = os.time()}
+	objectSet[object.__objectId] = {object = object,time = os.time()}
 end
 
 
@@ -128,7 +135,7 @@ function cObject:new(...)
 	local self = classCtx[self.__name]
 	_newObject(self,object)
 
-	object:create(...)
+	object:ctor(...)
 
 	return object
 end
@@ -142,21 +149,21 @@ end
 
 function cObject:release()
 	self.__alive = false
-	self:destroy()
+	self:onDestroy()
 end
 
 --子类重写
-function cObject:create(...)
-
-end
-
---子类重写
-function cObject:init()
+function cObject:ctor()
 
 end
 
 --子类重写
-function cObject:destroy()
+function cObject:onCreate(...)
+
+end
+
+--子类重写
+function cObject:onDestroy()
 
 end
 
@@ -259,6 +266,61 @@ function class.get(name)
 	return classCtx[name]
 end
 
+function class.super(object)
+	return classCtx[object.__parent]
+end
+
+function class.objectInfo(name,objectId,...)
+	local objectSet = objectCtx[name]
+	if not objectSet then
+		return
+	end
+
+	local object = objectSet[objectId]
+	if not object then
+		return
+	end
+end
+
+function class.countObject(name)
+	collectgarbage("collect")
+
+	if not name then
+		for name,objectSet in pairs(objectCtx) do
+			local count = 0
+			for _,info in pairs(objectSet) do
+				count = count + 1
+			end
+			print(string.format("objectType=%s,amount=%d",name,count))
+		end
+	else
+		local objectSet = objectCtx[name]
+		if not objectSet then
+			return
+		end
+
+		local count = 0
+		for _,info in pairs(objectSet) do
+			count = count + 1
+		end
+		print(string.format("objectType=%s,amount=%d",name,count))
+	end
+end
+
+function class.countObjectVerbose(name)
+	local objectSet = objectCtx[name]
+	if not objectSet then
+		return
+	end
+	collectgarbage("collect")
+
+	local count = 0
+	for objectId,info in pairs(objectSet) do
+		count = count + 1
+		print(string.format("object:%s,createTime:%s,debugInfo:%s",info.object,os.date("%m-%d %H:%M:%S",math.floor(info.time/100)),info.object.__debugInfo or "unknown"))
+	end
+end
+
 function class.detectLeak()
 	collectgarbage("collect")
 
@@ -295,5 +357,5 @@ function class.detectLeak()
 	print(table.concat(log,"\n"))
 end
 
-_G["class"] = class
 rawset(_G,"class",class)
+rawset(_G,"super",class.super)
