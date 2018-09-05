@@ -42,8 +42,6 @@ end
 function cObject:inherit(name,...)
 	local parent = classCtx[self.__name]
 
-	
-
 	local cls = {}
 	cls.__name = name
 	cls.__parent = parent.__name
@@ -168,7 +166,7 @@ function cObject:onDestroy()
 end
 
 function cObject:packData()
-	local cls = class.get(self:getType())
+	local cls = class.get(self.__name)
 	local packFields = cls.__packFields
 	local saveFields = cls.__saveFields
 	local result = {}
@@ -181,7 +179,7 @@ function cObject:packData()
 end
 
 function cObject:saveData()
-	local cls = class.get(self:getType())
+	local cls = class.get(self.__name)
 	local saveFields = cls.__saveFields
 	local result = {}
 	for k,v in pairs(self) do
@@ -284,7 +282,9 @@ function class.objectInfo(name,objectId,...)
 	local result = object
 	for i = 1, select('#',...) do
 		local member = select(i,...)
-		result = result[member]
+		if not result[member] then
+			result = result[tonumber(member)]
+		end
 	end
 	return result
 end
