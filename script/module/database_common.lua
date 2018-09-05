@@ -25,7 +25,7 @@ end
 
 function cDatabaseCommon:load(name,index)
 	local dbChannel = model.get_db_channel()
-
+	
 	local result = dbChannel:findOne("common",name,{query = index})
 	if result then
 		if result.__name then

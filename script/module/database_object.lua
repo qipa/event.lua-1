@@ -17,7 +17,7 @@ function cDatabase:dbIndex()
 end
 
 function cDatabase:load()
-	local db_channel = model.get_db_channel()
+	local dbChannel = model.get_db_channel()
 	local db = self:getType()
 	local dbIndex = self:dbIndex()
 	for field in pairs(self.__saveFields) do
@@ -27,16 +27,16 @@ function cDatabase:load()
 		local result
 		local cls = class.get(field)
 		if cls then
-			result = cls:load(db_channel,db,dbIndex)
+			result = cls:load(self,dbChannel,db,dbIndex)
 		else
-			result = db_channel:findOne(db,field,{query = dbIndex})
+			result = dbChannel:findOne(db,field,{query = dbIndex})
 		end
 		self[field] = result
 	end
 end
 
 function cDatabase:save()
-	local db_channel = model.get_db_channel()
+	local dbChannel = model.get_db_channel()
 	local db = self:getType()
 	for field in pairs(self.__dirty) do
 		if self.__saveFields[field] ~= nil then
@@ -44,11 +44,11 @@ function cDatabase:save()
 			if data then
 				if type(data) == "table" then
 					if data.save then
-						data:save(db_channel,db,self:dbIndex())
+						data:save(dbChannel,db,self:dbIndex())
 					else
 						local updater = {}
 						updater["$set"] = data
-						db_channel:update(db,field,self:dbIndex(),updater,true)
+						dbChannel:update(db,field,self:dbIndex(),updater,true)
 					end
 				end
 			end
