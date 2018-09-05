@@ -15,7 +15,7 @@ db_channel:init()
 
 model.set_db_channel(db_channel)
 
-local db = db_common.cls_database_common:new(10)
+local db = db_common.cDatabaseCommon:new(10)
 
 event.fork(function ()
 	local data = db:load("role",{id = 1})

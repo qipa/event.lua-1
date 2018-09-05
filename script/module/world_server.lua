@@ -17,7 +17,7 @@ function __init__(self)
 		end
 	end)
 
-	self.db_common = database_common.cls_database_common:new(30)
+	self.db_common = database_common.cDatabaseCommon:new(30)
 
 	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
 end
