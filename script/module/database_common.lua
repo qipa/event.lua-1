@@ -3,7 +3,7 @@ local event = require "event"
 local object = import "module.object"
 
 --对应着mongodb中的database概念
-cls_database_common = object.cls_base:inherit("database_common")
+cls_database_common = object.cObject:inherit("database_common")
 
 db_common_inst = db_common_inst or nil
 
@@ -29,7 +29,7 @@ function cls_database_common:load(name,index)
 	local result = db_channel:findOne("common",name,{query = index})
 	if result then
 		if result.__name then
-			local obj = class.instance_from(result.__name,result)
+			local obj = class.instanceFrom(result.__name,result)
 			self.data_ctx[obj] = {name = name,index = index}
 			return obj
 		else

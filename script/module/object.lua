@@ -6,60 +6,60 @@ local pairs = pairs
 local setmetatable = setmetatable
 local type = type
 
-class_ctx = class_ctx or {}
+classCtx = classCtx or {}
 
-object_ctx = object_ctx or {}
+objectCtx = objectCtx or {}
 
-cls_base = cls_base or { __name = "root", __childs = {}}
+cObject = cObject or { __name = "root", __childs = {}}
 
-class_ctx[cls_base.__name] = cls_base
+classCtx[cObject.__name] = cObject
 
-local function clean_cls_func(cls)
+local function _cleanClsFunc(cls)
 	for name in pairs(cls.__childs) do
-		local child_cls = class_ctx[name]
-		for method in pairs(child_cls.__method) do
-			child_cls[method] = nil
+		local childCls = classCtx[name]
+		for method in pairs(childCls.__method) do
+			childCls[method] = nil
 		end
-		child_cls.__method = {}
+		childCls.__method = {}
 		
-		clean_cls_func(child_cls)
+		_cleanClsFunc(childCls)
 	end
 end
 
-local function reset_object_meta(name)
-	local cls = class_ctx[name]
-	local object_set = object_ctx[name]
-	if not object_set then
+local function _resetObjectMeta(name)
+	local cls = classCtx[name]
+	local objectSet = objectCtx[name]
+	if not objectSet then
 		return
 	end
-	for obj in pairs(object_set) do
+	for obj in pairs(objectSet) do
 		setmetatable(obj,{__index = cls})
 	end
 end
 
-function cls_base:inherit(name,...)
-	local parent = class_ctx[self.__name]
+function cObject:inherit(name,...)
+	local parent = classCtx[self.__name]
 
-	local old_cls = class_ctx[name]
+	local old_cls = classCtx[name]
 
 	local cls = {}
 	cls.__name = name
 	cls.__parent = parent.__name
 	cls.__childs = {}
-	cls.__save_fields = {}
-	cls.__pack_fields = {}
-	if parent.__save_fields then
-		for f in pairs(parent.__save_fields) do
-			cls.__save_fields[f] = true
+	cls.__saveFields = {}
+	cls.__packFields = {}
+	if parent.__saveFields then
+		for f in pairs(parent.__saveFields) do
+			cls.__saveFields[f] = true
 		end
 	end
-	if parent.__pack_fields then
-		for f in pairs(parent.__pack_fields) do
-			cls.__pack_fields[f] = true
+	if parent.__packFields then
+		for f in pairs(parent.__packFields) do
+			cls.__packFields[f] = true
 		end
 	end
 	cls.__method = {}
-	cls.__pack_fields["__name"] = true
+	cls.__packFields["__name"] = true
 
 	assert(name ~= parent.__name)
 
@@ -72,26 +72,26 @@ function cls_base:inherit(name,...)
 
 	local cls = setmetatable(cls,meta)
 	
-	class_ctx[name] = cls
+	classCtx[name] = cls
 
-	if old_cls ~= nil then
+	if oCls ~= nil then
 		--热更
-		clean_cls_func(old_cls)
+		_cleanClsFunc(oCls)
 
-		for name in pairs(old_cls.__childs) do
-			local child_cls = class_ctx[name]
-			local child_cls = setmetatable(child_cls,{ __index = function (obj,method)
+		for name in pairs(oCls.__childs) do
+			local childCls = classCtx[name]
+			local childCls = setmetatable(childCls,{ __index = function (obj,method)
 				local func = cls[method]
-				child_cls.__method[method] = true
-				child_cls[method] = func
+				childCls.__method[method] = true
+				childCls[method] = func
 				return func
 			end})
 		end
 
-		reset_object_meta(name)
+		_resetObjectMeta(name)
 	else
 		if select("#",...) > 0 then
-			model.register_binder(name,...)
+			model.registerBinder(name,...)
 		end
 	end
 	parent.__childs[name] = true
@@ -99,11 +99,11 @@ function cls_base:inherit(name,...)
 	return cls
 end
 
-function cls_base:get_type()
+function cObject:getType()
 	return self.__name
 end
 
-local function new_object(self,object)
+local function _newObject(self,object)
 	object.__name = self.__name
 	object.__alive = true
 	object.__dirty = {}
@@ -112,88 +112,88 @@ local function new_object(self,object)
 
 	setmetatable(object,{__index = self})
 
-	local object_type = self:get_type()
-	local object_set = object_ctx[object_type]
-	if object_set == nil then
-		object_set = setmetatable({},{__mode = "k"})
-		object_ctx[object_type] = object_set
+	local objectType = self:getType()
+	local objectSet = objectCtx[objectType]
+	if objectSet == nil then
+		objectSet = setmetatable({},{__mode = "k"})
+		objectCtx[objectType] = objectSet
 	end
 
-	object_set[object] = {time = os.time()}
+	objectSet[object] = {time = os.time()}
 end
 
 
-function cls_base:new(...)
+function cObject:new(...)
 	local object = {}
-	local self = class_ctx[self.__name]
-	new_object(self,object)
+	local self = classCtx[self.__name]
+	_newObject(self,object)
 
 	object:create(...)
 
 	return object
 end
 
-function cls_base:instance_from(object)
-	local object_type = self:get_type()
-	local class = class_ctx[object_type]
-	new_object(class,object)
+function cObject:instanceFrom(object)
+	local objectType = self:getType()
+	local class = classCtx[objectType]
+	_newObject(class,object)
 	return object
 end
 
-function cls_base:release()
+function cObject:release()
 	self.__alive = false
 	self:destroy()
 end
 
 --子类重写
-function cls_base:create(...)
+function cObject:create(...)
 
 end
 
 --子类重写
-function cls_base:init()
+function cObject:init()
 
 end
 
 --子类重写
-function cls_base:destroy()
+function cObject:destroy()
 
 end
 
-function cls_base:pack_data()
-	local cls = class.get(self:get_type())
-	local pack_fields = cls.__pack_fields
-	local save_fields = cls.__save_fields
+function cObject:packData()
+	local cls = class.get(self:getType())
+	local packFields = cls.__packFields
+	local saveFields = cls.__saveFields
 	local result = {}
 	for k,v in pairs(self) do
-		if pack_fields[k] or save_fields[k] then
+		if packFields[k] or saveFields[k] then
 			result[k] = v
 		end
 	end
 	return result
 end
 
-function cls_base:save_data()
-	local cls = class.get(self:get_type())
-	local save_fields = cls.__save_fields
+function cObject:saveData()
+	local cls = class.get(self:getType())
+	local saveFields = cls.__saveFields
 	local result = {}
 	for k,v in pairs(self) do
-		if save_fields[k] then
+		if saveFields[k] then
 			result[k] = v
 		end
 	end
 	return result
 end
 
-function cls_base:save_field(field)
-	self.__save_fields[field] = true
+function cObject:saveField(field)
+	self.__saveFields[field] = true
 end
 
-function cls_base:pack_field(field)
-	self.__pack_fields[field] = true
+function cObject:packField(field)
+	self.__packFields[field] = true
 end
 
-function cls_base:register_event(ev,inst,method)
+function cObject:registerEvent(ev,inst,method)
 	local ev_list = self.__event[ev]
 	if not ev_list then
 		ev_list = {}
@@ -202,7 +202,7 @@ function cls_base:register_event(ev,inst,method)
 	ev_list[inst] = method
 end
 
-function cls_base:deregister_event(inst,ev)
+function cObject:deregisterEvent(inst,ev)
 	local ev_list = self.__event[ev]
 	if not ev_list then
 		return
@@ -210,7 +210,7 @@ function cls_base:deregister_event(inst,ev)
 	ev_list[inst] = nil
 end
 
-function cls_base:fire_event(ev,...)
+function cObject:fireEvent(ev,...)
 	local ev_list = self.__event[ev]
 	if not ev_list then
 		return
@@ -235,61 +235,61 @@ function class.new(name,...)
 	return cls:new(...)
 end
 
-local function instance_subobject(inst)
+local function instanceSubobject(inst)
 	for k,v in pairs(inst) do
 		if type(v) == "table" then
 			if v.__name then
-				inst[k] = class.instance_from(v.__name,v)
+				inst[k] = class.instanceFrom(v.__name,v)
 			else
-				instance_subobject(v)
+				instanceSubobject(v)
 			end
 		end
 	end
 end
 
-function class.instance_from(name,data)
+function class.instanceFrom(name,data)
 	local cls = class.get(name)
 	assert(cls ~= nil,name)
-	local inst = cls:instance_from(data)
-	instance_subobject(inst)
+	local inst = cls:instanceFrom(data)
+	instanceSubobject(inst)
 	return inst
 end
 
 function class.get(name)
-	return class_ctx[name]
+	return classCtx[name]
 end
 
-function class.detect_leak()
+function class.detectLeak()
 	collectgarbage("collect")
 
-	local leak_obj = {}
+	local leakObj = {}
 
-	for name in pairs(class_ctx) do
-		local object_set = object_ctx[name]
-		if object_set then
-			for weak_obj,info in pairs(object_set) do
-				local alive_object_ctx = model[string.format("fetch_%s",name)]()
+	for name in pairs(classCtx) do
+		local objectSet = objectCtx[name]
+		if objectSet then
+			for weakObj,info in pairs(objectSet) do
+				local aliveObjectCtx = model[string.format("fetch_%s",name)]()
 				local alive = false
 
-				if alive_object_ctx then
-					local _,alive_object = next(alive_object_ctx)
-					for _,obj in pairs(alive_object) do
-						if weak_obj == obj then
+				if aliveObjectCtx then
+					local _,aliveObject = next(aliveObjectCtx)
+					for _,obj in pairs(aliveObject) do
+						if weakObj == obj then
 							alive = true
 							break
 						end
 					end
 				end
 				if not alive then
-					leak_obj[weak_obj] = info
+					leakObj[weakObj] = info
 				end
 			end
 		end
 	end
 	
 	local log = {}
-	for obj,info in pairs(leak_obj) do
-		table.insert(log,string.format("object type:%s,create time:%s,debug info:%s",obj:get_type(),os.date("%m-%d %H:%M:%S",math.floor(info.time/100)),obj.__debugInfo or "unknown"))
+	for obj,info in pairs(leakObj) do
+		table.insert(log,string.format("object type:%s,create time:%s,debug info:%s",obj:getType(),os.date("%m-%d %H:%M:%S",math.floor(info.time/100)),obj.__debugInfo or "unknown"))
 	end
 	print("-----------------detect leak object-----------------")
 	print(table.concat(log,"\n"))

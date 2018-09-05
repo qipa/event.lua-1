@@ -7,7 +7,7 @@ local itemFactory = import "module.agent.item.item_factory"
 cItemMgr = dbCollection.cCollection:inherit("item_mgr")
 
 function __init__(self)
-	self.cItemMgr:save_field("itemSlot")
+	self.cItemMgr:saveField("itemSlot")
 end
 
 

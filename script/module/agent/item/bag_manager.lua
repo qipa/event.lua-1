@@ -5,7 +5,7 @@ local itemMgr = import "module.agent.item.item_manager"
 cBagMgr = itemMgr.cItemMgr:inherit("bagMgr")
 
 function __init__(self)
-	self.cBagMgr:save_field("gridMax")
+	self.cBagMgr:saveField("gridMax")
 end
 
 

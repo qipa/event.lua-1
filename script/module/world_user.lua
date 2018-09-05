@@ -9,8 +9,8 @@ local database_object = import "module.database_object"
 cls_world_user = database_object.cDatabase:inherit("world_user","uid")
 
 function __init__(self)
-	self.cls_world_user:save_field("base_info")
-	self.cls_world_user:save_field("world_user")
+	self.cls_world_user:saveField("base_info")
+	self.cls_world_user:saveField("world_user")
 end
 
 

@@ -6,7 +6,7 @@ local _binder_ctx = {}
 local _value_ctx = {}
 
 
-function _M.register_binder(name,...)
+function _M.registerBinder(name,...)
 	local keys = {...}
 	assert(#keys ~= 0)
 
@@ -58,7 +58,7 @@ function _M.register_binder(name,...)
 	end
 end
 
-function _M.register_value(name)
+function _M.registerValue(name)
 	_M[string.format("set_%s",name)] = function (value)
 		_value_ctx[name] = {time = os.time(),value = value}
 	end

@@ -8,7 +8,7 @@ local id_builder = import "module.id_builder"
 _agent_ctx = _agent_ctx or {}
 
 function __init__(self)
-	server_manager:register_event("SERVER_DOWN",self,"server_down")
+	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
 end
 
 function server_down(self,name,srv_id)

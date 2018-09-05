@@ -14,8 +14,8 @@ local loginServer = import "module.login.login_server"
 cLoginUser = database_object.cDatabase:inherit("login_user","account","cid")
 
 function __init__(self)
-	self.cLoginUser:save_field("accountInfo")
-	self.cLoginUser:save_field("forbidInfo")
+	self.cLoginUser:saveField("accountInfo")
+	self.cLoginUser:saveField("forbidInfo")
 end
 
 function cLoginUser:create(cid,account)

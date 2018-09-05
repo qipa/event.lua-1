@@ -1,11 +1,11 @@
 local object = import "module.object"
 
 --对应着mongodb中的文档集合(collection)概念
-cCollection = object.cls_base:inherit("database_collection")
+cCollection = object.cObject:inherit("database_collection")
 
 
 function __init__(self)
-	self.cCollection:save_field("__name")
+	self.cCollection:saveField("__name")
 end
 
 function cCollection:dirtyField(field)
@@ -21,7 +21,7 @@ function cCollection:load(parent,dbChannel,db,dbIndex)
 	local result = dbChannel:findOne(db,name,{query = dbIndex})
 	if result then
 		assert(name == result.__name)
-		local obj = class.instance_from(name,result)
+		local obj = class.instanceFrom(name,result)
 		obj.__parentObj = parent
 		return obj
 	else
@@ -32,7 +32,7 @@ function cCollection:load(parent,dbChannel,db,dbIndex)
 end
 
 function cCollection:save(dbChannel,db,dbIndex)
-	local save_fields = self.__save_fields
+	local save_fields = self.__saveFields
 	local set
 	local unset
 	for field in pairs(self.__dirty) do

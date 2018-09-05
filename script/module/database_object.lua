@@ -2,7 +2,7 @@ local model = require "model"
 local object = import "module.object"
 
 --对应着mongodb中的database概念
-cDatabase = object.cls_base:inherit("database_object")
+cDatabase = object.cObject:inherit("database_object")
 
 local pairs = pairs
 local type = type
@@ -18,9 +18,9 @@ end
 
 function cDatabase:load()
 	local db_channel = model.get_db_channel()
-	local db = self:get_type()
+	local db = self:getType()
 	local dbIndex = self:dbIndex()
-	for field in pairs(self.__save_fields) do
+	for field in pairs(self.__saveFields) do
 		if not self.__alive then
 			break
 		end
@@ -37,9 +37,9 @@ end
 
 function cDatabase:save()
 	local db_channel = model.get_db_channel()
-	local db = self:get_type()
+	local db = self:getType()
 	for field in pairs(self.__dirty) do
-		if self.__save_fields[field] ~= nil then
+		if self.__saveFields[field] ~= nil then
 			local data = self[field]
 			if data then
 				if type(data) == "table" then

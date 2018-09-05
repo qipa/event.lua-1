@@ -50,7 +50,7 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 	end
 
 	if db_addr then
-		model.register_value("db_channel")
+		model.registerValue("db_channel")
 		local db_channel,reason = event.connect(db_addr,4,true,mongodb_channel)
 		if not db_channel then
 			print(string.format("%s connect db:%s faield:%s",env.name,env.mongodb,reason))

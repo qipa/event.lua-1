@@ -5,7 +5,7 @@ local timer = require "timer"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
-cScene = object.cls_base:inherit("scene")
+cScene = object.cObject:inherit("scene")
 
 function cScene:create(sceneId,sceneUid)
 	self.sceneId = sceneId

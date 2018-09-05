@@ -5,8 +5,8 @@ local database_collection = import "module.database_collection"
 cSceneObj = database_collection.cCollection:inherit("sceneobj")
 
 function __init__(self)
-	self.cSceneObj:pack_field("uid")
-	self.cSceneObj:pack_field("pos")
+	self.cSceneObj:packField("uid")
+	self.cSceneObj:packField("pos")
 end
 
 function cSceneObj:create(uid,x,z,face)

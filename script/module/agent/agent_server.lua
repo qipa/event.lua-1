@@ -20,7 +20,7 @@ _enter_user = _enter_user or {}
 _server_stop = _server_stop or false
 
 function __init__(self)
-	server_manager:register_event("SERVER_DOWN",self,"server_down")
+	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
 end
 
 function start(self)

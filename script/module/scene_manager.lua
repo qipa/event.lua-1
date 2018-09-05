@@ -11,7 +11,7 @@ _agent_server_status = _agent_server_status or {}
 _sceneServerCtx = _sceneServerCtx or {}
 
 function __init__(self)
-	server_manager:register_event("SERVER_DOWN",self,"server_down")
+	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
 end
 
 function server_down(self,name,srv_id)

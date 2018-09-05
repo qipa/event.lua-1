@@ -2,13 +2,13 @@ local id_builder = import "module.id_builder"
 local object = import "module.object"
 
 
-cItem = object.cls_base:inherit("item","uid")
+cItem = object.cObject:inherit("item","uid")
 
 function __init__(self)
-	self.cItem:save_field("uid")
-	self.cItem:save_field("cid")
-	self.cItem:save_field("amount")
-	self.cItem:save_field("__name")
+	self.cItem:saveField("uid")
+	self.cItem:saveField("cid")
+	self.cItem:saveField("amount")
+	self.cItem:saveField("__name")
 end
 
 function cItem:create(cid,amount)

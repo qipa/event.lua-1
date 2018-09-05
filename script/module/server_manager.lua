@@ -10,11 +10,11 @@ local object_module = import "module.object"
 _server_channel = _server_channel or {}
 _server_name_ctx = _server_name_ctx or {}
 _server_counter = _server_counter or nil
-_event_listener = _event_listener or object_module.cls_base:new()
+_event_listener = _event_listener or object_module.cObject:new()
 
 local client_channel = channel:inherit()
 function client_channel:disconnect()
-	_event_listener:fire_event("SERVER_DOWN",self.name,self.id)
+	_event_listener:fireEvent("SERVER_DOWN",self.name,self.id)
 	_server_channel[self.id] = nil
 	_server_name_ctx[self.name] = nil
 	event.wakeup(self.monitor)
@@ -24,7 +24,7 @@ local server_channel = channel:inherit()
 function server_channel:disconnect()
 	_server_channel[self.id] = nil
 	_server_name_ctx[self.name] = nil
-	_event_listener:fire_event("SERVER_DOWN",self.name,self.id)
+	_event_listener:fireEvent("SERVER_DOWN",self.name,self.id)
 end
 
 function server_channel:dispatch(message,size)
@@ -65,7 +65,7 @@ function register_server(channel,args)
 
 	_server_channel[args.id] = channel
 	_server_name_ctx[args.name] = args.id
-	_event_listener:fire_event("SERVER_CONNECT",args.name,args.id)
+	_event_listener:fireEvent("SERVER_CONNECT",args.name,args.id)
 
 	return env.dist_id
 end
@@ -147,7 +147,7 @@ function connect_server(self,name,reconnect,try,addr)
 
 		_server_channel[channel.id] = channel
 		_server_name_ctx[channel.name] = channel.id
-		_event_listener:fire_event("SERVER_CONNECT",name,channel.id)
+		_event_listener:fireEvent("SERVER_CONNECT",name,channel.id)
 	end
 
 	local function channel_connect(name,addr,try)
@@ -192,12 +192,12 @@ function connect_server_with_addr(self,name,addr,reconnect,try)
 	return self:connect_server(name,reconnect,try,addr)
 end
 
-function register_event(self,ev,obj,method)
-	_event_listener:register_event(ev,obj,method)
+function registerEvent(self,ev,obj,method)
+	_event_listener:registerEvent(ev,obj,method)
 end
 
-function deregister_event(self,ev,obj)
-	_event_listener:deregister_event(obj,ev)
+function deregisterEvent(self,ev,obj)
+	_event_listener:deregisterEvent(obj,ev)
 end 
 
 -------------------------------------------------

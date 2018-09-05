@@ -543,7 +543,7 @@ append_table(struct bson *bs, lua_State *L, const char *key, size_t sz, int dept
 		lua_rawget(L, -2);
 		if (lua_type(L, -1) != LUA_TNIL) {
 			lua_pop(L, 1);
-			lua_getfield(L, -1, "save_data");
+			lua_getfield(L, -1, "saveData");
 			if (lua_type(L, -1) == LUA_TFUNCTION) {
 				lua_rotate(L, -2 , 1);
 				if (lua_pcall(L, 1, 1, 0) != LUA_OK) {

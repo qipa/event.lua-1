@@ -18,9 +18,9 @@ cAgentUser = database_object.cDatabase:inherit("agent_user","uid","cid")
 
 
 function __init__(self)
-	self.cAgentUser:save_field("base_info")
-	self.cAgentUser:save_field("itemMgr")
-	self.cAgentUser:save_field("task_mgr")
+	self.cAgentUser:saveField("base_info")
+	self.cAgentUser:saveField("itemMgr")
+	self.cAgentUser:saveField("task_mgr")
 end
 
 
@@ -48,14 +48,14 @@ function cAgentUser:enterGame()
 	
 	self.itemMgr:onEnterGame(self)
 
-	self:fire_event("ENTER_GAME")
+	self:fireEvent("ENTER_GAME")
 	self:send_client("s2c_agent_enter",{user_uid = self.uid})
 	event.error(string.format("user:%d enter agent:%d",self.uid,env.dist_id))
 end
 
 function cAgentUser:leaveGame()
 	self.itemMgr:onLeaveGame(self)
-	self:fire_event("LEAVE_GAME")
+	self:fireEvent("LEAVE_GAME")
 	event.error(string.format("user:%d leave agent:%d",self.uid,env.dist_id))
 end
 

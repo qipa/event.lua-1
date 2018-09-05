@@ -26,7 +26,7 @@ function start(self)
 		end
 	end
 
-	serverMgr:register_event("AGENT_DOWN",self,"agentDown")
+	serverMgr:registerEvent("AGENT_DOWN",self,"agentDown")
 	import "handler.login_handler"
 	import "handler.cmd_handler"
 end

@@ -56,7 +56,7 @@ function getScene(self,sceneUid)
 end
 
 function enterScene(self,userData,sceneUid,pos,switch)
-	local fighter = class.instance_from("fighter",table.decode(userData))
+	local fighter = class.instanceFrom("fighter",table.decode(userData))
 	fighter:create(fighter.uid,fighter.pos[1],fighter.pos[2])
 	model.bind_fighter_with_uid(fighter.uid,fighter)
 
@@ -81,7 +81,7 @@ function leaveScene(self,userUid,switch)
 
 	local fighterData 
 	if switch then
-		fighterData = fighter:pack_data()
+		fighterData = fighter:packData()
 	end
 
 	fighter:release()

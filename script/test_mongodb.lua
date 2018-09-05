@@ -5,7 +5,7 @@ local db_common = import "module.database_common"
 
 
 
-model.register_value("db_channel")
+model.registerValue("db_channel")
 
 local db_channel,reason = event.connect("tcp://127.0.0.1:10105",4,true,mongo)
 if not db_channel then

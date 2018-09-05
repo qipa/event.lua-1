@@ -15,8 +15,8 @@ function init(self,user)
 		user:dirtyField("task_mgr")
 	end
 	
-	user:register_event("ENTER_GAME",self,"enter_game")
-	user:register_event("LEAVE_GAME",self,"leave_game")
+	user:registerEvent("ENTER_GAME",self,"enter_game")
+	user:registerEvent("LEAVE_GAME",self,"leave_game")
 end
 
 function enter_game(self,user)
@@ -24,8 +24,8 @@ function enter_game(self,user)
 end
 
 function leave_game(self,user)
-	user:deregister_event("ENTER_GAME",self)
-	user:deregister_event("LEAVE_GAME",self)
+	user:deregisterEvent("ENTER_GAME",self)
+	user:deregisterEvent("LEAVE_GAME",self)
 end
 
 function accept(self,user)

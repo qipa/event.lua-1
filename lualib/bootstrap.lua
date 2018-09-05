@@ -25,8 +25,8 @@ table.tostring = serialize.tostring
 string.split = util.split
 string.copy = util.clone_string
 
-_G.MODEL_BINDER = model.register_binder
-_G.MODEL_VALUE = model.register_value
+_G.MODEL_BINDER = model.registerBinder
+_G.MODEL_VALUE = model.registerValue
 _G.tostring = util.tostring
 _G.import = import.import
 _G.debugger = debugger

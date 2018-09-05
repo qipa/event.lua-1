@@ -3,7 +3,7 @@ local event = require "event"
 local mongo = require "mongo"
 local model = require "model"
 
-model.register_value("db_channel")
+model.registerValue("db_channel")
 local db_channel,reason = event.connect(env.mongodb,4,true,mongo)
 if not db_channel then
 	print(string.format("%s connect db:%s faield:%s",env.name,env.mongodb,reason))

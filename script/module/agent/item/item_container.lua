@@ -8,13 +8,13 @@ local bagMgr = import "module.agent.item.bag_manager"
 local petMgr = import "module.agent.item.pet_manager"
 local equipmentMgr = import "module.agent.item.equipment_manager"
 
-cItemContainer = object.cls_base:inherit("item_container")
+cItemContainer = object.cObject:inherit("item_container")
 
 function __init__(self)
-	self.cItemContainer:save_field("currencyMgr")
-	self.cItemContainer:save_field("bagMgr")
-	self.cItemContainer:save_field("petMgr")
-	self.cItemContainer:save_field("equipmentMgr")
+	self.cItemContainer:saveField("currencyMgr")
+	self.cItemContainer:saveField("bagMgr")
+	self.cItemContainer:saveField("petMgr")
+	self.cItemContainer:saveField("equipmentMgr")
 
 end
 
@@ -36,7 +36,7 @@ end
 
 function cItemContainer:load(parent,dbChannel,db,dbIndex)
 	local inst = self:new()
-	for field in pairs(self.__save_fields) do
+	for field in pairs(self.__saveFields) do
 		local result
 		local cls = class.get(field)
 		assert(cls ~= nil,field)
@@ -54,7 +54,7 @@ end
 function cItemContainer:save(dbChannel,db,dbIndex)
 	
 	for field in pairs(self.__dirty) do
-		if self.__save_fields[field] ~= nil then
+		if self.__saveFields[field] ~= nil then
 			local inst = self[field]
 			inst:save(dbChannel,db,dbIndex)
 		end
@@ -94,7 +94,7 @@ end
 function cItemContainer:getItem(itemUid)
 	local item = model.fetch_item_with_uid(itemUid)
 
-	-- for field in pairs(self.__save_fields) do
+	-- for field in pairs(self.__saveFields) do
 	-- 	local inst = self[field]
 	-- 	if inst then
 	-- 		local item = inst:getItem(itemUid)
