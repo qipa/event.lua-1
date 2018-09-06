@@ -296,6 +296,7 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 			_delItem(self,oItem)
 		end
 	end
+	assert(left == 0)
 end
 
 function cItemMgr:deleteItemByUid(uid,amount)

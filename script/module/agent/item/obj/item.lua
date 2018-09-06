@@ -78,6 +78,9 @@ function cItem:overlapMore()
 	if cfg.overlap == 1 then
 		return 0
 	end
+	if cfg.overlap <= self.amount then
+		return 0
+	end
 	return cfg.overlap - self.amount
 end
 
