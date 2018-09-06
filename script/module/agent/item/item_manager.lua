@@ -1,10 +1,10 @@
 local model = require "model"
 local idBuilder = import "module.id_builder"
-local dbCollection = import "module.database_collection"
+local dbObject = import "module.database_object"
 local itemFactory = import "module.agent.item.item_factory"
 
 
-cItemMgr = dbCollection.cCollection:inherit("item_mgr")
+cItemMgr = dbObject.cCollection:inherit("item_mgr")
 
 function __init__(self)
 	self.cItemMgr:saveField("itemSlot")
@@ -33,7 +33,7 @@ function cItemMgr:dirtyItem(itemUid)
 end
 
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
-	local inst = dbCollection.cCollection.load(self,parent,dbChannel,db,dbIndex)
+	local inst = dbObject.cCollection.load(self,parent,dbChannel,db,dbIndex)
 	local itemSlot = {}
 	inst.helper = {}
 	inst.gridCount = 0
@@ -58,7 +58,7 @@ function cItemMgr:save(dbChannel,db,dbIndex)
 	if self.__dirty["itemSlot"] then
 		self.__dirty["itemSlot"] = nil
 	end
-	dbCollection.cCollection.save(self,dbChannel,db,dbIndex)
+	dbObject.cCollection.save(self,dbChannel,db,dbIndex)
 
 	local set
 	local unset 

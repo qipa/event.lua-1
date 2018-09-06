@@ -1,7 +1,7 @@
 local event = require "event"
 local mongo = require "mongo"
 local model = require "model"
-local db_common = import "module.database_common"
+local dbObject = import "module.database_object"
 
 
 
@@ -15,7 +15,7 @@ db_channel:init()
 
 model.set_db_channel(db_channel)
 
-local db = db_common.cDatabaseCommon:new(10)
+local db = dbObject.cDatabaseCommon:new(10)
 
 event.fork(function ()
 	local data = db:load("role",{id = 1})

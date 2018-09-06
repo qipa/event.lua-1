@@ -1,7 +1,6 @@
 local idBuilder = import "module.id_builder"
 local common = import "common.common"
 local object = import "module.object"
-local dbCollection = import "module.database_collection"
 local itemFactory = import "module.agent.item.item_factory"
 local currencyMgr = import "module.agent.item.currency_manager"
 local bagMgr = import "module.agent.item.bag_manager"
@@ -27,10 +26,10 @@ function cItemContainer:destroy()
 
 end
 
-function cItemContainer:dirtyField(obj)
-	self.__dirty[obj.__name] = true
-	if self.__parentObj then
-		self.__parentObj:dirtyField(self)
+function cItemContainer:dirtyField(field)
+	self.__dirty[field] = true
+	if self.__dbObject then
+		self.__dbObject:dirtyField(self.__name)
 	end
 end
 
@@ -44,10 +43,12 @@ function cItemContainer:load(parent,dbChannel,db,dbIndex)
 		if result then
 			inst[field] = result
 		else
-			inst[field] = cls:new()
+			result = cls:new()
+			result:attachDb(inst)
+			inst[field] = result
 		end
 	end
-	inst.__parentObj = parent
+	inst.__dbObject = parent
 	return inst
 end
 

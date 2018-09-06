@@ -3,7 +3,7 @@ local model = require "model"
 
 local server_manager = import "module.server_manager"
 local scene_manager = import "module.scene_manager"
-local database_common = import "module.database_common"
+local dbObject = import "module.database_object"
 local world_user = import "module.world_user"
 import "handler.world_handler"
 
@@ -17,7 +17,7 @@ function __init__(self)
 		end
 	end)
 
-	self.db_common = database_common.cDatabaseCommon:new(30)
+	self.db_common = dbObject.cDatabaseCommon:new(30)
 
 	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
 end
