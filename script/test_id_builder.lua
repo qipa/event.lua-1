@@ -14,12 +14,8 @@ model.set_db_channel(db_channel)
 
 event.fork(function ()
 	local buidler = import "module.id_builder"
-buidler:init(1)
+buidler:init(env.uid,1)
 
-util.time_diff("build id",function ()
-	for i = 1,1024*1024*10 do
-		buidler.alloc_user_uid()
-	end
-end)
-
+	print(buidler.alloc_user_uid())
+	print(buidler.pop_monster_tid())
 end)

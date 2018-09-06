@@ -43,7 +43,7 @@ function init(self,serverId,distId)
 		local max = result.begin + result.offset
 
 		self[string.format("alloc_%s_uid",field)] = function ()
-			local uid = cursor * kMASK_OFFSET * kSERVER_OFFSET * kPROCESS_OFFSET + mask * kSERVER_OFFSET * kPROCESS_OFFSET + serverId * kSERVER_OFFSET  + distId
+			local uid = cursor * kMASK_OFFSET * kSERVER_OFFSET * kPROCESS_OFFSET + mask * kSERVER_OFFSET * kPROCESS_OFFSET + serverId * kPROCESS_OFFSET + distId
 			cursor = cursor + 1
 			if cursor >= max then
 				result.begin = cursor
@@ -61,7 +61,7 @@ function init(self,serverId,distId)
 	for field,mask in pairs(eTMP_MASK) do
 		local pool = {}
 		local step = 1
-		local stepMax = kPROCESS_OFFSET * kSERVER_OFFSET * kMASK_OFFSET
+		local stepMax = kSERVER_OFFSET * kMASK_OFFSET
 		self[string.format("pop_%s_tid",field)] = function ()
 			if step >= stepMax then
 				error(string.format("%s tid empty",field))
