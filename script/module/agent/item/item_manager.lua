@@ -10,12 +10,6 @@ function __init__(self)
 	self.cItemMgr:saveField("itemSlot")
 end
 
-function cItemMgr:ctor()
-	self.helper = {}
-	self.itemSlot = {}
-	self.gridCount = 0
-end
-
 function cItemMgr:onCreate()
 	self.__dirtyItem = {}
 	self.helper = {}
@@ -334,6 +328,9 @@ end
 
 function cItemMgr:itemEnough(cid,amount)
 	local helperInfo = self.helper[cid]
+	if not helperInfo then
+		return false
+	end
 	local total = 0
 	for uid in pairs(helperInfo) do
 		local item = self.itemSlot[uid]
