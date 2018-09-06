@@ -123,7 +123,6 @@ local function _newObject(self,object)
 	object.__objectId = _allocObjectId(self.__name) 
 	object.__createTime = os.time()
 	object.__name = self.__name
-	object.__parent = self.__parent
 	object.__dirty = {}
 
 	setmetatable(object,{__index = self})
@@ -279,7 +278,8 @@ function class.get(name)
 end
 
 function class.super(object)
-	return classCtx[object.__parent]
+	local cls = classCtx[object.__name]
+	return classCtx[cls.__parent]
 end
 
 function class.objectInfo(name,objectId,...)
