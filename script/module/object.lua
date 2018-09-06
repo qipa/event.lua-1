@@ -12,6 +12,7 @@ objectId = objectId or 0
 classCtx = classCtx or {}
 
 objectCtx = objectCtx or {}
+objectMgr = objectMgr or setmetatable({},{__mode = "v"})
 
 cObject = cObject or { __name = "root", __childs = {}}
 
@@ -35,7 +36,7 @@ local function _resetObjectMeta(name)
 	if not objectSet then
 		return
 	end
-	for _,object in pairs(objectSet) do
+	for object in pairs(objectSet) do
 		setmetatable(object,{__index = cls})
 	end
 end
@@ -105,37 +106,32 @@ function cObject:getType()
 	return self.__name
 end
 
-local function _allocObjectId(objectType)
+local function _allocObjectId()
 	if objectId >= math.maxinteger then
 		objectId = 0 
 	end
 	objectId = objectId + 1
-	local objectSet = objectCtx[objectType]
-	if not objectSet then
-		return objectId
-	end
-	while objectSet[objectId] do
+	while objectMgr[objectId] do
 		objectId = objectId + 1
 	end
 	return objectId
 end
 
 local function _newObject(self,object)
-	object.__objectId = _allocObjectId(self.__name) 
-	object.__createTime = os.time()
+	object.__objectId = _allocObjectId() 
 	object.__name = self.__name
 	object.__dirty = {}
 
 	setmetatable(object,{__index = self})
 
-	local objectType = self:getType()
+	local objectType = self.__name
 	local objectSet = objectCtx[objectType]
 	if objectSet == nil then
-		objectSet = setmetatable({},{__mode = "v"})
+		objectSet = setmetatable({},{__mode = "k"})
 		objectCtx[objectType] = objectSet
 	end
-
-	objectSet[object.__objectId] = object 
+	objectSet[object] = {createTime = os.time(),debugInfo = nil}
+	objectMgr[object.__objectId] = object
 end
 
 
@@ -174,6 +170,11 @@ end
 --子类重写
 function cObject:onDestroy()
 
+end
+
+function cObject:setDebugInfo(info)
+	local objectSet = objectCtx[self.__name]
+	objectSet[self].debugInfo = info
 end
 
 function cObject:packData()
@@ -285,16 +286,11 @@ function class.super(object)
 end
 
 function class.objectInfo(name,objectId,...)
-	local objectSet = objectCtx[name]
-	if not objectSet then
-		return
-	end
-
-	local object = objectSet[objectId]
+	local object = objectMgr[objectId]
 	if not object then
 		return
 	end
-
+	
 	local result = object
 	for i = 1, select('#',...) do
 		local member = select(i,...)
@@ -311,7 +307,7 @@ function class.countObject(name)
 	if not name then
 		for name,objectSet in pairs(objectCtx) do
 			local count = 0
-			for _,info in pairs(objectSet) do
+			for _,_ in pairs(objectSet) do
 				count = count + 1
 			end
 			print(string.format("objectType=%s,amount=%d",name,count))
@@ -323,7 +319,7 @@ function class.countObject(name)
 		end
 
 		local count = 0
-		for _,info in pairs(objectSet) do
+		for _,_ in pairs(objectSet) do
 			count = count + 1
 		end
 		print(string.format("objectType=%s,amount=%d",name,count))
@@ -338,46 +334,10 @@ function class.countObjectVerbose(name)
 	collectgarbage("collect")
 
 	local count = 0
-	for objectId,object in pairs(objectSet) do
+	for object,info in pairs(objectSet) do
 		count = count + 1
-		print(string.format("object:%s,createTime:%s,debugInfo:%s",object,os.date("%m-%d %H:%M:%S",math.floor(object.__createTime/100)),object.__debugInfo or "unknown"))
+		print(string.format("object:%s,createTime:%s,debugInfo:%s",object,os.date("%m-%d %H:%M:%S",math.floor(info.__createTime/100)),info.debugInfo or "unknown"))
 	end
-end
-
-function class.detectLeak()
-	collectgarbage("collect")
-
-	local leakObj = {}
-
-	for name in pairs(classCtx) do
-		local objectSet = objectCtx[name]
-		if objectSet then
-			for weakObj,info in pairs(objectSet) do
-				local aliveObjectCtx = model[string.format("fetch_%s",name)]()
-				local alive = false
-
-				if aliveObjectCtx then
-					local _,aliveObject = next(aliveObjectCtx)
-					for _,obj in pairs(aliveObject) do
-						if weakObj == obj then
-							alive = true
-							break
-						end
-					end
-				end
-				if not alive then
-					leakObj[weakObj] = info
-				end
-			end
-		end
-	end
-	
-	local log = {}
-	for obj,info in pairs(leakObj) do
-		table.insert(log,string.format("object type:%s,create time:%s,debug info:%s",obj:getType(),os.date("%m-%d %H:%M:%S",math.floor(info.time/100)),obj.__debugInfo or "unknown"))
-	end
-	print("-----------------detect leak object-----------------")
-	print(table.concat(log,"\n"))
 end
 
 rawset(_G,"class",class)

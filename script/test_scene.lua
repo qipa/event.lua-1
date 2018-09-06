@@ -40,11 +40,12 @@ event.fork(function ()
 		container = itemContainer.cItemContainer:new()
 	end
 
-	container:insertItemByCid(100,1)
-	container:insertItemByCid(1000,1)
-	container:insertItemByCid(2000,1)
+	--container:insertItemByCid(100,1)
+	container:deleteItemByCid(100,5)
+--	container:insertItemByCid(1000,1)
+--	container:insertItemByCid(2000,1)
 	container:save(db_channel,"user",{userUid = 5})
-	table.print(container.currencyMgr)
+	table.print(container)
 
 end)
 

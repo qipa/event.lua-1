@@ -53,7 +53,11 @@ function _M.dump(data, prefix, depth, output, record)
         return
     end
 
-    assert(record[data] == nil)
+    if record[data] then
+        output(tab.." {}")
+	return
+    end
+    --assert(record[data] == nil)
     record[data] = true
 
     local count = 0

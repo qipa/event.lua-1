@@ -10,11 +10,32 @@ function __init__(self)
 	self.cItemMgr:saveField("itemSlot")
 end
 
-
-function cItemMgr:onCreate()
+function cItemMgr:ctor()
 	self.helper = {}
 	self.itemSlot = {}
 	self.gridCount = 0
+end
+
+function cItemMgr:onCreate()
+	self.__dirtyItem = {}
+	self.helper = {}
+	self.gridCount = 0
+	local itemSlot = {}
+	if self.itemSlot then
+		for itemUid,item in pairs(self.itemSlot) do
+			itemSlot[tonumber(itemUid)] = item
+			model.bind_item_with_uid(itemUid,item)
+			local info = self.helper[item.cid]
+			if not info then
+				info = {}
+				self.helper[item.cid] = info
+			end
+			info[item.uid] = true
+			self.gridCount = self.gridCount + 1
+		end
+	end
+	self.itemSlot = itemSlot
+
 end
 
 function cItemMgr:onDestroy()
@@ -32,31 +53,6 @@ function cItemMgr:dirtyItem(itemUid)
 	self:dirtyField("__name")
 end
 
-function cItemMgr:load(parent,dbChannel,db,dbIndex)
-	local inst = dbObject.cCollection.load(self,parent,dbChannel,db,dbIndex)
-	if not inst  then
-		return
-	end
-	local itemSlot = {}
-	inst.helper = {}
-	inst.gridCount = 0
-	if inst.itemSlot then
-		for itemUid,item in pairs(inst.itemSlot) do
-			itemSlot[tonumber(itemUid)] = item
-			model.bind_item_with_uid(itemUid,item)
-			local info = inst.helper[item.cid]
-			if not info then
-				info = {}
-				inst.helper[item.cid] = info
-			end
-			info[item.uid] = true
-			inst.gridCount = inst.gridCount + 1
-		end
-	end
-	inst.itemSlot = itemSlot
-	return inst
-end
-
 function cItemMgr:save(dbChannel,db,dbIndex)
 	local slotDirty = false
 	if self.__dirty["itemSlot"] then
@@ -70,7 +66,7 @@ function cItemMgr:save(dbChannel,db,dbIndex)
 	if slotDirty then
 		return
 	end
-
+	
 	local set
 	local unset 
 	for itemUid in pairs(self.__dirtyItem) do
@@ -144,7 +140,7 @@ local function _delItem(self,item)
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	self.gridCount = self.gridCount - 1
-	item:destroy()
+	item:release()
 	self:dirtyItem(item.uid)
 end
 
@@ -279,6 +275,10 @@ end
 function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 	if not self:itemEnough(cid,amount) then
 		return false
+	end
+	
+	if not deleteLog then
+		deleteLog = {}
 	end
 
 	local helperInfo = self.helper[cid]
