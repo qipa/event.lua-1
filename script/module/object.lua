@@ -1,6 +1,7 @@
 local event = require "event"
 local util = require "util"
 local model = require "model"
+local timer = require "timer"
 
 local pairs = pairs
 local setmetatable = setmetatable
@@ -156,6 +157,7 @@ function cObject:instanceFrom(object)
 end
 
 function cObject:release()
+	timer.removeAll(self)
 	self:onDestroy()
 end
 
@@ -214,7 +216,7 @@ function cObject:registerEvent(ev,inst,method)
 
 	local evList = self.__event[ev]
 	if not evList then
-		evList = {}
+		evList = setmetatable({},{__mode = "k"})
 		self.__event[ev] = evList 
 	end
 	evList[inst] = method

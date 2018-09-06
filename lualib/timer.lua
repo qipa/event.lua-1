@@ -38,6 +38,8 @@ function _M.calloutAfter(interval,inst,method,...)
 end
 
 function _M.removeTimer(inst,timer)
+	local __timer = rawget(inst,"__timer")
+	assert(__timer ~= nil)
 	assert(__timer[timer],string.format("no such timer:%s",timer))
 	timer:cancel()
 	__timer[timer] = nil
@@ -45,6 +47,9 @@ end
 
 function _M.removeAll(inst)
 	local __timer = rawget(inst,"__timer")
+	if not __timer then
+		return
+	end
 	for timer in pairs(__timer) do
 		timer:cancel()
 	end
