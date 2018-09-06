@@ -67,11 +67,7 @@ function init(self,serverId,distId)
 	for _,field in pairs(eTMP) do
 		local pool = {}
 		local step = 1
-		local stepMax = kSERVER_OFFSET * kMASK_OFFSET
 		self[string.format("pop_%s_tid",field)] = function ()
-			if step >= stepMax then
-				error(string.format("%s tid empty",field))
-			end
 			local tid = next(pool)
 			if tid then
 				pool[tid] = nil
