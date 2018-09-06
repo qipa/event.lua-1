@@ -18,11 +18,11 @@ function __init__(self)
 end
 
 
-function cItemContainer:create()
+function cItemContainer:onCreate()
 
 end
 
-function cItemContainer:destroy()
+function cItemContainer:onDestroy()
 
 end
 
@@ -47,6 +47,7 @@ function cItemContainer:load(parent,dbChannel,db,dbIndex)
 			result:attachDb(inst)
 			inst[field] = result
 		end
+		result:onCreate()
 	end
 	inst.__dbObject = parent
 	return inst

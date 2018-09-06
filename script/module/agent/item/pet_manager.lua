@@ -7,11 +7,11 @@ cPetMgr = itemMgr.cItemMgr:inherit("petMgr")
 function __init__(self)
 end
 
-
-function cPetMgr:create()
-	itemMgr.cItemMgr.create(self)
+function cPetMgr:onCreate(...)
+	itemMgr.cItemMgr.onCreate(self)
 end
 
-function cPetMgr:destroy()
-
+function cPetMgr:onDestroy()
+	itemMgr.cItemMgr.onDestroy(self)
 end
+

@@ -9,14 +9,14 @@ function __init__(self)
 end
 
 
-function cBagMgr:create(...)
-	itemMgr.cItemMgr.create(self)
+function cBagMgr:onCreate(...)
+	itemMgr.cItemMgr.onCreate(self)
 	self.gridMax = 30
 	self:dirtyField("gridMax")
 end
 
-function cBagMgr:destroy()
-
+function cBagMgr:onDestroy()
+	itemMgr.cItemMgr.onDestroy(self)
 end
 
 function cBagMgr:canInsertList(list)

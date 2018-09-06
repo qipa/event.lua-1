@@ -8,10 +8,12 @@ function __init__(self)
 end
 
 
-function cEquipmentMgr:create()
-	itemMgr.cItemMgr.create(self)
+
+function cEquipmentMgr:onCreate(...)
+	itemMgr.cItemMgr.onCreate(self)
 end
 
-function cEquipmentMgr:destroy()
-
+function cEquipmentMgr:onDestroy()
+	itemMgr.cItemMgr.onDestroy(self)
 end
+

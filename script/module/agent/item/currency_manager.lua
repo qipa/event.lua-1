@@ -8,10 +8,10 @@ function __init__(self)
 end
 
 
-function cCurrencyMgr:create()
-	itemMgr.cItemMgr.create(self)
+function cCurrencyMgr:onCreate(...)
+	itemMgr.cItemMgr.onCreate(self)
 end
 
-function cCurrencyMgr:destroy()
-
+function cCurrencyMgr:onDestroy()
+	itemMgr.cItemMgr.onDestroy(self)
 end

@@ -11,13 +11,13 @@ function __init__(self)
 end
 
 
-function cItemMgr:create()
+function cItemMgr:onCreate()
 	self.helper = {}
 	self.itemSlot = {}
 	self.gridCount = 0
 end
 
-function cItemMgr:destroy()
+function cItemMgr:onDestroy()
 	for _,item in pairs(self.itemSlot) do
 		item:release()
 		model.unbind_item_with_uid(item.uid)
@@ -29,7 +29,7 @@ function cItemMgr:dirtyItem(itemUid)
 		self.__dirtyItem = {}
 	end
 	self.__dirtyItem[itemUid] = true
-	self:dirtyField("itemSlot")
+	self:dirtyField("__name")
 end
 
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
@@ -55,10 +55,18 @@ function cItemMgr:load(parent,dbChannel,db,dbIndex)
 end
 
 function cItemMgr:save(dbChannel,db,dbIndex)
+	local slotDirty = false
 	if self.__dirty["itemSlot"] then
-		self.__dirty["itemSlot"] = nil
+		self.__dirtyItem = {}
+		slotDirty = true
+		dbObject.cCollection.save(self,dbChannel,db,dbIndex)
+	else
+		dbObject.cCollection.save(self,dbChannel,db,dbIndex)
 	end
-	dbObject.cCollection.save(self,dbChannel,db,dbIndex)
+
+	if slotDirty then
+		return
+	end
 
 	local set
 	local unset 
@@ -225,8 +233,6 @@ function cItemMgr:insertItem(item,insertLog)
 	if not self:canInsert(item.cid,item.amount) then
 		return false
 	end
-	
-	self:dirtyField("itemSlot")
 
 	local helperInfo = self.helper[item.cid]
 	if helperInfo then
@@ -272,8 +278,6 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 		return false
 	end
 
-	self:dirtyField("itemSlot")
-
 	local helperInfo = self.helper[cid]
 
 	local left = amount
@@ -298,7 +302,6 @@ function cItemMgr:deleteItemByCid(cid,amount,deleteLog)
 end
 
 function cItemMgr:deleteItemByUid(uid,amount)
-	self:dirtyField("itemSlot")
 	local item = self.itemSlot[uid]
 	if item.amount > amount then
 		item.amount = item.amount - amount

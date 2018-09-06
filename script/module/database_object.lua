@@ -157,6 +157,17 @@ function cCollection:dirtyField(field)
 	end
 end
 
+function cCollection:dirtyAll()
+	local saveFields = self.__saveFields
+	for field in pairs(saveFields) do
+		self.__dirty[field] = true
+	end
+	self.__dirty["__name"] = true
+	if self.__dbObject then
+		self.__dbObject:dirtyField(self.__name)
+	end
+end
+
 function cCollection:attachDb(dbObject)
 	self.__dbObject = dbObject
 end
@@ -173,11 +184,11 @@ function cCollection:load(parent,dbChannel,db,dbIndex)
 end
 
 function cCollection:save(dbChannel,db,dbIndex)
-	local save_fields = self.__saveFields
+	local saveFields = self.__saveFields
 	local set
 	local unset
 	for field in pairs(self.__dirty) do
-		if save_fields[field] ~= nil then
+		if saveFields[field] ~= nil then
 			local data = self[field]
 			if data then
 				if not set then
