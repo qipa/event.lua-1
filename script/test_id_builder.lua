@@ -17,5 +17,7 @@ event.fork(function ()
 buidler:init(env.uid,1)
 
 	print(buidler.alloc_user_uid())
+	print(buidler.alloc_item_uid())
+	print(buidler.alloc_scene_uid())
 	print(buidler.pop_monster_tid())
 end)

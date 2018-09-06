@@ -8,6 +8,7 @@ local type = type
 --对应着mongodb中的database概念
 cDatabase = object.cObject:inherit("database_object")
 cCollection = object.cObject:inherit("database_collection")
+cDatabaseCommon = object.cObject:inherit("database_common")
 
 function __init__(self)
 	self.cCollection:saveField("__name")

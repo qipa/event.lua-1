@@ -34,6 +34,9 @@ end
 
 function cItemMgr:load(parent,dbChannel,db,dbIndex)
 	local inst = dbObject.cCollection.load(self,parent,dbChannel,db,dbIndex)
+	if not inst  then
+		return
+	end
 	local itemSlot = {}
 	inst.helper = {}
 	inst.gridCount = 0

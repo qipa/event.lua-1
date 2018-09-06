@@ -6,7 +6,7 @@ local pairs = pairs
 local setmetatable = setmetatable
 local type = type
 
-objectId = objectId or 1
+objectId = objectId or 0 
 
 classCtx = classCtx or {}
 
@@ -34,8 +34,8 @@ local function _resetObjectMeta(name)
 	if not objectSet then
 		return
 	end
-	for _,info in pairs(objectSet) do
-		setmetatable(info.object,{__index = cls})
+	for _,object in pairs(objectSet) do
+		setmetatable(object,{__index = cls})
 	end
 end
 
@@ -104,16 +104,27 @@ function cObject:getType()
 	return self.__name
 end
 
+local function _allocObjectId(objectType)
+	if objectId >= math.maxinteger then
+		objectId = 0 
+	end
+	objectId = objectId + 1
+	local objectSet = objectCtx[objectType]
+	if not objectSet then
+		return objectId
+	end
+	while objectSet[objectId] do
+		objectId = objectId + 1
+	end
+	return objectId
+end
+
 local function _newObject(self,object)
-	object.__objectId = objectId
+	object.__objectId = _allocObjectId(self.__name) 
+	object.__createTime = os.time()
 	object.__name = self.__name
 	object.__parent = self.__parent
-	object.__alive = true
 	object.__dirty = {}
-	object.__event = {}
-	object.__timer = {}
-
-	objectId = objectId + 1
 
 	setmetatable(object,{__index = self})
 
@@ -124,7 +135,7 @@ local function _newObject(self,object)
 		objectCtx[objectType] = objectSet
 	end
 
-	objectSet[object.__objectId] = {object = object,time = os.time()}
+	objectSet[object.__objectId] = object 
 end
 
 
@@ -146,7 +157,6 @@ function cObject:instanceFrom(object)
 end
 
 function cObject:release()
-	self.__alive = false
 	self:onDestroy()
 end
 
@@ -199,28 +209,32 @@ function cObject:packField(field)
 end
 
 function cObject:registerEvent(ev,inst,method)
-	local ev_list = self.__event[ev]
-	if not ev_list then
-		ev_list = {}
-		self.__event[ev] = ev_list
+	if not self.__event then
+		self.__event = {}
 	end
-	ev_list[inst] = method
+
+	local evList = self.__event[ev]
+	if not evList then
+		evList = {}
+		self.__event[ev] = evList 
+	end
+	evList[inst] = method
 end
 
 function cObject:deregisterEvent(inst,ev)
-	local ev_list = self.__event[ev]
-	if not ev_list then
+	local evList = self.__event[ev]
+	if not evList then
 		return
 	end
-	ev_list[inst] = nil
+	evList[inst] = nil
 end
 
 function cObject:fireEvent(ev,...)
-	local ev_list = self.__event[ev]
-	if not ev_list then
+	local evList = self.__event[ev]
+	if not evList then
 		return
 	end
-	for inst,method in pairs(ev_list) do
+	for inst,method in pairs(evList) do
 		local func = inst[method]
 		if not func then
 			event.error(string.format("fire event error,no such method:%s",method))
@@ -322,9 +336,9 @@ function class.countObjectVerbose(name)
 	collectgarbage("collect")
 
 	local count = 0
-	for objectId,info in pairs(objectSet) do
+	for objectId,object in pairs(objectSet) do
 		count = count + 1
-		print(string.format("object:%s,createTime:%s,debugInfo:%s",info.object,os.date("%m-%d %H:%M:%S",math.floor(info.time/100)),info.object.__debugInfo or "unknown"))
+		print(string.format("object:%s,createTime:%s,debugInfo:%s",object,os.date("%m-%d %H:%M:%S",math.floor(object.__createTime/100)),object.__debugInfo or "unknown"))
 	end
 end
 

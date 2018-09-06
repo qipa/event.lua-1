@@ -37,7 +37,7 @@ function createItem(self,cid,amount)
 			end
 		end
 		local item = creator:new(cid,count)
-		item:init()
+		item:onCreate()
 		table.insert(result,item)
 	end
 	return result

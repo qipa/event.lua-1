@@ -34,7 +34,7 @@ end
 
 event.fork(function ()
 	startup.run(false,env.mongodb,env.config)
-	idBuilder:init(1)
+	idBuilder:init(env.uid,1)
 	local container = itemContainer.cItemContainer:load(nil,db_channel,"user",{userUid = 5})
 	if not container then
 		container = itemContainer.cItemContainer:new()
@@ -44,7 +44,7 @@ event.fork(function ()
 	container:insertItemByCid(1000,1)
 	container:insertItemByCid(2000,1)
 	container:save(db_channel,"user",{userUid = 5})
-	-- table.print(container)
+	table.print(container.currencyMgr)
 
 end)
 

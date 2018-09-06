@@ -6,7 +6,13 @@ local _M = {}
 
 function _M.callout(interval,inst,method,...)
 	local args = {...}
+
 	local __timer = rawget(inst,"__timer")
+	if not __timer then
+		__timer = {}
+		rawset(inst,"__timer",__timer)
+	end
+
 	local timer = event.timer(interval,function ()
 		inst[method](inst,table.unpack(args))
 	end)
@@ -16,7 +22,13 @@ end
 
 function _M.calloutAfter(interval,inst,method,...)
 	local args = {...}
+	
 	local __timer = rawget(inst,"__timer")
+	if not __timer then
+		__timer = {}
+		rawset(inst,"__timer",__timer)
+	end
+
 	local timer = event.timer(interval,function ()
 		inst[method](inst,table.unpack(args))
 		__timer[timer] = nil
