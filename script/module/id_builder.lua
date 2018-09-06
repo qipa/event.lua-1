@@ -7,15 +7,21 @@ local kSERVER_OFFSET = 10000
 local kMASK_OFFSET = 10
 local kID_STEP = 100
 
-local eUNIQUE_MASK = {
+local eFIELD_MASK = {
 	user = 1,
 	item = 2,
 	scene = 3,
+	monster = 4,
+}
+local eUNIQUE = {
+	"user",
+	"item",
+	"scene"
 }
 
 
-local eTMP_MASK = {
-	monster = 1
+local eTMP = {
+	"monster"
 }
 
 function init(self,serverId,distId)
@@ -26,7 +32,7 @@ function init(self,serverId,distId)
 
 	local dbChannel = model.get_db_channel()
 
-	for field,mask in pairs(eUNIQUE_MASK) do
+	for _,field in pairs(eUNIQUE) do
 		local result = dbChannel:findOne("common","id_builder",{query = {id = distId,key = field}})
 		if not result then
 			result = {begin = 1,offset = kID_STEP}
@@ -43,7 +49,7 @@ function init(self,serverId,distId)
 		local max = result.begin + result.offset
 
 		self[string.format("alloc_%s_uid",field)] = function ()
-			local uid = cursor * kMASK_OFFSET * kSERVER_OFFSET * kPROCESS_OFFSET + mask * kSERVER_OFFSET * kPROCESS_OFFSET + serverId * kPROCESS_OFFSET + distId
+			local uid = cursor * kMASK_OFFSET * kSERVER_OFFSET * kPROCESS_OFFSET + serverId * kMASK_OFFSET * kPROCESS_OFFSET + eFIELD_MASK[field] * kPROCESS_OFFSET + distId
 			cursor = cursor + 1
 			if cursor >= max then
 				result.begin = cursor
@@ -58,7 +64,7 @@ function init(self,serverId,distId)
 		end
 	end
 
-	for field,mask in pairs(eTMP_MASK) do
+	for _,field in pairs(eTMP) do
 		local pool = {}
 		local step = 1
 		local stepMax = kSERVER_OFFSET * kMASK_OFFSET
@@ -71,7 +77,7 @@ function init(self,serverId,distId)
 				pool[tid] = nil
 				return tid
 			end
-			local tid = step * kPROCESS_OFFSET * kMASK_OFFSET + mask * kPROCESS_OFFSET + distId
+			local tid = step * kMASK_OFFSET * kPROCESS_OFFSET + eFIELD_MASK[field] * kPROCESS_OFFSET + distId
 			step = step + 1
 			return tid
 		end
