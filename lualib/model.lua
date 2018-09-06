@@ -2,69 +2,69 @@
 local _M = {}
 
 
-local _binder_ctx = {}
-local _value_ctx = {}
+local _binderCtx = {}
+local _valueCtx = {}
 
 
 function _M.registerBinder(name,...)
 	local keys = {...}
 	assert(#keys ~= 0)
 
-	assert(_binder_ctx[name] == nil,string.format("name:%s already register",name))
-	_binder_ctx[name] = {}
+	local firstKey = keys[1]
+
+	assert(_binderCtx[name] == nil,string.format("name:%s already register",name))
+	_binderCtx[name] = {}
 	
 	_M[string.format("fetch_%s",name)] = function ()
-		local same_name = _binder_ctx[name]
-		if same_name and same_name[keys[1]] then
+		local ctxInfo = _binderCtx[name]
+		if ctxInfo and ctxInfo[firstKey] then
 			local result = {}
-			for _,info in pairs(same_name[keys[1]]) do
+			for _,info in pairs(ctxInfo[firstKey]) do
 				table.insert(result,info.value)
 			end
 			return result
 		end	
 	end
 
-	local binder_map = {}
-
 	for _,key in pairs(keys) do
-		if not _binder_ctx[name][key] then
-			_binder_ctx[name][key] = {}
+		if not _binderCtx[name][key] then
+			_binderCtx[name][key] = {}
 		end
 
 		_M[string.format("fetch_%s_with_%s",name,key)] = function (k)
-			local same_name = _binder_ctx[name]
-			local same_k = same_name[key]
-			if not same_k[k] then
+			local ctxInfo = _binderCtx[name]
+			local info = ctxInfo[key]
+			if not info[k] then
 				return
 			end
-			return same_k[k].value
+			return info[k].value
 		end
 
 		_M[string.format("bind_%s_with_%s",name,key)] = function (k,value)
-			local same_name = _binder_ctx[name]
-			local same_k = same_name[key]
-			if not same_k then
-				same_name[key] = {}
-				same_k = same_name[key]
+			local ctxInfo = _binderCtx[name]
+			local info = ctxInfo[key]
+			if not info then
+				ctxInfo[key] = {}
+				info = ctxInfo[key]
 			end
-			same_k[k] = {time = os.time(),value = value}
+			info[k] = {time = os.time(),value = value}
 		end
 
 		_M[string.format("unbind_%s_with_%s",name,key)] = function (k)
-			local same_name = _binder_ctx[name]
-			local same_k = same_name[key]
-			same_k[k] = nil
+			local ctxInfo = _binderCtx[name]
+			local info = ctxInfo[key]
+			info[k] = nil
 		end
 	end
 end
 
 function _M.registerValue(name)
 	_M[string.format("set_%s",name)] = function (value)
-		_value_ctx[name] = {time = os.time(),value = value}
+		_valueCtx[name] = {time = os.time(),value = value}
 	end
 
 	_M[string.format("get_%s",name)] = function ()
-		local ctx = _value_ctx[name]
+		local ctx = _valueCtx[name]
 		if ctx then
 			return ctx.value
 		end
@@ -72,19 +72,19 @@ function _M.registerValue(name)
 	end
 
 	_M[string.format("delete_%s",name)] = function ()
-		_value_ctx[name] = nil
+		_valueCtx[name] = nil
 	end
 end
 
-function _M.count_model()
+function _M.countModel()
 	local value_report = {}
-	for name,ctx in pairs(_value_ctx) do
+	for name,ctx in pairs(_valueCtx) do
 		local now = math.modf(ctx.now / 100)
 		table.insert(value_report,string.format("born:%s,value:%s",os.date("%Y-%m-%d %H:%M:%S",now),ctx.value))
 	end
 
 	local binder_report = {}
-	for name,binder in pairs(_binder_ctx) do
+	for name,binder in pairs(_binderCtx) do
 		local report = {}
 		for key,ctx in pairs(binder) do
 			local key_report = {}
