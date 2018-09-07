@@ -79,7 +79,9 @@ function cItemMgr:save(dbChannel,db,dbIndex)
 		updater["$unset"] = unset
 	end
 	
-	dbChannel:update(db,self.__name,dbIndex,updater,true)
+	if setFlag or unsetFlag then
+		dbChannel:update(db,self.__name,dbIndex,updater,true)
+	end
 end
 
 function cItemMgr:onEnterGame(user)

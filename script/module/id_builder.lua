@@ -5,7 +5,7 @@ require "lfs"
 local kPROCESS_OFFSET = 100
 local kSERVER_OFFSET = 10000
 local kMASK_OFFSET = 10
-local kID_STEP = 100
+local kSTEP = 50
 
 local eFIELD_MASK = {
 	user = 1,
@@ -25,25 +25,25 @@ local eTMP = {
 }
 
 function init(self,serverId,distId)
-	if distId >= kPROCESS_OFFSET then
-		print(string.format("error dist id:%d",distId))
-		os.exit(1)
-	end
+	assert(serverId < kSERVER_OFFSET,string.format("error serverId:%d",serverId))
+	assert(distId < kPROCESS_OFFSET,string.format("error distId:%d",serverId))
 
 	local dbChannel = model.get_db_channel()
+	assert(dbChannel ~= nil,string.format("no db channel"))
 
 	for _,field in pairs(eUNIQUE) do
-		local result = dbChannel:findOne("common","id_builder",{query = {id = distId,key = field}})
+		local query = {id = distId,key = field}
+		local result = dbChannel:findOne("common","idBuilder",{query = query})
 		if not result then
-			result = {begin = 1,offset = kID_STEP}
+			result = {begin = 1,offset = kSTEP}
 		else
 			result.begin = result.begin + result.offset
-			result.offset = kID_STEP
+			result.offset = kSTEP
 		end
 
 		local updator = {}
 		updator["$set"] = result
-		dbChannel:update("common","id_builder",{id = distId,key = field},updator,true)
+		dbChannel:update("common","idBuilder",query,updator,true)
 
 		local cursor = result.begin
 		local max = result.begin + result.offset
@@ -58,7 +58,7 @@ function init(self,serverId,distId)
 				local dbChannel = model.get_db_channel()
 				local updator = {}
 				updator["$set"] = result
-				dbChannel:update("common","id_builder",{id = distId,key = field},updator,true)
+				dbChannel:update("common","idBuilder",query,updator,true)
 			end
 			return uid
 		end

@@ -1,17 +1,33 @@
 local model = require "model"
+local timer = require "timer"
 local object = import "module.object"
 
 local pairs = pairs
 local type = type
-
 
 --对应着mongodb中的database概念
 cDatabase = object.cObject:inherit("database_object")
 cCollection = object.cObject:inherit("database_collection")
 cDatabaseCommon = object.cObject:inherit("database_common")
 
+
+local kSAVE_INTERVAL = 30
+
+dbCommonInst = dbCommonInst or nil
+
 function __init__(self)
 	self.cCollection:saveField("__name")
+end
+
+function cDatabase:ctor(interval)
+	if not interval then
+		interval = kSAVE_INTERVAL
+	else
+		if interval < 1 then
+			interval = 1
+		end
+	end
+	timer.callout(interval,self,"save")
 end
 
 ------------------database-------------------
@@ -74,9 +90,14 @@ function cDatabaseCommon:ctor(interval)
 	self.dataMgr = setmetatable({},{__mode = "k"})
 	assert(dbCommonInst == nil)
 	dbCommonInst = self
-	if interval < 1 then
-		interval = 1
+	if not interval then
+		interval = kSAVE_INTERVAL
+	else
+		if interval < 1 then
+			interval = 1
+		end
 	end
+	timer.callout(interval,dbCommonInst,"save")
 end
 
 function cDatabaseCommon:dirtyField(field)
@@ -183,37 +204,33 @@ end
 
 function cCollection:save(dbChannel,db,dbIndex)
 	local saveFields = self.__saveFields
-	local set
-	local unset
+	local set = {}
+	local setFlag = false
+	local unset = {}
+	local unsetFlag = false
 	for field in pairs(self.__dirty) do
 		if saveFields[field] ~= nil then
 			local data = self[field]
 			if data then
-				if not set then
-					set = {}
-				end
+				setFlag = true
 				set[field] = data
 			else
-				if not unset then
-					unset = {}
-				end
+				unsetFlag = true
 				unset[field] = true
 			end
 		end
 	end
 	self.__dirty = {}
+
 	local updater = {}
-	local dirty = false
-	if set then
-		dirty = true
+	if setFlag then
 		updater["$set"] = set
 	end
-	if unset then
-		dirty = true
+	if unsetFlag then
 		updater["$unset"] = unset
 	end
-	
-	if dirty then
+
+	if setFlag or unsetFlag then
 		dbChannel:update(db,self.__name,dbIndex,updater,true)
 	end
 end

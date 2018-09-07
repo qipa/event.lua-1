@@ -27,8 +27,8 @@ itemExtraInfo = {
 	itemAttr[] attrInfo
 }
 sItemInfo = {
-	itemBaseInfo[] baseInfo
-	itemExtraInfo[] extraInfo
+	itemBaseInfo baseInfo
+	itemExtraInfo extraInfo
 }
 ]]
 function cEquipment:getExtraInfo()
