@@ -32,10 +32,10 @@ end
 
 function cls_world_user:send_client(proto,args)
 	local message_id,data = protocol.encode[proto](args)
-	self:send_agent("handler.agent_handler","forward_client",{uid = self.uid,message_id = message_id,data = data})
+	self:sendAgent("handler.agent_handler","forward_client",{uid = self.uid,message_id = message_id,data = data})
 end
 
-function cls_world_user:send_agent(file,method,args,callback)
+function cls_world_user:sendAgent(file,method,args,callback)
 	self.agent_channel:send(file,method,args,callback)
 end
 

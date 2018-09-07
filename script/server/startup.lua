@@ -72,10 +72,10 @@ function reserve_id()
 	return tonumber(result)
 end
 
-function agent_amount()
-	return server_manager:call_world("module.server_manager","agent_amount")
+function agentAmount()
+	return server_manager:callWorld("module.server_manager","agentAmount")
 end
 
-function scene_amount()
-	return server_manager:call_world("module.server_manager","scene_amount")
+function sceneAmount()
+	return server_manager:callWorld("module.server_manager","sceneAmount")
 end

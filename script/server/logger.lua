@@ -6,5 +6,5 @@ import "handler.logger_handler"
 
 event.fork(function ()
 	env.dist_id = 0
-	server_manager:listen_server("logger")
+	server_manager:listenServer("logger")
 end)

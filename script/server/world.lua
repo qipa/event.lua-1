@@ -42,12 +42,12 @@ end)
 
 event.fork(function ()
 	env.dist_id = server_manager:reserve_id()
-	server_manager:connect_server("logger")
+	server_manager:connectServer("logger")
     
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 	id_builder:init(env.dist_id)
 
-	local listener,reason = server_manager:listen_server("world")
+	local listener,reason = server_manager:listenServer("world")
 	if not listener then
 		event.breakout(reason)
 		return

@@ -74,7 +74,7 @@ local function append_log(logger,log_lv,...)
 		mb.source_line = line
 	end
 
-	server_manager:send_log("handler.logger_handler","log",mb)
+	server_manager:sendLog("handler.logger_handler","log",mb)
 end
 
 function _M:DEBUG(...)

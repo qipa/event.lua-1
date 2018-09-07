@@ -19,15 +19,15 @@ local traceback = debug.traceback
 event.fork(function ()
 	env.dist_id = startup.reserve_id()
 
-	serverMgr:connect_server("logger")
+	serverMgr:connectServer("logger")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 	
-	serverMgr:connect_server("world")
+	serverMgr:connectServer("world")
 
 	local currentNum,expectNum
 	while true do
-		currentNum,expectNum = serverMgr:call_world("server_manager","scene_num")
+		currentNum,expectNum = serverMgr:callWorld("server_manager","scene_num")
 		if currentNum == expectNum then
 			break
 		end
@@ -36,7 +36,7 @@ event.fork(function ()
 
 	local sceneServerInfo
 	while true do
-		sceneServerInfo = serverMgr:call_world("scene_manager","sceneServerInfo")
+		sceneServerInfo = serverMgr:callWorld("scene_manager","sceneServerInfo")
 		if #sceneServerInfo == currentNum then
 			break
 		end
@@ -44,11 +44,11 @@ event.fork(function ()
 	end
 
 	for _,info in pairs(sceneServerInfo) do
-		serverMgr:connect_server_with_addr()
+		serverMgr:connectServerWithAddr()
 	end
 
 
-	serverMgr:connect_server("login")
+	serverMgr:connectServer("login")
 	
 
 	id_builder:init(env.dist_id)
@@ -62,7 +62,7 @@ event.fork(function ()
 	}
 	local port = clientMgr.start(gate_conf)
 
-	serverMgr:send_login("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
+	serverMgr:sendLogin("module.agent_manager","register_agent_addr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
 
 	event.error("start success")
 end)

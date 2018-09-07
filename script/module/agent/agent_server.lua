@@ -56,7 +56,7 @@ function dispatch_client(self,cid,message_id,data,size)
 	local forward = common.PROTOCOL_FORWARD[pto_name]
 	if forward then
 		if forward == common.SERVER_TYPE.WORLD then
-			server_manager:send_world("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			server_manager:sendWorld("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		elseif forward == common.SERVER_TYPE.SCENE then
 			local user = model.fetch_agent_user_with_cid(cid)
 			if not user then
@@ -64,7 +64,7 @@ function dispatch_client(self,cid,message_id,data,size)
 				return
 			end
 
-			server_manager:send_scene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			server_manager:sendScene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		end
 		return
 	end
@@ -158,10 +158,10 @@ function user_enter(self,cid,uid,account)
 	agent_user:enter_game()
 
 	local msg = {user_id = agent_user.uid,agent_id = env.dist_id}
-	server_manager:send_world("handler.world_handler","enter_world",msg)
+	server_manager:sendWorld("handler.world_handler","enter_world",msg)
 
 	local msg = {user_uid = agent_user.uid,agent_id = env.dist_id,location_info = agent_user.location_info}
-	server_manager:send_world("module.scene_manager","enter_scene",msg)
+	server_manager:sendWorld("module.scene_manager","enter_scene",msg)
 end
 
 function user_leave(self,user)
@@ -204,7 +204,7 @@ function get_all_enter_user(self)
 end
 
 function connect_scene_server(self,scene_server,scene_addr)
-	local all_scene_server = server_manager:find_server("scene")
+	local all_scene_server = server_manager:findServer("scene")
 	if all_scene_server[scene_server] then
 		return true
 	end
@@ -216,7 +216,7 @@ function connect_scene_server(self,scene_server,scene_addr)
 		addr = string.format("tcp://%s:%d",scene_addr.ip,scene_addr.port)
 	end
 
-	local channel = server_manager:connect_server_with_addr("scene",addr,false,1)
+	local channel = server_manager:connectServerWithAddr("scene",addr,false,1)
 	return channel ~= nil
 end
 
@@ -260,8 +260,8 @@ function scene_server_update()
 end
 
 function connect_scene_server()
-	local result = server_manager:send_world("module.scene_manager","scene_server_info")
-	local list = server_manager:find_server("scene")
+	local result = server_manager:sendWorld("module.scene_manager","scene_server_info")
+	local list = server_manager:findServer("scene")
 
 	for _,info in pairs(result) do
 		if not list[info.id] then

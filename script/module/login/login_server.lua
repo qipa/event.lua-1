@@ -115,7 +115,7 @@ function userAuth(self,cid,account)
 		end
 		table.insert(queue,cid)
 
-		serverMgr:send_agent(agentUserInfo.agentId,"handler.agent_handler","userKick",{uid = agentUserInfo.uid},function (ok)
+		serverMgr:sendAgent(agentUserInfo.agentId,"handler.agent_handler","userKick",{uid = agentUserInfo.uid},function (ok)
 			_agentUser[account] = nil
 			_accountQueue[account] = nil
 			local count = #queue
@@ -157,6 +157,6 @@ function server_stop(self)
 
 	local agent_set = server_manager:how_many_agent()
 	for _,agent_id in pairs(agent_set) do
-		server_manager:send_agent(agent_id,"handler.agent_handler","server_stop")
+		server_manager:sendAgent(agent_id,"handler.agent_handler","server_stop")
 	end
 end

@@ -15,7 +15,7 @@ local login_server = import "module.login.login_server"
 
 event.fork(function ()
 	env.dist_id = startup.reserve_id()
-	server_manager:connect_server("logger")
+	server_manager:connectServer("logger")
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 
 	id_builder:init(env.dist_id)

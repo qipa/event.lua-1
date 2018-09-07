@@ -60,10 +60,10 @@ function cAgentUser:leaveGame()
 end
 
 function cAgentUser:forward_scene(message_id,message)
-	self:send_scene("handler.scene_handler","forward",{uid = self.uid,message_id = message_id,message = message})
+	self:sendScene("handler.scene_handler","forward",{uid = self.uid,message_id = message_id,message = message})
 end
 
-function cAgentUser:send_scene(file,method,args)
+function cAgentUser:sendScene(file,method,args)
 	local scene_channel = self.scene_channel
 	if not scene_channel then
 		print(string.format("scene server:%d not connected",self.scene_server))
