@@ -48,50 +48,38 @@ function cItemMgr:dirtyItem(itemUid)
 end
 
 function cItemMgr:save(dbChannel,db,dbIndex)
-	local slotDirty = false
 	if self.__dirty["itemSlot"] then
 		self.__dirtyItem = {}
-		slotDirty = true
 		dbObject.cCollection.save(self,dbChannel,db,dbIndex)
-	else
-		dbObject.cCollection.save(self,dbChannel,db,dbIndex)
-	end
-
-	if slotDirty then
 		return
 	end
-	
-	local set
-	local unset 
+
+	dbObject.cCollection.save(self,dbChannel,db,dbIndex)
+
+	local set = {}
+	local setFlag = false
+	local unset = {}
+	local unsetFlag = false
 	for itemUid in pairs(self.__dirtyItem) do
 		if self.itemSlot[itemUid] then
-			if not set then
-				set = {}
-			end
+			setFlag = true
 			set[string.format("itemSlot.%d",itemUid)] = self.itemSlot[itemUid]
 		else
-			if not unset then
-				unset = {}
-			end
+			unsetFlag = true
 			unset[string.format("itemSlot.%d",itemUid)] = true
 		end
 	end
 	self.__dirtyItem = {}
 
 	local updater = {}
-	local dirty = false
-	if set then
-		dirty = true
+	if setFlag then
 		updater["$set"] = set
 	end
-	if unset then
-		dirty = true
+	if unsetFlag then
 		updater["$unset"] = unset
 	end
 	
-	if dirty then
-		dbChannel:update(db,self.__name,dbIndex,updater,true)
-	end
+	dbChannel:update(db,self.__name,dbIndex,updater,true)
 end
 
 function cItemMgr:onEnterGame(user)
@@ -107,7 +95,15 @@ function cItemMgr:onOverride(user)
 end
 
 function cItemMgr:onSyncInfo()
-
+	local mb = {baseInfo = {},extraInfo = {}}
+	for itemUid,item in pairs(self.itemSlot) do
+		local baseInfo = item:getBaseInfo()
+		table.insert(mb.baseInfo,baseInfo)
+		local extraInfo = item:getExtraInfo()
+		if extraInfo then
+			table.insert(mb.extraInfo,extraInfo)
+		end
+	end
 end
 
 local function _addItem(self,item)

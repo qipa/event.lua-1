@@ -18,3 +18,19 @@ end
 function cEquipment:destroy()
 
 end
+--[[
+itemAttr = {
+	int key
+	int value
+}
+itemExtraInfo = {
+	itemAttr[] attrInfo
+}
+sItemInfo = {
+	itemBaseInfo[] baseInfo
+	itemExtraInfo[] extraInfo
+}
+]]
+function cEquipment:getExtraInfo()
+
+end

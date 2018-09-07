@@ -36,9 +36,6 @@ function cDatabase:load()
 	local db = self:getType()
 	local dbIndex = self:dbIndex()
 	for field in pairs(self.__saveFields) do
-		if not self.__alive then
-			break
-		end
 		local result
 		local cls = class.get(field)
 		if cls then
