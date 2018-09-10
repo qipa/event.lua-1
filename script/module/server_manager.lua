@@ -12,22 +12,22 @@ _serverNameCtx = _serverNameCtx or {}
 _serverCountor = _serverCountor or nil
 _eventListener = _eventListener or object.cObject:new()
 
-local client_channel = channel:inherit()
-function client_channel:disconnect()
+local cClientChannel = channel:inherit()
+function cClientChannel:disconnect()
 	_eventListener:fireEvent("SERVER_DOWN",self.name,self.id)
 	_serverChannel[self.id] = nil
 	_serverNameCtx[self.name] = nil
 	event.wakeup(self.monitor)
 end
 
-local server_channel = channel:inherit()
-function server_channel:disconnect()
+local cServerChannel = channel:inherit()
+function cServerChannel:disconnect()
 	_serverChannel[self.id] = nil
 	_serverNameCtx[self.name] = nil
 	_eventListener:fireEvent("SERVER_DOWN",self.name,self.id)
 end
 
-function server_channel:dispatch(message,size)
+function cServerChannel:dispatch(message,size)
 	self.countor = self.countor + 1
 	if self.countor == 1 then
 		channel.dispatch(self,message,size)
@@ -40,7 +40,7 @@ function server_channel:dispatch(message,size)
 	end
 end
 
-local function channel_accept(_,channel)
+local function onChannelAccept(_,channel)
 	channel.countor = 0
 end
 
@@ -50,14 +50,14 @@ function __init__(self)
 	end
 end
 
-function reserve_id(channel)
+function reserveId(channel)
 	assert(env.name == "world")
 	local id = _serverCountor
 	_serverCountor = _serverCountor + 1
 	return id
 end
 
-function register_server(channel,args)
+function registerServer(channel,args)
 	channel.name = args.name
 	channel.id = args.id
 
@@ -113,7 +113,7 @@ function findServer(self,name)
 end
 
 function listenServer(self,name)
-	local listener,reason = event.listen(env[name],4,channel_accept,server_channel)
+	local listener,reason = event.listen(env[name],4,onChannelAccept,cServerChannel)
 	if not listener then
 		return listener,reason
 	end
@@ -127,7 +127,7 @@ function listenScene(self)
 	else
 		addr = "tcp://0.0.0.0:0"
 	end
-	local listener,reason = event.listen(addr,4,channel_accept,server_channel)
+	local listener,reason = event.listen(addr,4,onChannelAccept,cServerChannel)
 	if not listener then
 		return listener,reason
 	end
@@ -139,7 +139,7 @@ function connectServer(self,name,reconnect,try,addr)
 		
 		channel.monitor = event.gen_session()
 
-		local id = channel:call("module.server_manager","register_server",{id = env.dist_id,name = env.name})
+		local id = channel:call("module.server_manager","registerServer",{id = env.dist_id,name = env.name})
 		channel.id = id
 		channel.name = name
 
@@ -158,7 +158,7 @@ function connectServer(self,name,reconnect,try,addr)
 		local channel,reason
 		local count = 0
 		while not channel do
-			channel,reason = event.connect(addr,4,false,client_channel)
+			channel,reason = event.connect(addr,4,false,cClientChannel)
 			if not channel then
 				event.error(string.format("connect server:%s %s failed:%s",name,addr,reason))
 				event.sleep(1)
@@ -204,7 +204,7 @@ end
 function sendAgent(self,serverId,file,method,args,callback)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "agent" then
-		return
+		error(string.format("sendAgent error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -212,7 +212,7 @@ end
 function callAgent(self,serverId,file,method,args)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "agent" then
-		return
+		error(string.format("callAgent error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -220,7 +220,7 @@ end
 function sendScene(self,serverId,file,method,args,callback)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "scene" then
-		return
+		error(string.format("sendScene error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -228,7 +228,7 @@ end
 function callScene(self,serverId,file,method,args)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "scene" then
-		return
+		error(string.format("callScene error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -236,8 +236,8 @@ end
 function sendLogin(self,file,method,args,callback)
 	local serverId = _serverNameCtx.login
 	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= serverId then
-		return
+	if not channel or channel.name ~= "login" then
+		error(string.format("sendLogin error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -245,8 +245,8 @@ end
 function callLogin(self,file,method,args)
 	local serverId = _serverNameCtx.login
 	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= serverId then
-		return
+	if not channel or channel.name ~= "login" then
+		error(string.format("callLogin error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -254,8 +254,8 @@ end
 function sendWorld(self,file,method,args,callback)
 	local serverId = _serverNameCtx.world
 	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= serverId then
-		return
+	if not channel or channel.name ~= "world" then
+		error(string.format("sendWorld error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -263,8 +263,8 @@ end
 function callWorld(self,file,method,args)
 	local serverId = _serverNameCtx.world
 	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= serverId then
-		return
+	if not channel or channel.name ~= "world" then
+		error(string.format("callWorld error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -273,7 +273,7 @@ function sendLog(self,file,method,args,callback)
 	local serverId = _serverNameCtx.logger
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "logger" then
-		return
+		error(string.format("sendLog error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -281,8 +281,8 @@ end
 function callLog(self,file,method,args)
 	local serverId = _serverNameCtx.log
 	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= serverId then
-		return
+	if not channel or channel.name ~= "logger" then
+		error(string.format("callLog error:serverId=%d,file=%s,method=%d",serverId,file,method))
 	end
 	return channel:call(file,method,args)
 end
