@@ -30,7 +30,9 @@ function dispatch_client(_,args)
 	end
 end
 
-function createScene(self,sceneId,sceneUid)
+function createScene(self,args)
+	local sceneId,sceneUid = args.sceneId,args.sceneUid
+
 	local sceneInfo = _sceneCtx[sceneId]
 	if not sceneInfo then
 		sceneInfo = {}
@@ -40,6 +42,7 @@ function createScene(self,sceneId,sceneUid)
 	local scene = scene.cScene:new(sceneId,sceneUid)
 	sceneInfo[sceneUid] = scene
 	_sceneMap[sceneUid] = scene	
+	return sceneUid
 end
 
 function deleteScene(self,sceneUid)

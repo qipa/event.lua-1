@@ -29,8 +29,6 @@ function cWorldUser:dbIndex()
 end
 
 function cWorldUser:enter()
-	table.print(self)
-
 	event.error(string.format("user:%d enter world:%d",self.userUid,env.dist_id))
 
 	if not self.chatUser then
@@ -46,8 +44,6 @@ function cWorldUser:enter()
 	end
 	self.teamUser:onCreate(self)
 	self.teamUser:onEnter()
-
-
 end
 
 function cWorldUser:override(agentId)
