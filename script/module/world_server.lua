@@ -4,7 +4,7 @@ local model = require "model"
 local server_manager = import "module.server_manager"
 local scene_manager = import "module.scene_manager"
 local dbObject = import "module.database_object"
-local world_user = import "module.world_user"
+local worldUser = import "module.worldUser"
 import "handler.world_handler"
 
 _agent_server_status = _agent_server_status or {}
@@ -74,26 +74,19 @@ function server_down(self,name,srv_id)
 
 end
 
-function enter(self,user_uid,user_agent)
-	local user = model.fetch_world_user_with_uid(user_uid)
+function enter(self,userUid,agentId)
+	local user = model.fetch_world_user_with_uid(userUid)
 	if user then
-		user:leave()
-		user:release()
+		user:override(agentId)
+	else
+		user = worldUser.cWorldUser:new(userUid,agentId)
+		user:load()
+		user:enter()
 	end
-	
-	local user = world_user.cls_world_user:new(user_uid,user_agent)
-	user.loading = true
-	user:load()
-	user.loading = false
-	local user = model.fetch_world_user_with_uid(user_uid)
-	if not user then
-		return
-	end
-	user:enter()
 end
 
-function leave(self,user_uid)
-	local user = model.fetch_world_user_with_uid(user_uid)
+function leave(self,userUid)
+	local user = model.fetch_world_user_with_uid(userUid)
 	if not user then
 		return false
 	end

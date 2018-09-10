@@ -4,53 +4,39 @@ local model = require "model"
 local util = require "util"
 local protocol = require "protocol"
 local server_manager = import "module.server_manager"
-local database_object = import "module.database_object"
+local dbObject = import "module.database_object"
 
-cls_world_user = database_object.cDatabase:inherit("world_user","uid")
+cWorldUser = dbObject.cDatabase:inherit("world_user","uid")
 
 function __init__(self)
-	self.cls_world_user:saveField("base_info")
-	self.cls_world_user:saveField("world_user")
+	self.cWorldUser:saveField("base_info")
+	self.cWorldUser:saveField("world_user")
 end
 
 
-function cls_world_user:create(uid,agent_id)
-	self.uid = uid
-	self.agent_id = agent_id
-	self.agent_channel = server_manager:get_agent_channel(agent_id)
-	self.loading = false
-	model.bind_world_user_with_uid(self.uid,self)
+function cWorldUser:onCreate(userUid,agentId)
+	self.userUid = userUid
+	self.agentId = agentId
 end
 
-function cls_world_user:destroy()
-	model.unbind_world_user_with_uid(self.uid)
+function cWorldUser:onDestroy()
 end
 
-function cls_world_user:dbIndex()
-	return {uid = self.uid}
+function cWorldUser:dbIndex()
+	return {userUid = self.userUid}
 end
 
-function cls_world_user:send_client(proto,args)
-	local message_id,data = protocol.encode[proto](args)
-	self:sendAgent("handler.agent_handler","forward_client",{uid = self.uid,message_id = message_id,data = data})
+function cWorldUser:enter()
+	event.error(string.format("user:%d enter world:%d",self.userUid,env.dist_id))
+	model.bind_world_user_with_uid(self.userUid,self)
 end
 
-function cls_world_user:sendAgent(file,method,args,callback)
-	self.agent_channel:send(file,method,args,callback)
+function cWorldUser:override(agentId)
+	self.agentId = agentId
 end
 
-function cls_world_user:enter()
-	event.error(string.format("user:%d enter world:%d",self.uid,env.dist_id))
-	self:send_client("s2c_world_enter",{user_uid = self.uid})
+function cWorldUser:leave()
+	event.error(string.format("user:%d leave world:%d",self.userUid,env.dist_id))
+	model.unbind_world_user_with_uid(self.userUid)
 end
 
-function cls_world_user:leave()
-	event.error(string.format("user:%d leave world:%d",self.uid,env.dist_id))
-end
-
-function cls_world_user:sync_scene_info(scene_server,scene_id,scene_uid)
-	self.scene_server = scene_server
-	self.scene_id = scene_id
-	self.scene_uid = scene_uid
-	self.scene_channel = server_manager:get_scene_channel(scene_server)
-end
