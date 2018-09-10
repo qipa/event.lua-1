@@ -54,7 +54,8 @@ function enter(self,userUid,agentId)
 	if user and user.phase == eUSER_PHASE.DONE then
 		user:override(agentId)
 	else
-		user = worldUser.cWorldUser:new(userUid,agentId)
+		user = worldUser.cWorldUser:new()
+		user:onCreate(userUid,agentId)
 		model.bind_world_user_with_uid(userUid,user)
 		user.phase = eUSER_PHASE.LOADING
 		user:load()
@@ -82,9 +83,11 @@ function leave(self,userUid)
 	user:leave()
 	user:save()
 	user:release()
+	model.unbind_world_user_with_uid(userUid)
 	return true
 end
 
 function serverStop(self)
-	
+	local dbCommon = model.get_dbCommon()
+	dbCommon:save()
 end

@@ -24,21 +24,13 @@ function __init__(self)
 end
 
 function start(self)
-	
-	timer.callout(30,self,"flush")
-
 	timer.callout(1,self,"authTimer")
 
 	import "handler.agent_handler"
 	import "handler.cmd_handler"
 end
 
-function flush(self)
-	local all = model.fetch_agent_user()
-	for _,user in pairs(all) do
-		user:save()
-	end
-end
+
 
 function authTimer(self)
 	local now = util.time()
