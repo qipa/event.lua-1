@@ -5,14 +5,14 @@ local util = require "util"
 local protocol = require "protocol"
 local server_manager = import "module.server_manager"
 local dbObject = import "module.database_object"
-local chatMgr = import "module.world.chat_manager"
-local teamMgr = import "module.world.team_manager"
+local chatUser = import "module.world.chat_user"
+local teamUser = import "module.world.team_user"
 
 cWorldUser = dbObject.cDatabase:inherit("world_user","uid")
 
 function __init__(self)
-	self.cWorldUser:saveField("chatMgr")
-	self.cWorldUser:saveField("teamMgr")
+	self.cWorldUser:saveField("chatUser")
+	self.cWorldUser:saveField("teamUser")
 end
 
 
@@ -30,29 +30,30 @@ end
 
 function cWorldUser:enter()
 	event.error(string.format("user:%d enter world:%d",self.userUid,env.dist_id))
-	if not self.chatMgr then
-		self.chatMgr = chatMgr.cChatMgr:new()
-		self.chatMgr:onCreate(self)
-	end
-	self.chatMgr:onEnter()
 
-	if not self.teamMgr then
-		self.teamMgr = teamMgr.cTeamMgr:new()
-		self.teamMgr:onCreate(self)
+	if not self.chatUser then
+		self.chatUser = chatUser.cChatMgr:new()
 	end
-	self.teamMgr:onEnter()
+	self.chatUser:onCreate(self)
+	self.chatUser:onEnter()
+
+	if not self.teamUser then
+		self.teamUser = teamUser.cTeamMgr:new()
+	end
+	self.teamUser:onCreate(self)
+	self.teamUser:onEnter()
 end
 
 function cWorldUser:override(agentId)
 	self.agentId = agentId
-	self.chatMgr:onOverride()
-	self.teamMgr:onOverride()
+	self.chatUser:onOverride()
+	self.teamUser:onOverride()
 end
 
 function cWorldUser:leave()
 	event.error(string.format("user:%d leave world:%d",self.userUid,env.dist_id))
 
-	self.chatMgr:onLeave()
-	self.teamMgr:onLeave()
+	self.chatUser:onLeave()
+	self.teamUser:onLeave()
 end
 

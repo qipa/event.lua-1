@@ -5,30 +5,30 @@ local util = require "util"
 local serverMgr = import "module.server_manager"
 local dbObject = import "module.database_object"
 
-cTeamMgr = dbObject.cCollection:inherit("team_manager")
+cTeamUser = dbObject.cCollection:inherit("team_user")
 
 function __init__(self)
 
 end
 
 
-function cTeamMgr:onCreate()
-	
+function cTeamUser:onCreate(user)
+	self.__user = user
 end
 
-function cTeamMgr:onDestroy()
+function cTeamUser:onDestroy()
 end
 
 
-function cTeamMgr:onEnter()
-
-end
-
-function cTeamMgr:onOverride()
+function cTeamUser:onEnter()
 
 end
 
-function cTeamMgr:onLeave()
+function cTeamUser:onOverride()
+
+end
+
+function cTeamUser:onLeave()
 
 end
 

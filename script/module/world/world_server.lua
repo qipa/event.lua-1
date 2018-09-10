@@ -55,10 +55,10 @@ function enter(self,userUid,agentId)
 		user:override(agentId)
 	else
 		user = worldUser.cWorldUser:new()
-		user:onCreate(userUid,agentId)
 		model.bind_world_user_with_uid(userUid,user)
 		user.phase = eUSER_PHASE.LOADING
 		user:load()
+		user:onCreate(userUid,agentId)
 		if user.phase == eUSER_PHASE.LEAVE then
 			user:release()
 			model.unbind_world_user_with_uid(userUid)

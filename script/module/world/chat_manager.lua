@@ -5,30 +5,17 @@ local util = require "util"
 local serverMgr = import "module.server_manager"
 local dbObject = import "module.database_object"
 
-cChatMgr = dbObject.cCollection:inherit("chat_manager")
+_chatChannel = _chatChannel or {}
 
 function __init__(self)
 
 end
 
 
-function cChatMgr:onCreate()
-	
-end
-
-function cChatMgr:onDestroy()
-end
-
-
-function cChatMgr:onEnter()
+function enter(self,user)
 
 end
 
-function cChatMgr:onOverride()
+function leave(self,user)
 
 end
-
-function cChatMgr:onLeave()
-
-end
-
