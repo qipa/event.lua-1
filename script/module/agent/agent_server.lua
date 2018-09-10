@@ -195,7 +195,7 @@ function get_all_enter_user(self)
 	return result
 end
 
-function connect_scene_server(self,scene_server,scene_addr)
+function connectSceneServer(self,scene_server,scene_addr)
 	local all_scene_server = server_manager:findServer("scene")
 	if all_scene_server[scene_server] then
 		return true
