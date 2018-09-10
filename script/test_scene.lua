@@ -8,6 +8,7 @@ local monster = import "module.scene.monster"
 local sceneServer = import "module.scene.scene_server"
 local itemFactory = import "module.agent.item.item_factory"
 local itemContainer = import "module.agent.item.item_container"
+local worldServer = import "module.world.world_server"
 -- sceneServer:createScene(1001,1)
 
 -- local userData = table.tostring({uid = 1,pos = {1,1}})
@@ -33,6 +34,7 @@ if not db_channel then
 end
 
 event.fork(function ()
+	env.dist_id = 1
 	startup.run(false,env.mongodb,env.config)
 	idBuilder:init(env.uid,1)
 	local container = itemContainer.cItemContainer:load(nil,db_channel,"user",{userUid = 5})
@@ -40,12 +42,14 @@ event.fork(function ()
 		container = itemContainer.cItemContainer:new()
 	end
 
-	--container:insertItemByCid(100,1)
-	container:deleteItemByCid(100,5)
---	container:insertItemByCid(1000,1)
---	container:insertItemByCid(2000,1)
+	-- container:insertItemByCid(100,1)
+	-- container:deleteItemByCid(100,5)
+	-- container:insertItemByCid(1000,1)
+	-- container:insertItemByCid(2000,1)
 	container:save(db_channel,"user",{userUid = 5})
-	table.print(container)
+	-- table.print(container)
 
+	worldServer:enter(1,1)
+	worldServer:leave(1)
 end)
 

@@ -29,19 +29,25 @@ function cWorldUser:dbIndex()
 end
 
 function cWorldUser:enter()
+	table.print(self)
+
 	event.error(string.format("user:%d enter world:%d",self.userUid,env.dist_id))
 
 	if not self.chatUser then
-		self.chatUser = chatUser.cChatMgr:new()
+		self.chatUser = chatUser.cChatUser:new()
+		self:init(self.chatUser)
 	end
 	self.chatUser:onCreate(self)
 	self.chatUser:onEnter()
 
 	if not self.teamUser then
-		self.teamUser = teamUser.cTeamMgr:new()
+		self.teamUser = teamUser.cTeamUser:new()
+		self:init(self.teamUser)
 	end
 	self.teamUser:onCreate(self)
 	self.teamUser:onEnter()
+
+
 end
 
 function cWorldUser:override(agentId)

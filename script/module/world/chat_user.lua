@@ -6,10 +6,10 @@ local chatMgr = import "module.world.chat_manager"
 local serverMgr = import "module.server_manager"
 local dbObject = import "module.database_object"
 
-cChatUser = dbObject.cCollection:inherit("chat_user")
+cChatUser = dbObject.cCollection:inherit("chatUser")
 
 function __init__(self)
-
+	self.cChatUser:saveField("chatInfo")
 end
 
 
@@ -22,6 +22,10 @@ end
 
 
 function cChatUser:onEnter()
+	if not self.chatInfo then
+		self.chatInfo = {}
+	end
+	self:dirtyField("chatInfo")
 	chatMgr:enter(self)
 end
 

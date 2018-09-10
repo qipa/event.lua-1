@@ -204,7 +204,7 @@ end
 function sendAgent(self,serverId,file,method,args,callback)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "agent" then
-		error(string.format("sendAgent error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("sendAgent error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -212,7 +212,7 @@ end
 function callAgent(self,serverId,file,method,args)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "agent" then
-		error(string.format("callAgent error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("callAgent error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -220,7 +220,7 @@ end
 function sendScene(self,serverId,file,method,args,callback)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "scene" then
-		error(string.format("sendScene error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("sendScene error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -228,7 +228,7 @@ end
 function callScene(self,serverId,file,method,args)
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "scene" then
-		error(string.format("callScene error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("callScene error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -237,7 +237,7 @@ function sendLogin(self,file,method,args,callback)
 	local serverId = _serverNameCtx.login
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "login" then
-		error(string.format("sendLogin error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("sendLogin error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -246,7 +246,7 @@ function callLogin(self,file,method,args)
 	local serverId = _serverNameCtx.login
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "login" then
-		error(string.format("callLogin error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("callLogin error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -255,7 +255,7 @@ function sendWorld(self,file,method,args,callback)
 	local serverId = _serverNameCtx.world
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "world" then
-		error(string.format("sendWorld error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("sendWorld error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -264,7 +264,7 @@ function callWorld(self,file,method,args)
 	local serverId = _serverNameCtx.world
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "world" then
-		error(string.format("callWorld error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("callWorld error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	return channel:call(file,method,args)
 end
@@ -273,7 +273,7 @@ function sendLog(self,file,method,args,callback)
 	local serverId = _serverNameCtx.logger
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "logger" then
-		error(string.format("sendLog error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("sendLog error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	channel:send(file,method,args,callback)
 end
@@ -282,7 +282,7 @@ function callLog(self,file,method,args)
 	local serverId = _serverNameCtx.log
 	local channel = _serverChannel[serverId]
 	if not channel or channel.name ~= "logger" then
-		error(string.format("callLog error:serverId=%d,file=%s,method=%d",serverId,file,method))
+		error(string.format("callLog error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
 	return channel:call(file,method,args)
 end

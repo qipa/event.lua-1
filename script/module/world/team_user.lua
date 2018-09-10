@@ -5,10 +5,10 @@ local util = require "util"
 local serverMgr = import "module.server_manager"
 local dbObject = import "module.database_object"
 
-cTeamUser = dbObject.cCollection:inherit("team_user")
+cTeamUser = dbObject.cCollection:inherit("teamUser")
 
 function __init__(self)
-
+	self.cTeamUser:saveField("teamInfo")
 end
 
 
@@ -21,7 +21,10 @@ end
 
 
 function cTeamUser:onEnter()
-
+	if not self.teamInfo then
+		self.teamInfo = {}
+	end
+	self:dirtyField("teamInfo")
 end
 
 function cTeamUser:onOverride()

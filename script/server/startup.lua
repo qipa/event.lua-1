@@ -22,7 +22,7 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 	local runtime_logger = logger:create("runtime",5)
 	event.error = function (...)
 		print(...)
-		runtime_logger:ERROR(...)
+		-- runtime_logger:ERROR(...)
 	end
 
 	if monitor_collect then

@@ -4,7 +4,7 @@ local model = require "model"
 local serverMgr = import "module.server_manager"
 local scene_manager = import "module.scene_manager"
 local dbObject = import "module.database_object"
-local worldUser = import "module.world_user"
+local worldUser = import "module.world.world_user"
 import "handler.world_handler"
 
 model.registerValue("dbCommon")
@@ -17,7 +17,7 @@ local eUSER_PHASE = {
 
 function __init__(self)
 	local dbCommon = dbObject.cDatabaseCommon:new(30)
-	mode.set_dbCommon(dbCommon)
+	model.set_dbCommon(dbCommon)
 	serverMgr:registerEvent("SERVER_DOWN",self,"onServerDown")
 end
 

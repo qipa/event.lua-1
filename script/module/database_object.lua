@@ -64,6 +64,7 @@ function cDatabase:load()
 end
 
 function cDatabase:save()
+
 	local dbChannel = model.get_db_channel()
 	local db = self:getType()
 	for field in pairs(self.__dirty) do

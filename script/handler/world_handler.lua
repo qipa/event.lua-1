@@ -1,5 +1,5 @@
 local model = require "model"
-local world_server = import "module.world_server"
+local world_server = import "module.world.world_server"
 
 
 function enter_world(channel,args)
