@@ -38,10 +38,10 @@
 #include "common/common.h"
 
 
-#define LOG_ERROR   "\033[40;31m%s\033[0m\r\n"
-#define LOG_WARN    "\033[40;33m%s\033[0m\r\n"
-#define LOG_INFO    "\033[40;36m%s\033[0m\r\n"
-#define LOG_DEBUG   "\033[40;37m%s\033[0m\r\n"
+#define LOG_ERROR   "\033[40;31m%s\033[0m"
+#define LOG_WARN    "\033[40;33m%s\033[0m"
+#define LOG_INFO    "\033[40;36m%s\033[0m"
+#define LOG_DEBUG   "\033[40;37m%s\033[0m"
 
 static const char* LOG_COLOR[] = { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG};
 

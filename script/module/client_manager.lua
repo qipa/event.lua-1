@@ -18,15 +18,15 @@ function __init__(self)
 
 end
 
-local function _clientData(cid,message_id,data,size)
+local function _onClientData(cid,mesasgeId,data,size)
 	local cid = cid * 100 + env.dist_id
-	local ok,err = xpcall(_onData,debug.traceback,cid,message_id,data,size)
+	local ok,err = xpcall(_onData,debug.traceback,cid,mesasgeId,data,size)
 	if not ok then
 		event.error(err)
 	end
 end
 
-local function _clientAccept(cid,addr)
+local function _onClientAccept(cid,addr)
 	local cid = cid * 100 + env.dist_id
 	local ok,err = xpcall(_onAccept,debug.traceback,cid,addr)
 	if not ok then
@@ -34,7 +34,7 @@ local function _clientAccept(cid,addr)
 	end
 end
 
-local function _clientClose(cid)
+local function _onClientClose(cid)
 	local cid = cid * 100 + env.dist_id
 	local ok,err = xpcall(_onClose,debug.traceback,cid)
 	if not ok then
@@ -45,7 +45,7 @@ end
 
 function start(conf)
 	local gate = event.gate(conf.max or 1000)
-	gate:set_callback(_clientAccept,_clientClose,_clientData)
+	gate:set_callback(_onClientAccept,_onClientClose,_onClientData)
 	local port,reason = gate:start("0.0.0.0",conf.port or 0)
 	if not port then
 		return false,reason

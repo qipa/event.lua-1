@@ -41,7 +41,7 @@ end)
 
 
 event.fork(function ()
-	env.dist_id = server_manager:reserve_id()
+	env.dist_id = server_manager:reserveId()
 	server_manager:connectServer("logger")
     
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)

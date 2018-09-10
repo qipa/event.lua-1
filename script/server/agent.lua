@@ -17,7 +17,7 @@ local xpcall = xpcall
 local traceback = debug.traceback
 
 event.fork(function ()
-	env.dist_id = startup.reserve_id()
+	env.dist_id = startup.reserveId()
 
 	serverMgr:connectServer("logger")
 

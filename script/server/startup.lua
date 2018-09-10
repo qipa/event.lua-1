@@ -61,10 +61,10 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 	end
 end
 
-function reserve_id()
-	local result,reason = http.post_world("/module/server_manager/reserve_id/")
+function reserveId()
+	local result,reason = http.post_world("/module/server_manager/reserveId/")
 	while not result do
-		result,reason = http.post_world("/module/server_manager/reserve_id/")
+		result,reason = http.post_world("/module/server_manager/reserveId/")
 		if not result then
 			event.sleep(1)
 		end

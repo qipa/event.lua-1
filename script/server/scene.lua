@@ -15,7 +15,7 @@ local mongo_indexes = import "common.mongo_indexes"
 
 
 event.fork(function ()
-	env.dist_id = startup.reserve_id()
+	env.dist_id = startup.reserveId()
 	
 	server_manager:connectServer("world")
 	server_manager:connectServer("logger")
