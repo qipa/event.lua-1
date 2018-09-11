@@ -16,7 +16,7 @@ function __init__(self)
 	serverMgr:registerEvent("SERVER_DOWN",self,"onServerDown")
 end
 
-function createScene(self,sceneId,func)
+function createScene(self,sceneId)
 	local minServer
 	local minAmount
 	for serverId,info in pairs(_sceneServerMgr) do
@@ -27,7 +27,7 @@ function createScene(self,sceneId,func)
 	end
 
 	local sceneUid = idBuilder:alloc_scene_uid()
-	serverMgr:sendScene(minServer,"module.scene.scene_server","createScene",{sceneId = sceneId,sceneUid = sceneUid},func)
+	serverMgr:sendScene(minServer,"module.scene.scene_server","createScene",{sceneId = sceneId,sceneUid = sceneUid})
 	return minServer,sceneUid
 end
 
@@ -98,6 +98,7 @@ end
 function leave(self,args)
 
 end
+
 
 function enterScene(self,userUid,agentId,sceneId,sceneUid)
 	local fighterInfo

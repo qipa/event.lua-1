@@ -144,9 +144,6 @@ function userEnter(self,cid,uid,account)
 
 	local msg = {user_id = user.uid,agent_id = env.dist_id}
 	serverMgr:sendWorld("handler.world_handler","enterWorld",msg)
-
-	local msg = {user_uid = user.uid,agent_id = env.dist_id,location_info = user.location_info}
-	serverMgr:sendWorld("module.world.scene_manager","enterScene",msg)
 end
 
 function userLeave(self,user)
@@ -165,7 +162,6 @@ function userLeave(self,user)
 	user:release()
 
 	serverMgr:sendWorld("handler.world_handler","leaveWorld",{userUid = user.uid})
-	serverMgr:sendWorld("module.world.scene_manager","leaveScene",{userUid = user.uid})
 	serverMgr:sendLogin("handler.login_handler","leaveAgent",{account = user.account})
 end
 

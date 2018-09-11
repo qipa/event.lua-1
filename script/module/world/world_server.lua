@@ -22,7 +22,9 @@ function __init__(self)
 end
 
 function start(self)
-	import "handler.cmd_handler"
+	local dbCommon = model.get_dbCommon()
+	local dbChannel = model.get_dbChannel()
+	local list = dbChannel:findAll("common","simpleUser")
 end
 
 

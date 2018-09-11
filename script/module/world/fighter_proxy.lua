@@ -10,7 +10,7 @@ local sceneMgr = import "module.world.scene_manager"
 cFighterProxy = dbObject.cCollection:inherit("fighter")
 
 function __init__(self)
-	self.cFighterProxy:saveField("locationInfo")
+	
 end
 
 
@@ -21,12 +21,16 @@ end
 function cFighterProxy:onDestroy()
 end
 
-function cFighterProxy:enterScene(sceneId,sceneUid)
-	sceneMgr:enterScene(self,sceneId,sceneUid)
+function cFighterProxy:onEnter()
+	local locationInfo = self.locationInfo
+	self:enterScene(locationInfo.sceneId,locationInfo.sceneUid)
 end
 
-function cFighterProxy:leaveScene()
+function cFighterProxy:onLeave()
 	sceneMgr:leaveScene(self)
 end
 
+function cFighterProxy:enterScene(sceneId,sceneUid)
+	sceneMgr:enterScene(self,sceneId,sceneUid)
+end
 
