@@ -7,7 +7,7 @@ local protocol = require "protocol"
 local channel = require "channel"
 local timer = require "timer"
 local clientMgr = import "module.client_manager"
-local server_manager = import "module.server_manager"
+local serverMgr = import "module.server_manager"
 local module_object = import "module.object"
 local agentUser = import "module.agent.agent_user"
 local common = import "common.common"
@@ -19,7 +19,7 @@ _enterUserMgr = _enterUserMgr or {}
 _server_stop = _server_stop or false
 
 function __init__(self)
-	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
+	serverMgr:registerEvent("SERVER_DOWN",self,"server_down")
 end
 
 function start(self)
@@ -47,7 +47,7 @@ function dispatch_client(self,cid,message_id,data,size)
 	local forward = common.PROTOCOL_FORWARD[pto_name]
 	if forward then
 		if forward == common.SERVER_TYPE.WORLD then
-			server_manager:sendWorld("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			serverMgr:sendWorld("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		elseif forward == common.SERVER_TYPE.SCENE then
 			local user = model.fetch_agent_user_with_cid(cid)
 			if not user then
@@ -55,7 +55,7 @@ function dispatch_client(self,cid,message_id,data,size)
 				return
 			end
 
-			server_manager:sendScene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			serverMgr:sendScene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
 		end
 		return
 	end
@@ -129,13 +129,6 @@ function userAuth(self,cid,token)
 		return
 	end
 
-	local token_info = util.authcode(token,tokenInfo.time,0)
-	token_info = cjson.decode(token_info)
-	if token_info.uid ~= tokenInfo.uid then
-		clientMgr:close(cid)
-		return
-	end
-
 	local enterInfo = {mutex = event.mutex(),uid = tokenInfo.uid}
 	_enterUserMgr[cid] = enterInfo
 
@@ -150,37 +143,30 @@ function userEnter(self,cid,uid,account)
 	user:enterGame()
 
 	local msg = {user_id = user.uid,agent_id = env.dist_id}
-	server_manager:sendWorld("handler.world_handler","enter_world",msg)
+	serverMgr:sendWorld("handler.world_handler","enterWorld",msg)
 
 	local msg = {user_uid = user.uid,agent_id = env.dist_id,location_info = user.location_info}
-	server_manager:sendWorld("module.scene_manager","enter_scene",msg)
+	serverMgr:sendWorld("module.world.scene_manager","enterScene",msg)
 end
 
 function userLeave(self,user)
-	local ok,err = xpcall(user.leave_game,debug.traceback,user)
+	local ok,err = xpcall(user.leaveGame,debug.traceback,user)
 	if not ok then
 		event.error(err)
 	end
-
-	local world_channel = model.get_world_channel()
-	if world_channel then
-		world_channel:send("handler.world_handler","leave_world",{user_uid = user.uid})
-		world_channel:send("module.scene_manager","leave_scene",{uid = user.uid})
-	end
-
 	user:save()
-	
-	local db_channel = model.get_dbChannel()
+
+	local dbChannel = model.get_dbChannel()
 	local updater = {}
 	updater["$inc"] = {version = 1}
 	updater["$set"] = {time = os.time()}
-	db_channel:findAndModify("agent_user","save_version",{query = {uid = user.uid},update = updater,upsert = true})
+	dbChannel:findAndModify("agentUser","saveVersion",{query = {uid = user.uid},update = updater,upsert = true})
 
 	user:release()
 
-	local login_channel = model.get_login_channel()
-
-	login_channel:send("handler.login_handler","rpc_leave_agent",{account = user.account})
+	serverMgr:sendWorld("handler.world_handler","leaveWorld",{userUid = user.uid})
+	serverMgr:sendWorld("module.world.scene_manager","leaveScene",{userUid = user.uid})
+	serverMgr:sendLogin("handler.login_handler","leaveAgent",{account = user.account})
 end
 
 function get_all_enter_user(self)
@@ -196,7 +182,7 @@ function get_all_enter_user(self)
 end
 
 function connectSceneServer(self,scene_server,scene_addr)
-	local all_scene_server = server_manager:findServer("scene")
+	local all_scene_server = serverMgr:findServer("scene")
 	if all_scene_server[scene_server] then
 		return true
 	end
@@ -208,7 +194,7 @@ function connectSceneServer(self,scene_server,scene_addr)
 		addr = string.format("tcp://%s:%d",scene_addr.ip,scene_addr.port)
 	end
 
-	local channel = server_manager:connectServerWithAddr("scene",addr,false,1)
+	local channel = serverMgr:connectServerWithAddr("scene",addr,false,1)
 	return channel ~= nil
 end
 
@@ -252,8 +238,8 @@ function scene_server_update()
 end
 
 function connect_scene_server()
-	local result = server_manager:sendWorld("module.scene_manager","scene_server_info")
-	local list = server_manager:findServer("scene")
+	local result = serverMgr:sendWorld("module.scene_manager","scene_server_info")
+	local list = serverMgr:findServer("scene")
 
 	for _,info in pairs(result) do
 		if not list[info.id] then
