@@ -17,6 +17,15 @@ event.fork(function ()
 	env.dist_id = startup.reserveId()
 	startup.run(env.uid,env.dist_id,env.monitor,env.mongodb,env.config,env.protocol)
 
+	serverMgr:listenServer("login")
+
+	local agentInfo = startup.agentAmount()
+	while not agentInfo or agentInfo.needAmount ~= agentInfo.currAmount do
+		agentInfo = startup.agentAmount()
+		event.error(string.format("wait for agent connect:%d %d",agentInfo.needAmount,agentInfo.currAmount))
+		event.sleep(1)
+	end
+	
 	local gateConf = {
 		max = 1000,
 		port = 0,

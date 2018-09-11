@@ -39,7 +39,7 @@ function cLoginUser:auth()
 		table.insert(result,{uid = role.uid,name = role.name})
 	end
 
-	send_client(self.cid,"sLoginAuth",{list = result})
+	sendClient(self.cid,"sLoginAuth",{list = result})
 end
 
 function cLoginUser:createRole(career,name)
@@ -52,7 +52,7 @@ function cLoginUser:createRole(career,name)
 		table.insert(result,{uid = role.uid,name = role.name})
 	end
 
-	send_client(self.cid,"s2c_create_role",{list = result})
+	sendClient(self.cid,"sCreateRole",{list = result})
 end
 
 function cLoginUser:delete_role(uid)
@@ -89,7 +89,7 @@ function cLoginUser:enterAgent(uid)
 			return
 		end
 		loginServer:userEnterAgent(user.account,user.uid,agentId)
-		send_client(user.cid,"s2c_login_enter",{token = token,ip = agentAddr.ip,port = agentAddr.port})
+		sendClient(user.cid,"s2c_login_enter",{token = token,ip = agentAddr.ip,port = agentAddr.port})
 		clientMgr:close(user.cid)
 	end)
 

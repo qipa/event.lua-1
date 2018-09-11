@@ -6,17 +6,16 @@ local cjson = require "cjson"
 local protocol = require "protocol"
 local channel = require "channel"
 local timer = require "timer"
-local client_manager = import "module.client_manager"
+local clientMgr = import "module.client_manager"
 local server_manager = import "module.server_manager"
 local module_object = import "module.object"
-local agent_user = import "module.agent_user"
-local scene_user = import "module.scene_user"
+local agentUser = import "module.agent.agent_user"
 local common = import "common.common"
 
 local kAUTH_TIME = 60
 
 _tokenMgr = _tokenMgr or {}
-_enter_user = _enter_user or {}
+_enterUserMgr = _enterUserMgr or {}
 _server_stop = _server_stop or false
 
 function __init__(self)
@@ -75,13 +74,13 @@ end
 
 function leave(self,cid)
 	print(string.format("client leave:%d,%s",cid,addr))
-	local enter_info = _enter_user[cid]
-	_enter_user[cid] = nil
-	if not enter_info then
+	local enterInfo = _enterUserMgr[cid]
+	_enterUserMgr[cid] = nil
+	if not enterInfo then
 		return
 	end
 
-	local user = model.fetch_agent_user_with_uid(enter_info.uid)
+	local user = model.fetch_agent_user_with_uid(enterInfo.uid)
 	if not user then
 		return
 	end
@@ -91,7 +90,7 @@ function leave(self,cid)
 		return
 	end
 	event.fork(function ()
-		enter_info.mutex(user_leave,self,user)
+		enterInfo.mutex(userLeave,self,user)
 	end)
 end
 
@@ -105,58 +104,59 @@ function userKick(self,uid)
 		return false
 	end
 
-	local enter_info = _enter_user[user.cid]
-	_enter_user[user.cid] = nil
+	local enter_info = _enterUserMgr[user.cid]
+	_enterUserMgr[user.cid] = nil
 	if not enter_info then
 		return false
 	end
-	client_manager:close(user.cid)
-	_enter_user.mutex(user_leave,user)
+	clientMgr:close(user.cid)
+	_enterUserMgr.mutex(user_leave,user)
 	return true
 end
 
-function user_auth(self,cid,token)
-	if not _user_token[token] then
-		client_manager:close(cid)
+function userAuth(self,cid,token)
+	if not _tokenMgr[token] then
+		clientMgr:close(cid)
 		return
 	end
 
-	local info = _user_token[token]
-	_user_token[token] = nil
+	local tokenInfo = _tokenMgr[token]
+	_tokenMgr[token] = nil
 
 	local now = util.time()
-	if now - info.time >= 60 * 100 then
-		client_manager:close(cid)
+	if now - tokenInfo.time >= 60 * 100 then
+		clientMgr:close(cid)
 		return
 	end
 
-	local token_info = util.authcode(token,info.time,0)
+	local token_info = util.authcode(token,tokenInfo.time,0)
 	token_info = cjson.decode(token_info)
-	if token_info.uid ~= info.uid then
-		client_manager:close(cid)
+	if token_info.uid ~= tokenInfo.uid then
+		clientMgr:close(cid)
 		return
 	end
 
-	local enter_info = {mutex = event.mutex(),uid = info.uid}
-	_enter_user[cid] = enter_info
+	local enterInfo = {mutex = event.mutex(),uid = tokenInfo.uid}
+	_enterUserMgr[cid] = enterInfo
 
-	enter_info.mutex(user_enter,self,cid,info.uid,info.account)
+	enterInfo.mutex(userEnter,self,cid,tokenInfo.uid,tokenInfo.account)
 end
 
-function user_enter(self,cid,uid,account)
-	local agent_user = agent_user.cls_agent_user:new(cid,uid,account)
-	agent_user:load()
+function userEnter(self,cid,uid,account)
+	local user = agentUser.cAgentUser:new(cid,uid,account)
+	user:onCreate(cid,uid,account)
+	user:load()
 
-	agent_user:enter_game()
+	user:enterGame()
 
-	local msg = {user_id = agent_user.uid,agent_id = env.dist_id}
+	local msg = {user_id = user.uid,agent_id = env.dist_id}
 	server_manager:sendWorld("handler.world_handler","enter_world",msg)
 
-	local msg = {user_uid = agent_user.uid,agent_id = env.dist_id,location_info = agent_user.location_info}
+	local msg = {user_uid = user.uid,agent_id = env.dist_id,location_info = user.location_info}
 	server_manager:sendWorld("module.scene_manager","enter_scene",msg)
 end
 
-function user_leave(self,user)
+function userLeave(self,user)
 	local ok,err = xpcall(user.leave_game,debug.traceback,user)
 	if not ok then
 		event.error(err)
@@ -185,7 +185,7 @@ end
 
 function get_all_enter_user(self)
 	local result = {}
-	for cid,info in pairs(_enter_user) do
+	for cid,info in pairs(_enterUserMgr) do
 		local user = model.fetch_agent_user_with_uid(info.uid)
 		result[user.account] = {uid = user.uid,agent_server = env.dist_id}
 	end
@@ -225,15 +225,15 @@ end
 
 function server_stop()
 	_server_stop = true
-	client_manager:stop()
+	clientMgr:stop()
 
-	for cid,enter_info in pairs(_enter_user) do
-		client_manager:close(cid)
+	for cid,enter_info in pairs(_enterUserMgr) do
+		clientMgr:close(cid)
 		local user = model.fetch_agent_user_with_uid(enter_info.uid)
 		if user then
 			enter_info.mutex(user_leave,self,user)
 		end
-		_enter_user[cid] = nil
+		_enterUserMgr[cid] = nil
 	end
 
 	local db_channel = model.get_dbChannel()

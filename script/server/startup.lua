@@ -63,21 +63,26 @@ function run(serverId,distId,stat,dbAddr,cfgPath,ptoPath)
 	end
 end
 
-function reserveId()
-	local result,reason = http.post_world("/module/server_manager/reserveId/")
+local function postWorld(method)
+	local path = string.format("/module/server_manager/%s/",method)
+	local result,reason
 	while not result do
-		result,reason = http.post_world("/module/server_manager/reserveId/")
+		result,reason = http.post_world(path)
 		if not result then
 			event.sleep(1)
 		end
 	end
-	return tonumber(result)
+	return result
+end
+
+function reserveId()
+	return postWorld("reserveId")
 end
 
 function agentAmount()
-	return server_manager:callWorld("module.server_manager","agentAmount")
+	return postWorld("agentAmount")
 end
 
 function sceneAmount()
-	return server_manager:callWorld("module.server_manager","sceneAmount")
+	return postWorld("sceneAmount")
 end

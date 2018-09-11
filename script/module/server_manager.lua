@@ -88,7 +88,11 @@ function agentAmount()
 			amount = amount + 1
 		end
 	end
-	return amount,env.agent_num
+
+	return {
+		needAmount = env.agent_num,
+		currAmount = amount
+	}
 end
 
 function sceneAmount()
@@ -117,6 +121,7 @@ function listenServer(self,name)
 	if not listener then
 		return listener,reason
 	end
+	event.error(string.format("%s listen success",env.name))
 	return listener
 end
 

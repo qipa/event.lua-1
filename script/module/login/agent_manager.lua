@@ -17,7 +17,7 @@ function server_down(self,name,srv_id)
 	end
 end
 
-function register_agent_addr(_,args)
+function reportAgentAddr(_,args)
 	_agent_ctx[args.id] = {
 		addr = args.addr,
 		amount = 0

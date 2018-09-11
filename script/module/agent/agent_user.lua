@@ -5,10 +5,9 @@ local model = require "model"
 local util = require "util"
 local protocol = require "protocol"
 
-local agent_server = import "module.agent_server"
+local agent_server = import "module.agent.agent_server"
 local database_object = import "module.database_object"
-local module_item_mgr = import "module.item_manager"
-local task_manager = import "module.task_manager"
+
 
 local eUSER_STATUS = {
 	ALIVE = 1,
@@ -24,7 +23,7 @@ function __init__(self)
 end
 
 
-function cAgentUser:create(cid,uid,account)
+function cAgentUser:onCreate(cid,uid,account)
 	self.cid = cid
 	self.uid = uid
 	self.status = eUSER_STATUS.ALIVE 
@@ -35,7 +34,7 @@ function cAgentUser:create(cid,uid,account)
 	model.bind_agent_user_with_cid(cid,self)
 end
 
-function cAgentUser:destroy()
+function cAgentUser:onDestroy()
 	model.unbind_agent_user_with_uid(self.uid)
 	model.unbind_agent_user_with_cid(self.cid)
 end
@@ -49,7 +48,7 @@ function cAgentUser:enterGame()
 	self.itemMgr:onEnterGame(self)
 
 	self:fireEvent("ENTER_GAME")
-	self:send_client("s2c_agent_enter",{user_uid = self.uid})
+	self:sendClient("s2c_agent_enter",{user_uid = self.uid})
 	event.error(string.format("user:%d enter agent:%d",self.uid,env.dist_id))
 end
 
@@ -57,10 +56,6 @@ function cAgentUser:leaveGame()
 	self.itemMgr:onLeaveGame(self)
 	self:fireEvent("LEAVE_GAME")
 	event.error(string.format("user:%d leave agent:%d",self.uid,env.dist_id))
-end
-
-function cAgentUser:forward_scene(message_id,message)
-	self:sendScene("handler.scene_handler","forward",{uid = self.uid,message_id = message_id,message = message})
 end
 
 function cAgentUser:sendScene(file,method,args)

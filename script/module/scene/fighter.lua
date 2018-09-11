@@ -51,7 +51,7 @@ function cFighter:onObjEnter(sceneObjList)
 	for _,sceneObj in pairs(sceneObjList) do
 		table.insert(list,sceneObj:getSeeInfo())
 	end
-	send_client(self.cid,"s_sceneObj_create",msg)
+	sendClient(self.cid,"s_sceneObj_create",msg)
 end
 
 function cFighter:onObjLeave(sceneObjList)
@@ -60,7 +60,7 @@ function cFighter:onObjLeave(sceneObjList)
 	for _,sceneObj in pairs(sceneObjList) do
 		table.insert(list,sceneObj.uid)
 	end 
-	send_client(self.cid,"s_sceneObj_delete",list)
+	sendClient(self.cid,"s_sceneObj_delete",list)
 end
 
 function cFighter:onUpdate(now)

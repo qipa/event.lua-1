@@ -57,7 +57,7 @@ function start(conf)
 
 	_gate = gate
 
-	return gate
+	return port
 end
 
 function stop(self)
@@ -120,5 +120,6 @@ function broadcastClient(cids,pto,message)
 	_doBroadcastClient(cids,mid,data)
 end
 
-_G.sendClient = sendClient
-_G.broadcastClient = broadcastClient
+rawset(_G,"sendClient",sendClient)
+rawset(_G,"broadcastClient",broadcastClient)
+
