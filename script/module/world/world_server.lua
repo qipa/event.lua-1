@@ -8,6 +8,7 @@ local worldUser = import "module.world.world_user"
 import "handler.world_handler"
 
 model.registerValue("dbCommon")
+model.registerBinder("simpleUser","uid")
 
 local eUSER_PHASE = {
 	LOADING = 1,
@@ -25,6 +26,10 @@ function start(self)
 	local dbCommon = model.get_dbCommon()
 	local dbChannel = model.get_dbChannel()
 	local list = dbChannel:findAll("common","simpleUser")
+	for _,info in pairs(list) do
+		dbCommon:init(info,"simpleUser",{userUid = info.userUid})
+		model.bind_simpleUser_with_uid(info.userUid,info)
+	end
 end
 
 
