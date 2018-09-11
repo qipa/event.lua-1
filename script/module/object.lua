@@ -232,6 +232,9 @@ function cObject:deregisterEvent(inst,ev)
 end
 
 function cObject:fireEvent(ev,...)
+	if not self.__event then
+		return
+	end
 	local evList = self.__event[ev]
 	if not evList then
 		return

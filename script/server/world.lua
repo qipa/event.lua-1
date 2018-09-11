@@ -9,7 +9,7 @@ local http = require "http"
 local channel = require "channel"
 local startup = import "server.startup"
 local server_manager = import "module.server_manager"
-local world_server = import "module.world_server"
+local world_server = import "module.world.world_server"
 local id_builder = import "module.id_builder"
 local mongo_indexes = import "common.mongo_indexes"
 
@@ -42,10 +42,8 @@ end)
 
 event.fork(function ()
 	env.dist_id = server_manager:reserveId()
-	server_manager:connectServer("logger")
-    
-	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
-	id_builder:init(env.dist_id)
+	startup.run(env.uid,env.dist_id,env.monitor,env.mongodb,env.config,env.protocol)
+
 
 	local listener,reason = server_manager:listenServer("world")
 	if not listener then

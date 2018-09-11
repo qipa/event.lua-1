@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 
 local serverMgr = import "module.server_manager"
-local scene_manager = import "module.scene_manager"
+local scene_manager = import "module.world.scene_manager"
 local dbObject = import "module.database_object"
 local worldUser = import "module.world.world_user"
 import "handler.world_handler"
@@ -22,7 +22,6 @@ function __init__(self)
 end
 
 function start(self)
-	import "module.scene_manager"
 	import "handler.cmd_handler"
 end
 

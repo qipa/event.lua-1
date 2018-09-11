@@ -48,7 +48,7 @@ function cDatabase:init(obj,name)
 end
 
 function cDatabase:load()
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	local db = self:getType()
 	local dbIndex = self:dbIndex()
 	for field in pairs(self.__saveFields) do
@@ -65,7 +65,7 @@ end
 
 function cDatabase:save()
 
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	local db = self:getType()
 	for field in pairs(self.__dirty) do
 		if self.__saveFields[field] ~= nil then
@@ -111,7 +111,7 @@ function cDatabaseCommon:init(obj,name,dbIndex)
 end
 
 function cDatabaseCommon:load(name,dbIndex)
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 
 	local result
 	local cls = class.get(name)
@@ -127,7 +127,7 @@ function cDatabaseCommon:load(name,dbIndex)
 end
 
 function cDatabaseCommon:save()
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 
 	for data in pairs(self.__dirty) do
 		local dataInfo = self.dataMgr[data]
@@ -146,7 +146,7 @@ function cDatabaseCommon:save()
 end
 
 function cDatabaseCommon:saveRightnow(data)
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 
 	local dataInfo = self.dataMgr[data]
 	self.__dirty[data] = nil
@@ -163,7 +163,7 @@ function cDatabaseCommon:saveRightnow(data)
 end
 
 function cDatabaseCommon:insert(name,data)
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	dbChannel:insert("common",name,data)
 end
 

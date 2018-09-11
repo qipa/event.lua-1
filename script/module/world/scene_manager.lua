@@ -84,7 +84,7 @@ function agentConnectScene(self,agentServerId,sceneServerId)
 end
 
 function enter(self,args)
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	local location = dbChannel:findOne("event","fighter",{query = {userUid = args.agentUid,selector = {locationInfo = true}}})
 	if not location then
 		location = {

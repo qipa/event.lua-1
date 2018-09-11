@@ -76,7 +76,7 @@ function leaveScene(self,userUid,switch)
 	scene:leave(fighter)
 	fighter:save()
 	
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	local updater = {}
 	updater["$inc"] = {version = 1}
 	updater["$set"] = {time = os.time()}

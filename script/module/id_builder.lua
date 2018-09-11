@@ -28,7 +28,7 @@ function init(self,serverId,distId)
 	assert(serverId < kSERVER_OFFSET,string.format("error serverId:%d",serverId))
 	assert(distId < kPROCESS_OFFSET,string.format("error distId:%d",serverId))
 
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	assert(dbChannel ~= nil,string.format("no db channel"))
 
 	for _,field in pairs(eUNIQUE) do
@@ -55,7 +55,7 @@ function init(self,serverId,distId)
 				result.begin = cursor
 				max = result.begin + result.offset
 
-				local dbChannel = model.get_db_channel()
+				local dbChannel = model.get_dbChannel()
 				local updator = {}
 				updator["$set"] = result
 				dbChannel:update("common","idBuilder",query,updator,true)

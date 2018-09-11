@@ -170,7 +170,7 @@ function user_leave(self,user)
 
 	user:save()
 	
-	local db_channel = model.get_db_channel()
+	local db_channel = model.get_dbChannel()
 	local updater = {}
 	updater["$inc"] = {version = 1}
 	updater["$set"] = {time = os.time()}
@@ -236,7 +236,7 @@ function server_stop()
 		_enter_user[cid] = nil
 	end
 
-	local db_channel = model.get_db_channel()
+	local db_channel = model.get_dbChannel()
 	
 	local updater = {}
 	updater["$inc"] = {version = 1}

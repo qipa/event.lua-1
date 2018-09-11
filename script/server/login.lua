@@ -8,26 +8,23 @@ local route = require "route"
 local http = require "http"
 local debugger = require "debugger"
 local startup = import "server.startup"
-local id_builder = import "module.id_builder"
-local client_manager = import "module.client_manager"
-local server_manager = import "module.server_manager"
-local login_server = import "module.login.login_server"
+local idBuilder = import "module.id_builder"
+local clientMgr = import "module.client_manager"
+local serverMgr = import "module.server_manager"
+local loginServer = import "module.login.login_server"
 
 event.fork(function ()
 	env.dist_id = startup.reserveId()
-	server_manager:connectServer("logger")
-	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
+	startup.run(env.uid,env.dist_id,env.monitor,env.mongodb,env.config,env.protocol)
 
-	id_builder:init(env.dist_id)
-	
-	local gate_conf = {
+	local gateConf = {
 		max = 1000,
 		port = 0,
-		data = login_server.dispatch_client,
-		accept = login_server.enter,
-		close = login_server.leave
+		onData = loginServer.dispatch_client,
+		onAccept = loginServer.enter,
+		onClose = loginServer.leave
 	}
-	local port = client_manager.start(gate_conf)
+	local port = clientMgr.start(gateConf)
 
-	login_server:start()
+	loginServer:start()
 end)

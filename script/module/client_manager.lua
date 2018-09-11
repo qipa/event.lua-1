@@ -51,9 +51,9 @@ function start(conf)
 		return false,reason
 	end
 
-	_onAccept = conf.accept
-	_onClose = conf.close
-	_dataFunc = conf.data
+	_onAccept = conf.onAccept
+	_onClose = conf.onClose
+	_onData = conf.onData
 
 	_gate = gate
 

@@ -8,31 +8,43 @@ local monitor = require "monitor"
 local util = require "util"
 local http = require "http"
 local logger = require "module.logger"
+local idBuilder = import "module.id_builder"
+local serverMgr = import "module.server_manager"
 
-local server_manager = import "module.server_manager"
-
-local mongodb_channel = mongo:inherit()
-function mongodb_channel:disconnect()
-	model.set_db_channel(nil)
+local mongodbChannel = mongo:inherit()
+function mongodbChannel:disconnect()
+	model.set_dbChannel(nil)
 	os.exit(1)
 end
 
-function run(monitor_collect,db_addr,config_path,protocol_path)
-	
-	local runtime_logger = logger:create("runtime",5)
+function run(serverId,distId,stat,dbAddr,cfgPath,ptoPath)
+	serverMgr:connectServer("logger")
+
+	local runtimeLogger = logger:create("runtime",5)
 	event.error = function (...)
-		print(...)
-		-- runtime_logger:ERROR(...)
+		runtimeLogger:ERROR(...)
 	end
 
-	if monitor_collect then
+	if stat then
 		monitor.start()
 	end
 
-	if config_path then
+	if dbAddr then
+		model.registerValue("dbChannel")
+		local dbChannel,reason = event.connect(dbAddr,4,true,mongodbChannel)
+		if not dbChannel then
+			print(string.format("%s connect mongodb:%s failed:%s",env.name,dbAddr,reason))
+			os.exit()
+		end
+		model.set_dbChannel(dbChannel)
+		event.error(string.format("%s connect mongodb:%s success",env.name,dbAddr))
+		idBuilder:init(serverId,distId)
+	end
+
+	if cfgPath then
 		_G.config = {}
 
-		local list = util.list_dir(config_path,true,"lua",true)
+		local list = util.list_dir(cfgPath,true,"lua",true)
 
 		for _,path in pairs(list) do
 			print("load config",path)
@@ -42,22 +54,12 @@ function run(monitor_collect,db_addr,config_path,protocol_path)
 			_G.config[name] = data
 		end
 	end
-	if protocol_path then
-		local list = util.list_dir(protocol_path,true,"protocol",true)
+
+	if ptoPath then
+		local list = util.list_dir(ptoPath,true,"protocol",true)
 		for _,file in pairs(list) do
 			protocol.parse(file)
 		end
-	end
-
-	if db_addr then
-		model.registerValue("db_channel")
-		local db_channel,reason = event.connect(db_addr,4,true,mongodb_channel)
-		if not db_channel then
-			print(string.format("%s connect db:%s faield:%s",env.name,env.mongodb,reason))
-			os.exit()
-		end
-		model.set_db_channel(db_channel)
-		event.error(string.format("connect mongodb:%s success",db_addr))
 	end
 end
 

@@ -2,22 +2,25 @@ local event = require "event"
 local model = require "model"
 local route = require "route"
 local timer = require "timer"
-local login_user = import "module.login.login_user"
+local loginUser = import "module.login.login_user"
 local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
 
 _loginCtx = _loginCtx or {}
-_accountQueue = _accountQueue or {}
-_agentUser = _agentUser or {}
+_agentAccountMgr = _agentAccountMgr or {}
 
 _nameAccount = _nameAccount or {}
 _uidAccount = _uidAccount or {}
 
+local eUSER_PHASE = {
+	LOADING = 1,
+	DONE = 2,
+	LEAVE = 3
+}
+
 function start(self)
-	
-	timer.callout(30,self,"flush")
 	timer.callout(1,self,"timeout")
-	local dbChannel = model.get_db_channel()
+	local dbChannel = model.get_dbChannel()
 	local result = dbChannel:findAll("event","accountInfo")
 	for _,info in pairs(result) do
 		for _,detail in pairs(info.list) do
@@ -31,26 +34,19 @@ function start(self)
 	import "handler.cmd_handler"
 end
 
-function flush(self)
-	local all = model.fetch_login_user()
-	for _,user in pairs(all) do
-		user:save()
-	end
-end
-
 function timeout(self)
 	table.print(self)
 end
 
 function userEnterAgent(self,account,userUid,agentId)
 	local info = {userUid = userUid,agentId = agentId,time = os.time()}
-	_agentUser[account] = info
+	_agentAccountMgr[account] = info
 end
 
 function agentDown(self,listener,agentId)
-	for account,info in pairs(_agentUser) do
+	for account,info in pairs(_agentAccountMgr) do
 		if info.agent_server == agentId then
-			_agentUser[account] = nil
+			_agentAccountMgr[account] = nil
 		end
 	end
 end
@@ -72,7 +68,12 @@ function leave(self,cid)
 	if info.account then
 		local user = model.fetch_login_user_with_account(info.account)
 		if user and user.cid == cid then
+			if user.phase == eUSER_PHASE.DONE then
+				user:save()
+			end
+			user.phase = eUSER_PHASE.LEAVE
 			user:leave()
+			model.unbind_login_user_with_account(info.account)
 		end
 	end
 end
@@ -93,11 +94,26 @@ local function _userDoAuth(self,cid,account)
 	if user then
 		if _loginCtx[user.cid] then
 			clientMgr:close(user.cid)
+			_loginCtx[user.cid] = nil
 		end
-		user:leave()
+		if user.phase == eUSER_PHASE.DONE then
+			user.cid = cid
+			user:auth()
+			return
+		elseif user.phase == eUSER_PHASE.LOADING then
+			user.cid = cid
+		end
+
 	end
-	user = login_user.cls_login_user:new(cid,account)
+	user = loginUser.cLoginUser:new()
+	model.bind_login_user_with_account(account,user)
+	user:onCreate(cid,account)
+	user.phase = eUSER_PHASE.LOADING
 	user:load()
+	if user.phase == eUSER_PHASE.LEAVE then
+		return
+	end
+	user.phase = eUSER_PHASE.DONE
 	user:auth()
 end
 
@@ -106,18 +122,17 @@ function userAuth(self,cid,account)
 	assert(info ~= nil,cid)
 	assert(info.account == nil,info.account)
 
-	local agentUserInfo = _agentUser[account]
-	if agentUserInfo then
-		local queue = _accountQueue[account]
+	local accountInfo = _agentAccountMgr[account]
+	if accountInfo then
+		local queue = accountInfo.queue
 		if not queue then
 			queue = {}
-			_accountQueue[account] = queue
+			accountInfo.queue = queue
 		end
 		table.insert(queue,cid)
 
-		serverMgr:sendAgent(agentUserInfo.agentId,"handler.agent_handler","userKick",{uid = agentUserInfo.uid},function (ok)
-			_agentUser[account] = nil
-			_accountQueue[account] = nil
+		serverMgr:sendAgent(accountInfo.agentId,"handler.agent_handler","userKick",{uid = accountInfo.uid},function (ok)
+			_agentAccountMgr[account] = nil
 			local count = #queue
 			for i = 1,count-1 do
 				local cid = queue[i]
@@ -148,7 +163,7 @@ function server_stop(self)
 		user:leave()
 	end
 
-	local db_channel = model.get_db_channel()
+	local db_channel = model.get_dbChannel()
 	
 	local updater = {}
 	updater["$inc"] = {version = 1}

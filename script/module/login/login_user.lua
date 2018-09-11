@@ -5,20 +5,20 @@ local util = require "util"
 local protocol = require "protocol"
 
 local id_builder = import "module.id_builder"
-local database_object = import "module.database_object"
+local dbObject = import "module.database_object"
 local serverMgr = import "module.server_manager"
 local agentMgr = import "module.login.agent_manager"
 local clientMgr = import "module.client_manager"
 local loginServer = import "module.login.login_server"
 
-cLoginUser = database_object.cDatabase:inherit("login_user","account","cid")
+cLoginUser = dbObject.cDatabase:inherit("login_user","account","cid")
 
 function __init__(self)
 	self.cLoginUser:saveField("accountInfo")
 	self.cLoginUser:saveField("forbidInfo")
 end
 
-function cLoginUser:create(cid,account)
+function cLoginUser:onCreate(cid,account)
 	self.cid = cid
 	self.account = account
 	
@@ -29,13 +29,6 @@ function cLoginUser:dbIndex()
 end
 
 function cLoginUser:auth()
-	self:load()
-
-	local user = model.fetch_login_user_with_account(self.account)
-	if not user or user ~= self then
-		return
-	end
-
 	if not self.accountInfo then
 		self.accountInfo = {list = {}}
 		self:dirtyField("accountInfo")
@@ -46,10 +39,7 @@ function cLoginUser:auth()
 		table.insert(result,{uid = role.uid,name = role.name})
 	end
 
-	send_client(self.cid,"s2c_login_auth",{list = result})
-
-	model.bind_login_user_with_account(self.account,self)
-	model.bind_login_user_with_cid(self.cid,self)
+	send_client(self.cid,"sLoginAuth",{list = result})
 end
 
 function cLoginUser:createRole(career,name)
@@ -77,7 +67,7 @@ function cLoginUser:random_name()
 
 end
 
-function cLoginUser:destroy()
+function cLoginUser:onDestroy()
 	model.unbind_login_user_with_account(self.account)
 	model.unbind_login_user_with_cid(self.cid)
 end
