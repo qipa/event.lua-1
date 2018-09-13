@@ -242,11 +242,11 @@ function cObject:fireEvent(ev,...)
 	for inst,method in pairs(evList) do
 		local func = inst[method]
 		if not func then
-			event.error(string.format("fire event error,no such method:%s",method))
+			event.error(string.format("fire event error,no such method:%s\n%s",method,debug.traceback()))
 		else
 			local ok,err = xpcall(func,debug.traceback,inst,self,...)
 			if not ok then
-				event.error(err)
+				event.error(string.format("%s\n%s",err,debug.traceback()))
 			end
 		end
 	end
