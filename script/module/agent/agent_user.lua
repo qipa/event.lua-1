@@ -7,6 +7,7 @@ local protocol = require "protocol"
 
 local serverMgr = import "module.server_manager"
 local dbObject = import "module.database_object"
+local itemContainer = import "module.agent.item.item_container"
 
 
 local eUSER_STATUS = {
@@ -41,10 +42,15 @@ end
 
 function cAgentUser:enterGame()
 	
+	if not self.itemMgr then
+		local itemMgr = itemContainer.cItemContainer:new()
+		itemMgr:onCreate()
+		self:init(itemMgr)
+	end
 	self.itemMgr:onEnterGame(self)
 
 	self:fireEvent("ENTER_GAME")
-	self:sendClient("s2c_agent_enter",{user_uid = self.uid})
+	sendClient(self.cid,"sAgentEnter",{user_uid = self.uid})
 	event.error(string.format("user:%d enter agent:%d",self.uid,env.dist_id))
 end
 

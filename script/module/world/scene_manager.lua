@@ -7,7 +7,6 @@ local idBuilder = import "module.id_builder"
 _sceneServerMgr = _sceneServerMgr or {}
 _sceneInfo = _sceneInfo or {}
 _sceneMgr = _sceneMgr or {}
-_fighterMgr = _fighterMgr or {}
 
 _agentConnectMutex = _agentConnectMutex or {}
 _agentConnectInfo = _agentConnectInfo or {}
@@ -28,6 +27,15 @@ function createScene(self,sceneId)
 
 	local sceneUid = idBuilder:alloc_scene_uid()
 	serverMgr:sendScene(minServer,"module.scene.scene_server","createScene",{sceneId = sceneId,sceneUid = sceneUid})
+	local info = _sceneMgr[sceneId]
+	if not info then
+		info = {}
+		_sceneMgr[sceneId] = info
+	end
+
+	info[sceneUid] = {amount = 0,serverId = minServer}
+	_sceneInfo[sceneUid] = {amount = 0,serverId = minServer}
+
 	return minServer,sceneUid
 end
 
@@ -100,45 +108,31 @@ function leave(self,args)
 end
 
 
-function enterScene(self,userUid,agentId,sceneId,sceneUid)
+function enterScene(self,fighterProxy,sceneId,sceneUid)
+	local sceneInfo = _sceneInfo[sceneUid]
+
 	local fighterInfo
-	local location = _fighterMgr[userUid]
-	if location then
-		if location.sceneUid ~= sceneUid then
-			fighterInfo = serverMgr:callScene(location.serverId,"module.scene.scene_server","leaveScene",{userUid = userUid})
-		else
-			serverMgr:callScene(location.serverId,"module.scene.scene_server","enterScene",{userUid = userUid})
-			return
-		end
-	end
-
-	local sceneInfo = _sceneMgr[args.sceneId]
-	if not sceneInfo then
-		sceneInfo = {}
-		_sceneMgr[args.sceneId] = sceneInfo
-	end
-
-	local serverId
-	if not sceneUid then
-		serverId,sceneUid = self:createScene(sceneId)
-		sceneInfo[sceneUid] = {serverId = serverId}
+	if fighterProxy.sceneUid == sceneUid then
+		serverMgr:sendScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighterProxy})
+		fighterProxy:onEnterScene(sceneId,sceneUid)
+		return
 	else
-		local info = sceneInfo[sceneUid]
-		if info then
-			serverId = info.serverId
+		local oSceneInfo = _sceneInfo[fighterProxy.sceneUid]
+		if oSceneInfo.serverId = sceneInfo.sceneId then
+			serverMgr:sendScene(sceneInfo.serverId,"module.scene.scene_server","transferInside",{userUid = userUid,sceneUid = sceneUid})
+			fighterProxy:onEnterScene(sceneId,sceneUid)
+			return
 		else
-			serverId,sceneUid = self:createScene(sceneId)
-			sceneInfo[sceneUid] = {serverId = serverId}
+			fighterInfo = serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","leaveScene",{userUid = userUid})
 		end
 	end
 
-	if not self:agentConnectScene(agentId,serverId) then
+	if not self:agentConnectScene(fighterProxy.agentId,sceneInfo.serverId) then
 		return
 	end
 
-	serverMgr:callScene("module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighterInfo})
-
-	_fighterMgr[userUid] = {serverId = serverId,sceneId = sceneId,sceneUid = sceneUid}
+	serverMgr:sendScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighterInfo})
+	fighterProxy:onEnterScene(sceneId,sceneUid)
 end
 
 function leaveScene(self,args)
