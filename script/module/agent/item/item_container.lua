@@ -26,10 +26,10 @@ function cItemContainer:onDestroy()
 
 end
 
-function cItemContainer:dirtyField(field)
+function cItemContainer:markDirty(field)
 	self.__dirty[field] = true
 	if self.__dbObject then
-		self.__dbObject:dirtyField(self.__name)
+		self.__dbObject:markDirty(self.__name)
 	end
 end
 

@@ -21,10 +21,7 @@ local strformat = string.format
 local tostring = tostring
 local osTime = os.time
 
-
 local loggerCtx = {}
-
-local serverName
 
 local _M = {}
 
@@ -38,7 +35,7 @@ function _M:create(logType,depth)
 	end
 
 	local ctx = setmetatable({},{__index = self})
-	ctx.logLevel = env.log_level or kLOG_LV_DEBUG
+	ctx.logLevel = env.logLevel or kLOG_LV_DEBUG
 	ctx.logType = logType
 	ctx.depth = depth
 
@@ -53,11 +50,6 @@ local function getDebugInfo(logger)
 end
 
 local function appendLog(logger,logLevel,...)
-	if not serverName then
-		local list = env.name:split("/")
-		serverName = list[#list]
-	end
-
 	local log = tconcat({...},"\t")
 
 	local mb = {
@@ -65,7 +57,7 @@ local function appendLog(logger,logLevel,...)
 		logTag = eLOG_TAG[logLevel],
 		logType = logger.logType,
 		time = osTime(),
-		serverName = serverName,
+		serverName = env.name,
 		log = log,
 	}
 	

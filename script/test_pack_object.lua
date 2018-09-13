@@ -15,16 +15,16 @@ local fighter = scene_user.cls_scene_user:new(1)
 
 if not fighter.attr then
 	fighter.attr = {atk = 100,def = 100}
-	fighter:dirtyField("attr")
+	fighter:markDirty("attr")
 end
 if not fighter.scene_info then
 	fighter.scene_info = {scene_id = 1001,scene_pos = {x = 100,z = 100}}
-	fighter:dirtyField("scene_info")
+	fighter:markDirty("scene_info")
 end
 
 if not fighter.fighter_info then
 	fighter.fighter_info = {scene_id = 1001,scene_pos = {x = 100,z = 100}}
-	fighter:dirtyField("fighter_info")
+	fighter:markDirty("fighter_info")
 end
 
 fighter.item_mgr = item_mgr.cls_item_mgr:new(fighter)

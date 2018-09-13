@@ -31,7 +31,7 @@ end
 function cLoginUser:auth()
 	if not self.accountInfo then
 		self.accountInfo = {list = {}}
-		self:dirtyField("accountInfo")
+		self:markDirty("accountInfo")
 	end
 
 	local result = {}
@@ -45,7 +45,7 @@ end
 function cLoginUser:createRole(career,name)
 	local role = {career = career,name = "mrq",uid = id_builder:alloc_user_uid()}
 	table.insert(self.accountInfo.list,role)
-	self:dirtyField("accountInfo")
+	self:markDirty("accountInfo")
 
 	local result = {}
 	for _,role in pairs(self.accountInfo.list) do
