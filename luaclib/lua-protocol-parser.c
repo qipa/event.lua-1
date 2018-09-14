@@ -14,15 +14,18 @@
 #define TRY(l) if (setjmp((l)->exception) == 0)
 #define THROW(l) longjmp((l)->exception, 1)
 
-#define TYPE_INT				0
-#define TYPE_FLOAT				1
-#define TYPE_DOUBLE				2
-#define TYPE_STRING				3
-#define TYPE_PROTOCOL			4
+#define TYPE_BOOL 		0
+#define TYPE_SHORT     	1
+#define TYPE_INT 		2
+#define TYPE_FLOAT 		3
+#define TYPE_DOUBLE 	4
+#define TYPE_STRING 	5
+#define TYPE_PROTOCOL 	6
+
 
 #define MAX_DEPTH	32
 
-static const char* BUILTIN_TYPE[] = { "int", "float", "double", "string"};
+static const char* BUILTIN_TYPE[] = { "bool", "short", "int", "float", "double", "string"};
 
 struct field {
 	char* name;
