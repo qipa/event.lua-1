@@ -837,7 +837,7 @@ ldecode_protocol(lua_State* L) {
 			break;
 		}
 		default:
-			luaL_error(L,"decode protocol error,unkown type:%s",lua_typename(L,lua_type(L,3)));
+			luaL_error(L,"decode protocol:%s error,unkown type:%s",pto->name,lua_typename(L,lua_type(L,3)));
 	}
 
 	reader_t reader;
@@ -857,7 +857,7 @@ ldecode_protocol(lua_State* L) {
 	}
 	
 	if (reader.offset != reader.size) {
-		luaL_error(L,"decode protocol error");
+		luaL_error(L,"decode protocol:%s error",pto->name);
 	}
 	return 1;
 }
