@@ -44,7 +44,7 @@ function cItemMgr:dirtyItem(itemUid)
 		self.__dirtyItem = {}
 	end
 	self.__dirtyItem[itemUid] = true
-	self:dirtyField("__name")
+	self:markDirty("__name")
 end
 
 function cItemMgr:save(dbChannel,db,dbIndex)

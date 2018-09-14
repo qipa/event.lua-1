@@ -31,7 +31,7 @@ function cDatabase:ctor(interval)
 end
 
 ------------------database-------------------
-function cDatabase:dirtyField(field)
+function cDatabase:markDirty(field)
 	self.__dirty[field] = true
 end
 
@@ -101,7 +101,7 @@ function cDatabaseCommon:ctor(interval)
 	timer.callout(interval,dbCommonInst,"save")
 end
 
-function cDatabaseCommon:dirtyField(field)
+function cDatabaseCommon:markDirty(field)
 	self.__dirty[field] = true
 end
 
@@ -169,11 +169,11 @@ end
 
 ---------------collection--------------
 
-function cCollection:dirtyField(field)
+function cCollection:markDirty(field)
 	self.__dirty[field] = true
 	self.__dirty["__name"] = true
 	if self.__dbObject then
-		self.__dbObject:dirtyField(self.__name)
+		self.__dbObject:markDirty(self.__name)
 	end
 end
 
@@ -184,7 +184,7 @@ function cCollection:dirtyAll()
 	end
 	self.__dirty["__name"] = true
 	if self.__dbObject then
-		self.__dbObject:dirtyField(self.__name)
+		self.__dbObject:markDirty(self.__name)
 	end
 end
 

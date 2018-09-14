@@ -24,7 +24,7 @@ function cTeamUser:onEnter()
 	if not self.teamInfo then
 		self.teamInfo = {}
 	end
-	self:dirtyField("teamInfo")
+	self:markDirty("teamInfo")
 end
 
 function cTeamUser:onOverride()

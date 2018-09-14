@@ -25,7 +25,7 @@ function cChatUser:onEnter()
 	if not self.chatInfo then
 		self.chatInfo = {}
 	end
-	self:dirtyField("chatInfo")
+	self:markDirty("chatInfo")
 	chatMgr:enter(self)
 end
 
