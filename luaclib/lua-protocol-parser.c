@@ -14,6 +14,7 @@
 #define TRY(l) if (setjmp((l)->exception) == 0)
 #define THROW(l) longjmp((l)->exception, 1)
 
+
 #define TYPE_BOOL 		0
 #define TYPE_SHORT     	1
 #define TYPE_INT 		2
