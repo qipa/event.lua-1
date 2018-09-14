@@ -17,11 +17,13 @@
 #define TYPE_NUMBER_DWORD 	3
 #define TYPE_NUMBER_QWORD 	4
 
-#define FTYPE_INT 		0
-#define FTYPE_FLOAT 	1
-#define FTYPE_DOUBLE 	2
-#define FTYPE_STRING 	3
-#define FTYPE_PROTOCOL 	4
+#define FTYPE_BOOL 		0
+#define FTYPE_SHORT     1
+#define FTYPE_INT 		2
+#define FTYPE_FLOAT 	3
+#define FTYPE_DOUBLE 	4
+#define FTYPE_STRING 	5
+#define FTYPE_PROTOCOL 	6
 
 #define PARENT_TPROTOCOL 0
 #define PARENT_TFIELD	 1
@@ -154,8 +156,13 @@ write_byte(writer_t* writer,uint8_t val) {
 }
 
 inline static void
-write_short(writer_t* writer,ushort val) {
+write_ushort(writer_t* writer,ushort val) {
 	writer_push(writer,&val,sizeof(ushort));
+}
+
+inline static void
+write_short(writer_t* writer,short val) {
+	writer_push(writer,&val,sizeof(short));
 }
 
 inline static void
@@ -197,7 +204,7 @@ write_double(writer_t* writer,double val) {
 
 inline static void
 write_string(writer_t* writer,const char* str,size_t size) {
-	write_short(writer,size);
+	write_ushort(writer,size);
 	writer_push(writer,(void*)str,size);
 }
 
@@ -215,10 +222,24 @@ reader_left(reader_t* reader) {
 	return reader->size - reader->offset;
 }
 
+inline static uint8_t
+read_byte(lua_State* L,reader_t* reader) {
+	uint8_t val;
+	reader_pop(L,reader,(uint8_t*)&val,sizeof(uint8_t));
+	return val;
+}
+
 inline static ushort
+read_ushort(lua_State* L,reader_t* reader) {
+	ushort val;
+	reader_pop(L,reader,(uint8_t*)&val,sizeof(ushort));
+	return val;
+}
+
+inline static short
 read_short(lua_State* L,reader_t* reader) {
 	short val;
-	reader_pop(L,reader,(uint8_t*)&val,sizeof(ushort));
+	reader_pop(L,reader,(uint8_t*)&val,sizeof(short));
 	return val;
 }
 
@@ -274,7 +295,7 @@ read_double(lua_State* L,reader_t* reader) {
 inline static char*
 read_string(lua_State* L,reader_t* reader,size_t* size) {
 	char* result;
-	*size = read_short(L,reader);
+	*size = read_ushort(L,reader);
 	if (reader_left(reader) < *size) {
 		luaL_error(L,"decode error:invalid mesasge");
 	}
@@ -283,18 +304,85 @@ read_string(lua_State* L,reader_t* reader,size_t* size) {
 	return result;
 }
 
+inline static int
+check_array(lua_State* L,writer_t* writer,field_t* f,int index,int vt) {
+	if (vt != LUA_TTABLE) {
+		writer_release(writer);
+		luaL_error(L,"field:%s expect %s,not %s",f->name,lua_typename(L,LUA_TTABLE),lua_typename(L,vt));
+	}
+
+	int array_size = lua_rawlen(L, index);
+	if (array_size > 0xffff) {
+		writer_release(writer);
+		luaL_error(L,"field:%s array size more than 0xffff",f->name);
+	}
+	return array_size;
+}
+
+inline void
+pack_bool(lua_State* L,writer_t* writer,field_t* f,int index) {
+	int vt = lua_type(L,index);
+
+	if (f->array) {
+		int array_size = check_array(L,writer,f,index,vt);
+
+		write_ushort(writer,array_size);
+		int i;
+		for (i = 1; i <= array_size; i++) {
+			lua_rawgeti(L, index, i);
+			vt = lua_type(L,-1);
+			if (vt != LUA_TBOOLEAN) {
+				writer_release(writer);
+				luaL_error(L,"field:%s array member expect bool,not %s",f->name,lua_typename(L,vt));
+			}
+			write_byte(writer,lua_toboolean(L,-1));
+			lua_pop(L, 1);
+		}
+	} else {
+		if (vt != LUA_TBOOLEAN) {
+			writer_release(writer);
+			luaL_error(L,"field:%s expect bool,not %s",f->name,lua_typename(L,vt));
+		}
+		write_byte(writer,lua_toboolean(L,index));
+	}
+}  
+
+inline void
+pack_short(lua_State* L,writer_t* writer,field_t* f,int index) {
+	int vt = lua_type(L,index);
+
+	if (f->array) {
+		int array_size = check_array(L,writer,f,index,vt);
+
+		write_ushort(writer,array_size);
+		int i;
+		for (i = 1; i <= array_size; i++) {
+			lua_rawgeti(L, index, i);
+			vt = lua_type(L,-1);
+			if (vt != LUA_TNUMBER) {
+				writer_release(writer);
+				luaL_error(L,"field:%s array member expect short,not %s",f->name,lua_typename(L,vt));
+			}
+			write_short(writer,lua_tointeger(L,-1));
+			lua_pop(L, 1);
+		}
+	} else {
+		if (vt != LUA_TNUMBER) {
+			writer_release(writer);
+			luaL_error(L,"field:%s expect short,not %s",f->name,lua_typename(L,vt));
+		}
+		write_short(writer,lua_tointeger(L,index));
+	}
+} 
+
 inline void
 pack_int(lua_State* L,writer_t* writer,field_t* f,int index) {
 	int vt = lua_type(L,index);
 
 	if (f->array) {
-		if (vt != LUA_TTABLE) {
-			writer_release(writer);
-			luaL_error(L,"field:%s expect table,not %s",f->name,lua_typename(L,vt));
-		}
+		int array_size = check_array(L,writer,f,index,vt);
 
-		int array_size = lua_rawlen(L, index);
-		write_short(writer,array_size);
+		write_ushort(writer,array_size);
 		int i;
 		for (i = 1; i <= array_size; i++) {
 			lua_rawgeti(L, index, i);
@@ -320,13 +408,9 @@ pack_float(lua_State* L,writer_t* writer,field_t* f,int index) {
 	int vt = lua_type(L,index);
 
 	if (f->array) {
-		if (vt != LUA_TTABLE) {
-			writer_release(writer);
-			luaL_error(L,"field:%s expect table,not %s",f->name,lua_typename(L,vt));
-		}
+		int array_size = check_array(L,writer,f,index,vt);
 
-		int array_size = lua_rawlen(L, index);
-		write_short(writer,array_size);
+		write_ushort(writer,array_size);
 		int i;
 		for (i = 1; i <= array_size; i++) {
 			lua_rawgeti(L, index, i);
@@ -351,20 +435,16 @@ inline void
 pack_double(lua_State* L,writer_t* writer,field_t* f,int index) {
 	int vt = lua_type(L,index);
 	if (f->array) {
-		if (vt != LUA_TTABLE) {
-			writer_release(writer);
-			luaL_error(L,"field:%s expect table,not %s",f->name,lua_typename(L,vt));
-		}
+		int array_size = check_array(L,writer,f,index,vt);
 
-		int array_size = lua_rawlen(L, index);
-		write_short(writer,array_size);
+		write_ushort(writer,array_size);
 		int i;
 		for (i = 1; i <= array_size; i++) {
 			lua_rawgeti(L, index, i);
 			vt = lua_type(L,-1);
 			if (vt != LUA_TNUMBER) {
 				writer_release(writer);
-				luaL_error(L,"field:%s array member expect float,not %s",f->name,lua_typename(L,vt));
+				luaL_error(L,"field:%s array member expect double,not %s",f->name,lua_typename(L,vt));
 			}
 			write_double(writer,lua_tonumber(L,-1));
 			lua_pop(L, 1);
@@ -372,7 +452,7 @@ pack_double(lua_State* L,writer_t* writer,field_t* f,int index) {
 	} else {
 		if (vt != LUA_TNUMBER) {
 			writer_release(writer);
-			luaL_error(L,"field:%s expect float,not %s",f->name,lua_typename(L,vt));
+			luaL_error(L,"field:%s expect double,not %s",f->name,lua_typename(L,vt));
 		}
 		write_double(writer,lua_tonumber(L,index));
 	}
@@ -382,13 +462,9 @@ inline void
 pack_string(lua_State* L,writer_t* writer,field_t* f,int index) {
 	int vt = lua_type(L,index);
 	if (f->array) {
-		if (vt != LUA_TTABLE) {
-			writer_release(writer);
-			luaL_error(L,"field:%s expect table,not %s",f->name,lua_typename(L,vt));
-		}
+		int array_size = check_array(L,writer,f,index,vt);
 
-		int array_size = lua_rawlen(L, index);
-		write_short(writer,array_size);
+		write_ushort(writer,array_size);
 		int i;
 		for (i = 1; i <= array_size; i++) {
 			lua_rawgeti(L, index, i);
@@ -399,6 +475,10 @@ pack_string(lua_State* L,writer_t* writer,field_t* f,int index) {
 			}
 			size_t size;
 			const char* str = lua_tolstring(L,-1,&size);
+			if (size > 0xffff) {
+				writer_release(writer);
+				luaL_error(L,"field:%s string size more than 0xffff:%d",f->name,size);
+			}
 			write_string(writer,str,size);
 			lua_pop(L, 1);
 		}
@@ -409,41 +489,15 @@ pack_string(lua_State* L,writer_t* writer,field_t* f,int index) {
 		}
 		size_t size;
 		const char* str = lua_tolstring(L,index,&size);
+		if (size > 0xffff) {
+			writer_release(writer);
+			luaL_error(L,"field:%s string size more than 0xffff:%d",f->name,size);
+		}
 		write_string(writer,str,size);
 	}
 }
 
-void pack_field(lua_State* L,writer_t* writer,field_t* f,int index,int depth);
-
-static inline void
-pack_one(lua_State* L,writer_t* writer,field_t* f,int index,int depth) {
-	switch(f->type) {
-		case FTYPE_INT: {
-			pack_int(L,writer,f,index);
-			break;
-		}
-		case FTYPE_FLOAT: {
-			pack_float(L,writer,f,index);
-			break;
-		}
-		case FTYPE_DOUBLE: {
-			pack_double(L,writer,f,index);
-			break;
-		}
-		case FTYPE_STRING: {
-			pack_string(L,writer,f,index);
-			break;
-		}
-		case FTYPE_PROTOCOL: {
-			pack_field(L,writer,f,index,depth);
-			break;
-		}
-		default: {
-			writer_release(writer);
-			luaL_error(L,"pack error:invalid name:%s,type:%d",f->name,f->type);
-		}
-	}
-}
+static inline void pack_one(lua_State* L,writer_t* writer,field_t* f,int index,int depth);
 
 void
 pack_field(lua_State* L,writer_t* writer,field_t* parent,int index,int depth) {
@@ -452,8 +506,6 @@ pack_field(lua_State* L,writer_t* writer,field_t* parent,int index,int depth) {
 		writer_release(writer);
 		luaL_error(L,"message pack too depth");
 	}
-
-	// printf("pack depth:%d,%d\n",depth,lua_gettop(L));
 	
 	int vt = lua_type(L,index);
 	if (vt != LUA_TTABLE) {
@@ -462,8 +514,9 @@ pack_field(lua_State* L,writer_t* writer,field_t* parent,int index,int depth) {
 	}
 
 	if (parent->array) {
-		int array_size = lua_rawlen(L,index);
-		write_short(writer,array_size);
+		int array_size = check_array(L,writer,parent,index,vt);
+		
+		write_ushort(writer,array_size);
 
 		int i;
 		for (i = 0; i < array_size; i++) {
@@ -494,11 +547,86 @@ pack_field(lua_State* L,writer_t* writer,field_t* parent,int index,int depth) {
 	}
 }
 
+static inline void
+pack_one(lua_State* L,writer_t* writer,field_t* f,int index,int depth) {
+	switch(f->type) {
+		case FTYPE_BOOL: {
+			pack_bool(L,writer,f,index);
+			break;
+		}
+		case FTYPE_SHORT: {
+			pack_short(L,writer,f,index);
+			break;
+		}
+		case FTYPE_INT: {
+			pack_int(L,writer,f,index);
+			break;
+		}
+		case FTYPE_FLOAT: {
+			pack_float(L,writer,f,index);
+			break;
+		}
+		case FTYPE_DOUBLE: {
+			pack_double(L,writer,f,index);
+			break;
+		}
+		case FTYPE_STRING: {
+			pack_string(L,writer,f,index);
+			break;
+		}
+		case FTYPE_PROTOCOL: {
+			pack_field(L,writer,f,index,depth);
+			break;
+		}
+		default: {
+			writer_release(writer);
+			luaL_error(L,"pack error:invalid name:%s,type:%d",f->name,f->type);
+		}
+	}
+}
+
+inline void
+unpack_bool(lua_State* L,reader_t* reader,field_t* f,int index) {
+	if (f->array) {
+		int array_size = read_ushort(L,reader);
+		lua_createtable(L,0,0);
+		int i;
+		for (i = 1; i <= array_size; i++) {
+			uint8_t val = read_byte(L,reader);
+			lua_pushboolean(L,val);
+			lua_rawseti(L,-2,i);
+		}
+		lua_setfield(L,index,f->name);
+	} else {
+		uint8_t val = read_byte(L,reader);
+		lua_pushboolean(L,val);
+		lua_setfield(L,index,f->name);
+	}
+}
+
+inline void
+unpack_short(lua_State* L,reader_t* reader,field_t* f,int index) {
+	if (f->array) {
+		int array_size = read_ushort(L,reader);
+		lua_createtable(L,0,0);
+		int i;
+		for (i = 1; i <= array_size; i++) {
+			short val = read_short(L,reader);
+			lua_pushinteger(L,val);
+			lua_rawseti(L,-2,i);
+		}
+		lua_setfield(L,index,f->name);
+	} else {
+		short val = read_short(L,reader);
+		lua_pushinteger(L,val);
+		lua_setfield(L,index,f->name);
+	}
+} 
 
 inline void
 unpack_int(lua_State* L,reader_t* reader,field_t* f,int index) {
 	if (f->array) {
-		int array_size = read_short(L,reader);
+		int array_size = read_ushort(L,reader);
 		lua_createtable(L,0,0);
 		int i;
 		for (i = 1; i <= array_size; i++) {
@@ -517,7 +645,7 @@ unpack_int(lua_State* L,reader_t* reader,field_t* f,int index) {
 inline void
 unpack_float(lua_State* L,reader_t* reader,field_t* f,int index) {
 	if (f->array) {
-		int array_size = read_short(L,reader);
+		int array_size = read_ushort(L,reader);
 		lua_createtable(L,0,0);
 		int i;
 		for (i = 1; i <= array_size; i++) {
@@ -536,7 +664,7 @@ unpack_float(lua_State* L,reader_t* reader,field_t* f,int index) {
 inline void
 unpack_double(lua_State* L,reader_t* reader,field_t* f,int index) {
 	if (f->array) {
-		int array_size = read_short(L,reader);
+		int array_size = read_ushort(L,reader);
 		lua_createtable(L,0,0);
 		int i;
 		for (i = 1; i <= array_size; i++) {
@@ -555,7 +683,7 @@ unpack_double(lua_State* L,reader_t* reader,field_t* f,int index) {
 inline void
 unpack_string(lua_State* L,reader_t* reader,field_t* f,int index) {
 	if (f->array) {
-		int array_size = read_short(L,reader);
+		int array_size = read_ushort(L,reader);
 		lua_createtable(L,0,0);
 		int i;
 		for (i = 1; i <= array_size; i++) {
@@ -581,10 +709,9 @@ unpack_field(lua_State* L,reader_t* reader,field_t* parent,int index,int depth) 
 	if (depth > MAX_DEPTH) {
 		luaL_error(L,"message unpack too depth");
 	}
-	// printf("unpack depth:%d,%d\n",depth,lua_gettop(L));
 	
 	if (parent->array) {
-		int array_size = read_short(L,reader);
+		int array_size = read_ushort(L,reader);
 		lua_createtable(L,0,0);
 		int i;
 		for (i = 1; i <= array_size; i++) {
@@ -611,6 +738,14 @@ unpack_field(lua_State* L,reader_t* reader,field_t* parent,int index,int depth) 
 static inline void
 unpack_one(lua_State* L,reader_t* reader,field_t* f,int index,int depth) {
 	switch(f->type) {
+		case FTYPE_BOOL: {
+			unpack_bool(L,reader,f,index);
+			break;
+		}
+		case FTYPE_SHORT: {
+			unpack_short(L,reader,f,index);
+			break;
+		}
 		case FTYPE_INT: {
 			unpack_int(L,reader,f,index);
 			break;

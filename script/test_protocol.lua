@@ -3,7 +3,7 @@ local util = require "util"
 local protocol = require "protocol"
 
 -- protocol.parse("./protocol/other.protocol")
-protocol.parse("./protocol/test.protocol")
+protocol.parse("./protocol/new.protocol")
 
 -- protocol.dumpfile("./tmp/")
 
@@ -55,3 +55,8 @@ protocol.parse("./protocol/test.protocol")
 --  table.print(message,name)
 
 protocol.dump()
+
+local id,str = protocol.encode.sAgentEnter({a = false,b = {false,true},c = 655,d = {},e = 1000,f = {1989,10,16},g = 1.16,h = {},i = 1.1,j = {},str = "abc"})
+ print(id,string.len(str))
+ local name,message = protocol.decode[id](str)
+ table.print(message,name)
