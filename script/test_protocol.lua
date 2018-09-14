@@ -54,9 +54,26 @@ protocol.parse("./protocol/new.protocol")
 --   local name,message = protocol.decode[id](str)
 --  table.print(message,name)
 
-protocol.dump()
+-- protocol.dump()
 
-local id,str = protocol.encode.sAgentEnter({a = false,b = {false,true},c = 655,d = {},e = 1000,f = {1989,10,16},g = 1.16,h = {},i = 1.1,j = {},str = "abc"})
- print(id,string.len(str))
+local pos = {}
+
+for i = 1,65536 do
+	table.insert(pos,i)
+	end
+
+local info = {
+	userUid = 1001,
+	userName = "mrq",
+	level = 100,
+	pos = pos,
+	created = true,
+	version = 123,
+	bornTime = 1.1123,
+	itemInfoList = {{itemId = 101,amount = 1},{itemId = 102,amount = 2}}
+}
+local id,str = protocol.encode.sAgentEnter(info)
+ -- print(id,string.len(str))
+
  local name,message = protocol.decode[id](str)
  table.print(message,name)

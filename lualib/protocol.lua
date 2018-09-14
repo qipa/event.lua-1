@@ -60,7 +60,7 @@ function _M.parse(fullfile)
 	remake_field(tbl.root.children)
 	replace_sub_protocol(tbl.root.children,function (protocol)
 		for _,field in pairs(protocol.fields) do
-			if field.type == 7 then
+			if field.type == 6 then
 				local info
 				if protocol.children ~= nil then
 					info = protocol.children[field.type_name]
