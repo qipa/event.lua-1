@@ -263,7 +263,7 @@ read_int(lua_State* L,reader_t* reader) {
 		return n;
 	}
 	case TYPE_NUMBER_DWORD: {
-		uint32_t n;
+		int32_t n;
 		reader_pop(L,reader,(uint8_t*)&n,sizeof(uint32_t));
 		return n;
 	}
