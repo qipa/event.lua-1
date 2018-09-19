@@ -816,6 +816,7 @@ point_random(struct nav_mesh_context* ctx, struct vector3* result, int poly) {
 	result->z = PA->z + AB.z * x + AC.z * z;
 }
 
+#define HEIGHT_USE_LERP
 #ifdef HEIGHT_USE_LERP
 
 bool
@@ -909,7 +910,7 @@ point_height(struct nav_mesh_context* ctx, double x, double z, double* height) {
 	//射线起点
 	struct vector3 from = { x, 0, z };
 	//射线方向
-	static struct vector3 direction = { 0, 1, 0 };
+	static const struct vector3 direction = { 0, 1, 0 };
 	
 	int triangle[3] = { 0, 0, 0 };
 	int i;

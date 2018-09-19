@@ -1,5 +1,12 @@
 #include "nav.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#define USE_THREAD
+#endif
+
+//#undef USE_THREAD
+
 struct tile_info
 {
 	struct vector3 center;
@@ -44,85 +51,153 @@ intersect(struct vector3* a, struct vector3* b, struct vector3* c, struct vector
 	return false;
 }
 
-struct nav_tile*
-	create_tile(struct nav_mesh_context* ctx, uint32_t unit) {
-		ctx->tile_unit = unit;
-		ctx->tile_width = ctx->width / unit + 1;
-		ctx->tile_heigh = ctx->heigh / unit + 1;
-
-		uint32_t count = ctx->tile_width * ctx->tile_heigh;
-		struct nav_tile* navtile = ( struct nav_tile* )malloc(sizeof( struct nav_tile )*count);
-		memset(navtile, 0, sizeof( struct nav_tile )*count);
-
-		struct tile_info* tileinfo = ( struct tile_info* )malloc(sizeof( struct tile_info )*count);
-		memset(tileinfo, 0, sizeof( struct tile_info )*count);
-
-		uint32_t z;
-		for ( z = 0; z < ctx->tile_heigh; z++ ) {
-			uint32_t x;
-			for ( x = 0; x < ctx->tile_width; x++ ) {
-				uint32_t index = x + z * ctx->tile_width;
-				struct tile_info* tile = &tileinfo[index];
-				tile->pos[0].x = ctx->lt.x + x * unit;
-				tile->pos[0].z = ctx->lt.z + z * unit;
-				tile->pos[1].x = ctx->lt.x + ( x + 1 ) * unit;
-				tile->pos[1].z = ctx->lt.z + z * unit;
-				tile->pos[2].x = ctx->lt.x + ( x + 1 ) * unit;
-				tile->pos[2].z = ctx->lt.z + ( z + 1 ) * unit;
-				tile->pos[3].x = ctx->lt.x + x * unit;
-				tile->pos[3].z = ctx->lt.z + ( z + 1 ) * unit;
-				tile->center.x = ctx->lt.x + ( x + 0.5 ) * unit;
-				tile->center.z = ctx->lt.z + ( z + 0.5 ) * unit;
-				navtile[index].center.x = (uint32_t)tile->center.x;
-				navtile[index].center.z = (uint32_t)tile->center.z;
-#ifdef _WIN32
-				memcpy(&navtile[index].pos, &tile->pos, sizeof( tile->pos ));
-#endif
-				
-			}
+bool
+inside_reactangle(struct tile_info* tileinfo, double x, double z) {
+	if ( tileinfo->pos[0].x <= x && x <= tileinfo->pos[2].x )
+	{
+		if ( tileinfo->pos[0].z <= z && z <= tileinfo->pos[2].z )
+		{
+			return true;
 		}
+	}
+	return false;
+}
 
-		uint32_t i;
-		for ( i = 0; i < count; i++ ) {
-			struct tile_info* tile = &tileinfo[i];
-			int j;
-			for ( j = 0; j < ctx->node_size; j++ ) {
-				bool done = false;
-				struct nav_node* node = &ctx->node[j];
-				int k;
-				for ( k = 0; k < 4; k++ ) {
-					int l;
-					for ( l = 0; l < node->size; l++ ) {
-						struct nav_border* border = get_border(ctx, node->border[l]);
-						if ( intersect(&tile->pos[k], &tile->pos[( k + 1 ) % 4], &ctx->vertices[border->a], &ctx->vertices[border->b]) ) {
-							done = true;
-							break;
-						}
-					}
-					if ( done )
+void
+make_tile(struct nav_mesh_context* ctx, struct tile_info* tileinfo, struct nav_tile* navtile, uint32_t from, uint32_t offset) {
+	uint32_t i;
+	for ( i = from; i < offset; i++ ) {
+		struct tile_info* tile = &tileinfo[i];
+		int j;
+		for ( j = 0; j < ctx->node_size; j++ ) {
+			bool done = false;
+			struct nav_node* node = &ctx->node[j];
+			int k;
+			for ( k = 0; k < 4; k++ ) {
+				int l;
+				for ( l = 0; l < node->size; l++ ) {
+					struct nav_border* border = get_border(ctx, node->border[l]);
+					if ( intersect(&tile->pos[k], &tile->pos[( k + 1 ) % 4], &ctx->vertices[border->a], &ctx->vertices[border->b]) ) {
+						done = true;
 						break;
+					}
 				}
-
 				if ( done )
+					break;
+			}
+
+			if ( done )
+				add_node(&navtile[i], j);
+			else {
+				if ( inside_node(ctx, j, tile->center.x, tile->center.y, tile->center.z) ) {
 					add_node(&navtile[i], j);
+				}
 				else {
-					if ( inside_node(ctx, j, tile->center.x, tile->center.y, tile->center.z) )
+					if ( inside_reactangle(tile, node->center.x,node->center.z))
 						add_node(&navtile[i], j);
 				}
 			}
+		}
 
-			navtile[i].center_node = -1;
-			for ( j = 0; j < navtile[i].offset;j++ )
+		navtile[i].center_node = -1;
+		for ( j = 0; j < navtile[i].offset; j++ )
+		{
+			if ( inside_node(ctx, navtile[i].node[j], navtile[i].center.x, 0, navtile[i].center.z) )
 			{
-				if ( inside_node(ctx, navtile[i].node[j], navtile[i].center.x,0,navtile[i].center.z) )
-				{
-					navtile[i].center_node = navtile[i].node[j];
-				}
+				navtile[i].center_node = navtile[i].node[j];
 			}
 		}
-		free(tileinfo);
-		return navtile;
 	}
+}
+
+#ifdef USE_THREAD
+struct thread_args
+{
+	struct nav_mesh_context* ctx;
+	struct tile_info* tileinfo;
+	struct nav_tile* navtile;
+	int index;
+	int offset;
+};
+
+DWORD WINAPI make_thread(LPVOID ctx) {
+	struct thread_args* arg = ( struct thread_args* )ctx;
+	make_tile(arg->ctx, arg->tileinfo, arg->navtile, arg->index, arg->offset);
+	return 0;
+}
+
+#endif
+
+struct nav_tile*
+create_tile(struct nav_mesh_context* ctx, uint32_t unit) {
+	ctx->tile_unit = unit;
+	ctx->tile_width = ctx->width / unit + 1;
+	ctx->tile_heigh = ctx->heigh / unit + 1;
+
+	uint32_t count = ctx->tile_width * ctx->tile_heigh;
+	struct nav_tile* navtile = ( struct nav_tile* )malloc(sizeof( struct nav_tile )*count);
+	memset(navtile, 0, sizeof( struct nav_tile )*count);
+
+	struct tile_info* tileinfo = ( struct tile_info* )malloc(sizeof( struct tile_info )*count);
+	memset(tileinfo, 0, sizeof( struct tile_info )*count);
+
+	uint32_t z;
+	for ( z = 0; z < ctx->tile_heigh; z++ ) {
+		uint32_t x;
+		for ( x = 0; x < ctx->tile_width; x++ ) {
+			uint32_t index = x + z * ctx->tile_width;
+			struct tile_info* tile = &tileinfo[index];
+			tile->pos[0].x = ctx->lt.x + x * unit;
+			tile->pos[0].z = ctx->lt.z + z * unit;
+			tile->pos[1].x = ctx->lt.x + ( x + 1 ) * unit;
+			tile->pos[1].z = ctx->lt.z + z * unit;
+			tile->pos[2].x = ctx->lt.x + ( x + 1 ) * unit;
+			tile->pos[2].z = ctx->lt.z + ( z + 1 ) * unit;
+			tile->pos[3].x = ctx->lt.x + x * unit;
+			tile->pos[3].z = ctx->lt.z + ( z + 1 ) * unit;
+			tile->center.x = ctx->lt.x + ( x + 0.5 ) * unit;
+			tile->center.z = ctx->lt.z + ( z + 0.5 ) * unit;
+			navtile[index].center.x = (uint32_t)tile->center.x;
+			navtile[index].center.z = (uint32_t)tile->center.z;
+#ifdef _WIN32
+			memcpy(&navtile[index].pos, &tile->pos, sizeof( tile->pos ));
+#endif
+
+		}
+	}
+
+#ifdef USE_THREAD
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	struct thread_args* args = malloc(sizeof( *args ) * si.dwNumberOfProcessors);
+	HANDLE* handlers = malloc(sizeof( *handlers ) * si.dwNumberOfProcessors);
+
+	int task_count = count / si.dwNumberOfProcessors;
+	for ( int i = 0; i < si.dwNumberOfProcessors; i++ ) {
+		struct thread_args* arg = &args[i];
+		arg->ctx = ctx;
+		arg->tileinfo = tileinfo;
+		arg->navtile = navtile;
+		arg->index = task_count * i;
+		arg->offset = arg->index + task_count;
+		if ( arg->offset > count ) {
+			arg->offset = count;
+		}
+		handlers[i] = CreateThread(NULL, 0, make_thread, arg, 0, NULL);
+	}
+
+	WaitForMultipleObjects(si.dwNumberOfProcessors, handlers, TRUE, INFINITE);
+	for ( int i = 0; i < si.dwNumberOfProcessors; i++ )
+		CloseHandle(handlers[i]);
+
+	free(args);
+	free(handlers);
+#else
+	make_tile(ctx, tileinfo, navtile, 0, count);
+#endif
+	free(tileinfo);
+	return navtile;
+}
 
 
 void
