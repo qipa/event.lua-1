@@ -7,15 +7,6 @@
 
 #include "khash.h"
 
-#define BUFFER_SIZE 128
-
-#define MAX_DEPTH	32
-
-#define TYPE_NUMBER_ZERO 	0
-#define TYPE_NUMBER_BYTE 	1
-#define TYPE_NUMBER_WORD 	2
-#define TYPE_NUMBER_DWORD 	3
-#define TYPE_NUMBER_QWORD 	4
 
 #define FTYPE_BOOL 		0
 #define FTYPE_SHORT     1
@@ -28,9 +19,9 @@
 #define PARENT_TPROTOCOL 0
 #define PARENT_TFIELD	 1
 
-#define MAX_INT 0xffffffffffffff
-
-
+#define MAX_INT 	0xffffffffffffff
+#define MAX_DEPTH	32
+#define BUFFER_SIZE 128
 
 KHASH_MAP_INIT_STR(protocol, int);
 
@@ -271,20 +262,19 @@ read_short(lua_State* L,reader_t* reader) {
 inline static lua_Integer
 read_int(lua_State* L,reader_t* reader) {
 	
-	uint8_t type;
-	reader_pop(L,reader,&type,sizeof(uint8_t));
+	uint8_t tag;
+	reader_pop(L,reader,&tag,sizeof(uint8_t));
 
-	if (type == 0) {
+	if (tag == 0) {
 		return 0;
 	}
 
-	int positive = type & 0x1;
-	int length = type >> 1;
+	int length = tag >> 1;
 
 	uint64_t value = 0;
 	reader_pop(L,reader,(uint8_t*)&value,length);
 
-	return positive == 1 ? value : -value;
+	return (tag & 0x1) == 1 ? value : -value;
 }
 
 inline static float
