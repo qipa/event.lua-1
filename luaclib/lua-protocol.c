@@ -28,6 +28,9 @@
 #define PARENT_TPROTOCOL 0
 #define PARENT_TFIELD	 1
 
+#define MAX_INT 0xffffffffffffff
+
+
 
 KHASH_MAP_INIT_STR(protocol, int);
 
@@ -168,28 +171,50 @@ write_short(writer_t* writer,short val) {
 inline static void
 write_int(writer_t* writer,lua_Integer val) {
 	if (val == 0) {
-		write_byte(writer,TYPE_NUMBER_ZERO);
-	} else if (val != (int32_t)val) {
-		int64_t v64 = val;
-		write_byte(writer,TYPE_NUMBER_QWORD);
-		writer_push(writer, &v64, sizeof(v64));
-	} else if (val < 0) {
-		int32_t v32 = (int32_t)val;
-		write_byte(writer,TYPE_NUMBER_DWORD);
-		writer_push(writer, &v32, sizeof(v32));
-	} else if (val<0x100) {
-		write_byte(writer,TYPE_NUMBER_BYTE);
-		uint8_t byte = (uint8_t)val;
-		writer_push(writer, &byte, sizeof(byte));
-	} else if (val<0x10000) {
-		write_byte(writer,TYPE_NUMBER_WORD);
-		uint16_t word = (uint16_t)val;
-		writer_push(writer, &word, sizeof(word));
-	} else {
-		write_byte(writer,TYPE_NUMBER_DWORD);
-		uint32_t v32 = (uint32_t)val;
-		writer_push(writer, &v32, sizeof(v32));
+		write_byte(writer,0);
+		return;
 	}
+	uint64_t value;
+	uint8_t positive = 0;
+	if (val < 0) {
+		positive = 0x0;
+		value = -val;
+	} else {
+		positive = 0x1;
+		value = val;
+	}
+	
+	int length;
+	if (value <= 0xff) {
+		length = 1;
+	}
+	else if (value <= 0xffff) {
+		length = 2;
+	}
+	else if (value <= 0xffffff) {
+		length = 3;
+	}
+	else if (value <= 0xffffffff) {
+		length = 4;
+	}
+	else if (value <= 0xffffffffff) {
+		length = 5;
+	}
+	else if (value <= 0xffffffffffff) {
+		length = 6;
+	}
+	else {
+		length = 7;
+	}
+
+	uint8_t tag = length;
+	tag = (tag << 1) | positive;
+
+	uint8_t data[8] = {0};
+	data[0] = tag;
+	memcpy(&data[1],&value,length);
+
+	writer_push(writer, data, length + 1);
 }
 
 inline static void
@@ -249,33 +274,17 @@ read_int(lua_State* L,reader_t* reader) {
 	uint8_t type;
 	reader_pop(L,reader,&type,sizeof(uint8_t));
 
-	switch (type) {
-	case TYPE_NUMBER_ZERO:
-		return 0;
-	case TYPE_NUMBER_BYTE: {
-		uint8_t n;
-		reader_pop(L,reader,&n,sizeof(uint8_t));
-		return n;
-	}
-	case TYPE_NUMBER_WORD: {
-		uint16_t n;
-		reader_pop(L,reader,(uint8_t*)&n,sizeof(uint16_t));
-		return n;
-	}
-	case TYPE_NUMBER_DWORD: {
-		int32_t n;
-		reader_pop(L,reader,(uint8_t*)&n,sizeof(uint32_t));
-		return n;
-	}
-	case TYPE_NUMBER_QWORD: {
-		uint64_t n;
-		reader_pop(L,reader,(uint8_t*)&n,sizeof(uint64_t));
-		return n;
-	}
-	default:
-		luaL_error(L,"decode error:invalid int type:%d",type);
+	if (type == 0) {
 		return 0;
 	}
+
+	int positive = type & 0x1;
+	int length = type >> 1;
+
+	uint64_t value = 0;
+	reader_pop(L,reader,(uint8_t*)&value,length);
+
+	return positive == 1 ? value : -value;
 }
 
 inline static float
@@ -391,7 +400,12 @@ pack_int(lua_State* L,writer_t* writer,field_t* f,int index) {
 				writer_release(writer);
 				luaL_error(L,"field:%s array member expect int,not %s",f->name,lua_typename(L,vt));
 			}
-			write_int(writer,lua_tointeger(L,-1));
+			lua_Integer val = lua_tointeger(L,-1);
+			if (val > MAX_INT || val < -MAX_INT) {
+				writer_release(writer);
+				luaL_error(L,"field:%s array member int out of range,%I",f->name,val);
+			}
+			write_int(writer,val);
 			lua_pop(L, 1);
 		}
 	} else {
@@ -399,7 +413,13 @@ pack_int(lua_State* L,writer_t* writer,field_t* f,int index) {
 			writer_release(writer);
 			luaL_error(L,"field:%s expect int,not %s",f->name,lua_typename(L,vt));
 		}
-		write_int(writer,lua_tointeger(L,index));
+		lua_Integer val = lua_tointeger(L,index);
+		if (val > MAX_INT || val < -MAX_INT) {
+			writer_release(writer);
+			luaL_error(L,"field:%s int out of range,%I",f->name,val);
+		}
+		
+		write_int(writer,val);
 	}
 }  
 
