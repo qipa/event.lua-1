@@ -64,20 +64,22 @@ function cDatabase:load()
 end
 
 function cDatabase:save()
-
+	local saveFields = self.__saveFields
+	local db = self.__name
+	local dbIndex = self:dbIndex()
 	local dbChannel = model.get_dbChannel()
-	local db = self:getType()
 	for field in pairs(self.__dirty) do
-		if self.__saveFields[field] ~= nil then
+		local readOnly = saveFields[field]
+		if readOnly == false then
 			local data = self[field]
 			if data then
 				if type(data) == "table" then
 					if data.save then
-						data:save(dbChannel,db,self:dbIndex())
+						data:save(dbChannel,db,dbIndex)
 					else
 						local updater = {}
 						updater["$set"] = data
-						dbChannel:update(db,field,self:dbIndex(),updater,true)
+						dbChannel:update(db,field,dbIndex,updater,true)
 					end
 				end
 			end
@@ -210,7 +212,8 @@ function cCollection:save(dbChannel,db,dbIndex)
 	local unset = {}
 	local unsetFlag = false
 	for field in pairs(self.__dirty) do
-		if saveFields[field] ~= nil then
+		local readOnly = saveFields
+		if readOnly == false then
 			local data = self[field]
 			if data then
 				setFlag = true

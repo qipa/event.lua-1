@@ -13,6 +13,7 @@ cWorldUser = dbObject.cDatabase:inherit("world_user","uid")
 function __init__(self)
 	self.cWorldUser:saveField("chatUser")
 	self.cWorldUser:saveField("teamUser")
+	self.cWorldUser:saveField("fighter")
 end
 
 
