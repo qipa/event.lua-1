@@ -202,8 +202,8 @@ function cObject:saveData()
 	return result
 end
 
-function cObject:saveField(field)
-	self.__saveFields[field] = true
+function cObject:saveField(field,readOnly)
+	self.__saveFields[field] = readOnly or false
 end
 
 function cObject:packField(field)

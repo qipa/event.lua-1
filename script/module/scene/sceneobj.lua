@@ -9,7 +9,7 @@ function __init__(self)
 	self.cSceneObj:packField("pos")
 end
 
-function cSceneObj:create(uid,x,z,face)
+function cSceneObj:onCreate(uid,x,z,face)
 	print("cSceneObj:create")
 	self.uid = uid
 	self.pos = {x,z}
@@ -20,7 +20,7 @@ function cSceneObj:create(uid,x,z,face)
 	self.viewerCtx = {}
 end
 
-function cSceneObj:destroy()
+function cSceneObj:onDestroy()
 
 end
 
@@ -56,8 +56,10 @@ end
 
 function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
-	self.pos[1] = x
-	self.pos[2] = z
+
+	local oPos = self.pos
+	self.pos = {x,z}
+	self.face = (self.pos[2] - oPos[2]) / (self.pos[1] - oPos[1])
 end
 
 function cSceneObj:onObjEnter(sceneObjList)
@@ -78,11 +80,10 @@ end
 
 function cSceneObj:getViewer(range)
 	local result = {}
-	local sceneInst = self.scene
+	local objMgr = self.scene.objMgr
 
-	for aoiTriggerId in pairs(self.viewerCtx) do
-		local sceneObjUid = sceneInst.viewerCtx[aoiTriggerId]
-		local sceneObj = sceneInst.objMgr[sceneObjUid]
+	for sceneObjUid in pairs(self.viewerCtx) do
+		local sceneObj = objMgr[sceneObjUid]
 		table.insert(result,sceneObj)
 	end
 
@@ -118,19 +119,23 @@ function cSceneObj:getWitnessCid()
 	return result
 end
 
-function cSceneObj:getSceneObjInLine()
+function cSceneObj:getSceneObjInLine(range,findType)
 
 end
 
-function cSceneObj:getSceneObjInRectangle()
+function cSceneObj:getSceneObjInRectangle(range,findType)
 
 end
 
-function cSceneObj:getSceneObjInCircle()
+function cSceneObj:getSceneObjInCircle(range,findType)
+	local result = {}
+	local allObjs = self:getWitness()
+	for _,obj in pairs(allObjs) do
 
+	end
 end
 
-function cSceneObj:getSceneObjInSector()
+function cSceneObj:getSceneObjInSector(range,findType)
 
 end
 

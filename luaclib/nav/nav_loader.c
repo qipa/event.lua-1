@@ -169,131 +169,131 @@ init_mesh(struct nav_mesh_context* mesh_ctx) {
 }
 
 struct nav_mesh_context*
-	load_mesh(double** v, int vertices_size, int** p, int node_size) {
-		struct nav_mesh_context* mesh_ctx = ( struct nav_mesh_context* )malloc(sizeof( *mesh_ctx ));
-		init_mesh(mesh_ctx);
+load_mesh(double** v, int vertices_size, int** p, int node_size) {
+	struct nav_mesh_context* mesh_ctx = ( struct nav_mesh_context* )malloc(sizeof( *mesh_ctx ));
+	init_mesh(mesh_ctx);
 
-		int i, j, k;
+	int i, j, k;
 
-		mesh_ctx->vertices_size = vertices_size;
-		mesh_ctx->vertices = ( struct vector3 * )malloc(sizeof( struct vector3 ) * mesh_ctx->vertices_size);
-		memset(mesh_ctx->vertices, 0, sizeof( struct vector3 ) * mesh_ctx->vertices_size);
+	mesh_ctx->vertices_size = vertices_size;
+	mesh_ctx->vertices = ( struct vector3 * )malloc(sizeof( struct vector3 ) * mesh_ctx->vertices_size);
+	memset(mesh_ctx->vertices, 0, sizeof( struct vector3 ) * mesh_ctx->vertices_size);
 
-		memset(&mesh_ctx->lt, 0, sizeof( struct vector3 ));
-		memset(&mesh_ctx->br, 0, sizeof( struct vector3 ));
+	memset(&mesh_ctx->lt, 0, sizeof( struct vector3 ));
+	memset(&mesh_ctx->br, 0, sizeof( struct vector3 ));
 
-		//初始化顶点信息，并找到左上和右下的坐标
-		for ( i = 0; i < vertices_size; i++ ) {
-			mesh_ctx->vertices[i].x = v[i][0];
-			mesh_ctx->vertices[i].y = v[i][1];
-			mesh_ctx->vertices[i].z = v[i][2];
+	//初始化顶点信息，并找到左上和右下的坐标
+	for ( i = 0; i < vertices_size; i++ ) {
+		mesh_ctx->vertices[i].x = v[i][0];
+		mesh_ctx->vertices[i].y = v[i][1];
+		mesh_ctx->vertices[i].z = v[i][2];
 
-			if ( mesh_ctx->lt.x == 0 )
+		if ( mesh_ctx->lt.x == 0 )
+			mesh_ctx->lt.x = mesh_ctx->vertices[i].x;
+		else {
+			if ( mesh_ctx->vertices[i].x < mesh_ctx->lt.x )
 				mesh_ctx->lt.x = mesh_ctx->vertices[i].x;
-			else {
-				if ( mesh_ctx->vertices[i].x < mesh_ctx->lt.x )
-					mesh_ctx->lt.x = mesh_ctx->vertices[i].x;
-			}
+		}
 
-			if ( mesh_ctx->lt.z == 0 )
+		if ( mesh_ctx->lt.z == 0 )
+			mesh_ctx->lt.z = mesh_ctx->vertices[i].z;
+		else {
+			if ( mesh_ctx->vertices[i].z < mesh_ctx->lt.z )
 				mesh_ctx->lt.z = mesh_ctx->vertices[i].z;
-			else {
-				if ( mesh_ctx->vertices[i].z < mesh_ctx->lt.z )
-					mesh_ctx->lt.z = mesh_ctx->vertices[i].z;
-			}
+		}
 
-			if ( mesh_ctx->br.x == 0 )
+		if ( mesh_ctx->br.x == 0 )
+			mesh_ctx->br.x = mesh_ctx->vertices[i].x;
+		else {
+			if ( mesh_ctx->vertices[i].x > mesh_ctx->br.x )
 				mesh_ctx->br.x = mesh_ctx->vertices[i].x;
-			else {
-				if ( mesh_ctx->vertices[i].x > mesh_ctx->br.x )
-					mesh_ctx->br.x = mesh_ctx->vertices[i].x;
-			}
+		}
 
-			if ( mesh_ctx->br.z == 0 )
+		if ( mesh_ctx->br.z == 0 )
+			mesh_ctx->br.z = mesh_ctx->vertices[i].z;
+		else {
+			if ( mesh_ctx->vertices[i].z > mesh_ctx->br.z )
 				mesh_ctx->br.z = mesh_ctx->vertices[i].z;
-			else {
-				if ( mesh_ctx->vertices[i].z > mesh_ctx->br.z )
-					mesh_ctx->br.z = mesh_ctx->vertices[i].z;
-			}
 		}
-
-		//计算出地图的宽和高
-		mesh_ctx->width = (uint32_t)( mesh_ctx->br.x - mesh_ctx->lt.x );
-		mesh_ctx->heigh = (uint32_t)( mesh_ctx->br.z - mesh_ctx->lt.z );
-
-		mesh_ctx->border_size = 64;
-		mesh_ctx->border_offset = 0;
-		mesh_ctx->borders = ( struct nav_border * )malloc(sizeof( struct nav_border ) * mesh_ctx->border_size);
-		memset(mesh_ctx->borders, 0, sizeof( struct nav_border ) * mesh_ctx->border_size);
-
-		struct nav_border_searcher** border_searcher = ( struct nav_border_searcher** )malloc(sizeof( *border_searcher ) * mesh_ctx->vertices_size);
-		memset(border_searcher, 0, sizeof( *border_searcher ) * mesh_ctx->vertices_size);
-
-		mesh_ctx->node_size = node_size;
-		mesh_ctx->node = ( struct nav_node * )malloc(sizeof( struct nav_node ) * mesh_ctx->node_size);
-		memset(mesh_ctx->node, 0, sizeof( struct nav_node ) * mesh_ctx->node_size);
-
-		//初始化多边形信息，并计算出多边形的边
-		for ( i = 0; i < node_size; i++ ) {
-			struct nav_node* node = &mesh_ctx->node[i];
-			memset(node, 0, sizeof( *node ));
-			node->id = i;
-
-			node->size = p[i][0];
-
-			node->border = (int*)malloc(node->size * sizeof( int ));
-			node->poly = (int*)malloc(node->size * sizeof( int ));
-
-			struct vector3 center;
-			center.x = center.y = center.z = 0;
-
-			node->link_border = -1;
-			node->link_parent = NULL;
-
-			for ( j = 1; j <= node->size; j++ ) {
-				node->poly[j - 1] = p[i][j];
-				center.x += mesh_ctx->vertices[node->poly[j - 1]].x;
-				center.y += mesh_ctx->vertices[node->poly[j - 1]].y;
-				center.z += mesh_ctx->vertices[node->poly[j - 1]].z;
-			}
-			node->mask = 0;
-			node->center.x = center.x / node->size;
-			node->center.y = center.y / node->size;
-			node->center.z = center.z / node->size;
-
-			node->area = poly_area(mesh_ctx, node->size, node->poly);
-			mesh_ctx->area += node->area;
-
-			//顶点顺时针排序
-			vertex_sort(mesh_ctx, node);
-
-			//初始化多边形的边
-			for ( k = 0; k < node->size; k++ ) {
-				int k0 = k;
-				int k1 = k + 1 >= node->size ? 0 : k + 1;
-
-				int a = node->poly[k0];
-				int b = node->poly[k1];
-
-				struct nav_border* border = search_border(mesh_ctx, border_searcher, a, b);
-				border_link_node(border, node->id);
-
-				int border_id = border->id;
-				node->border[k] = border_id;
-
-				struct nav_border* border_opposite = search_border(mesh_ctx, border_searcher, b, a);
-				border_link_node(border_opposite, node->id);
-				border_opposite->opposite = border_id;
-
-				border = get_border(mesh_ctx, border_id);
-				border->opposite = border_opposite->id;
-			}
-		}
-
-		release_border_searcher(mesh_ctx, border_searcher);
-
-		return mesh_ctx;
 	}
+
+	//计算出地图的宽和高
+	mesh_ctx->width = (uint32_t)( mesh_ctx->br.x - mesh_ctx->lt.x );
+	mesh_ctx->heigh = (uint32_t)( mesh_ctx->br.z - mesh_ctx->lt.z );
+
+	mesh_ctx->border_size = 64;
+	mesh_ctx->border_offset = 0;
+	mesh_ctx->borders = ( struct nav_border * )malloc(sizeof( struct nav_border ) * mesh_ctx->border_size);
+	memset(mesh_ctx->borders, 0, sizeof( struct nav_border ) * mesh_ctx->border_size);
+
+	struct nav_border_searcher** border_searcher = ( struct nav_border_searcher** )malloc(sizeof( *border_searcher ) * mesh_ctx->vertices_size);
+	memset(border_searcher, 0, sizeof( *border_searcher ) * mesh_ctx->vertices_size);
+
+	mesh_ctx->node_size = node_size;
+	mesh_ctx->node = ( struct nav_node * )malloc(sizeof( struct nav_node ) * mesh_ctx->node_size);
+	memset(mesh_ctx->node, 0, sizeof( struct nav_node ) * mesh_ctx->node_size);
+
+	//初始化多边形信息，并计算出多边形的边
+	for ( i = 0; i < node_size; i++ ) {
+		struct nav_node* node = &mesh_ctx->node[i];
+		memset(node, 0, sizeof( *node ));
+		node->id = i;
+
+		node->size = p[i][0];
+
+		node->border = (int*)malloc(node->size * sizeof( int ));
+		node->poly = (int*)malloc(node->size * sizeof( int ));
+
+		struct vector3 center;
+		center.x = center.y = center.z = 0;
+
+		node->link_border = -1;
+		node->link_parent = NULL;
+
+		for ( j = 1; j <= node->size; j++ ) {
+			node->poly[j - 1] = p[i][j];
+			center.x += mesh_ctx->vertices[node->poly[j - 1]].x;
+			center.y += mesh_ctx->vertices[node->poly[j - 1]].y;
+			center.z += mesh_ctx->vertices[node->poly[j - 1]].z;
+		}
+		node->mask = 0;
+		node->center.x = center.x / node->size;
+		node->center.y = center.y / node->size;
+		node->center.z = center.z / node->size;
+
+		node->area = poly_area(mesh_ctx, node->size, node->poly);
+		mesh_ctx->area += node->area;
+
+		//顶点顺时针排序
+		vertex_sort(mesh_ctx, node);
+
+		//初始化多边形的边
+		for ( k = 0; k < node->size; k++ ) {
+			int k0 = k;
+			int k1 = k + 1 >= node->size ? 0 : k + 1;
+
+			int a = node->poly[k0];
+			int b = node->poly[k1];
+
+			struct nav_border* border = search_border(mesh_ctx, border_searcher, a, b);
+			border_link_node(border, node->id);
+
+			int border_id = border->id;
+			node->border[k] = border_id;
+
+			struct nav_border* border_opposite = search_border(mesh_ctx, border_searcher, b, a);
+			border_link_node(border_opposite, node->id);
+			border_opposite->opposite = border_id;
+
+			border = get_border(mesh_ctx, border_id);
+			border->opposite = border_opposite->id;
+		}
+	}
+
+	release_border_searcher(mesh_ctx, border_searcher);
+
+	return mesh_ctx;
+}
 
 
 void

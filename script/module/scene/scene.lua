@@ -7,7 +7,7 @@ local sceneConst = import "module.scene.scene_const"
 
 cScene = object.cObject:inherit("scene")
 
-function cScene:create(sceneId,sceneUid)
+function cScene:onCreate(sceneId,sceneUid)
 	self.sceneId = sceneId
 	self.sceneUid = sceneUid
 
@@ -38,7 +38,7 @@ function cScene:create(sceneId,sceneUid)
 	self.areaActive = {}
 end
 
-function cScene:destroy()
+function cScene:onDestroy()
 	timer.removeAll(self)
 	self:cleanSceneObj()
 end
@@ -132,6 +132,10 @@ function cScene:onObjEnter(obj)
 end
 
 function cScene:onObjLeave(obj)
+
+end
+
+function cScene:getSize()
 
 end
 

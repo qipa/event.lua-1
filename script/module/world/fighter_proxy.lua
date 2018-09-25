@@ -10,7 +10,7 @@ local sceneMgr = import "module.world.scene_manager"
 cFighterProxy = dbObject.cCollection:inherit("fighter")
 
 local eTRANSFER_STATUS = {
-	TRANSFER = 1,
+	DONE = 1,
 	ENTER = 2,
 	LEAVE = 3	
 }
@@ -30,18 +30,22 @@ end
 
 function cFighterProxy:onEnter()
 	local locationInfo = self.locationInfo
-	self:enterScene(locationInfo.sceneId,locationInfo.sceneUid)
+	self:enterScene(true,locationInfo.sceneId,locationInfo.sceneUid)
 end
 
 function cFighterProxy:onLeave()
 	event.fork(function ()
+		self.phase = eTRANSFER_STATUS.LEAVE
 		self.__mutex(sceneMgr.leaveScene,sceneMgr,self)
+		self.phase = eTRANSFER_STATUS.DONE
 	end)
 end
 
-function cFighterProxy:enterScene(sceneId,sceneUid)
+function cFighterProxy:enterScene(switch,sceneId,sceneUid)
 	event.fork(function ()
-		self.__mutex(sceneMgr.enterScene,sceneMgr,self,sceneId,sceneUid)
+		self.phase = eTRANSFER_STATUS.ENTER
+		self.__mutex(sceneMgr.enterScene,sceneMgr,self,switch,sceneId,sceneUid)
+		self.phase = eTRANSFER_STATUS.DONE
 	end)
 end
 
