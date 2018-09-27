@@ -5,13 +5,12 @@ local scene = import "module.scene.scene"
 local id_builder = import "module.id_builder"
 import "handler.cmd_handler"
 
-local kFLUSH_TIME = 30
 
 _sceneCtx = _sceneCtx or {}
 _sceneMap = _sceneMap or {}
 
 function __init__(self)
-	self.flushTimer = timer.callout(kFLUSH_TIME,self,"flush")
+	
 end
 
 function flush()

@@ -17,9 +17,10 @@ local eUSER_STATUS = {
 cAgentUser = dbObject.cDatabase:inherit("agentUser","uid","cid")
 
 function __init__(self)
-	self.cAgentUser:saveField("base_info")
+	self.cAgentUser:saveField("baseInfo")
 	self.cAgentUser:saveField("itemMgr")
-	self.cAgentUser:saveField("task_mgr")
+	self.cAgentUser:saveField("taskMgr")
+	self.cAgentUser:saveField("fighter",true)
 end
 
 

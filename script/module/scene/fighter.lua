@@ -1,6 +1,8 @@
 local aoi_core = require "simpleaoi.core"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
+local serverMgr = import "module.server_manager"
+local clientMgr = import "module.client_manager"
 
 cFighter = sceneobj.cSceneObj:inherit("fighter","uid")
 
@@ -8,12 +10,12 @@ function __init__(self)
 	
 end
 
-function cFighter:create(uid,x,z)
+function cFighter:onCreate(uid,x,z)
 	print("cFighter:create")
 	sceneobj.cSceneObj.create(self,uid,x,z)
 end
 
-function cFighter:destroy()
+function cFighter:onDestroy()
 	sceneobj.cSceneObj.destroy(self)
 end
 
@@ -32,6 +34,10 @@ end
 function cFighter:onEnterScene(scene)
 	sceneobj.cSceneObj.onEnterScene(self,scene)
 	self.aoiTriggerId = scene:createAoiTrigger(self)
+
+	local msg = {sceneId = scene.sceneId,sceneUid = scene.sceneUid}
+	serverMgr:sendAgent(self.agentId,"handler.agent_handler","onEnterScene",msg)
+	clientMgr:sendClient(self.cid,"sEnterScene",msg)
 end
 
 function cFighter:onLeaveScene()
