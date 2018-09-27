@@ -91,32 +91,32 @@ function agentConnectScene(self,agentServerId,sceneServerId)
 	end)
 end
 
-function enterScene(self,fighter,switch,sceneId,sceneUid)
+function enterScene(self,worldUser,sceneId,sceneUid,fighter)
 	local sceneInfo = _sceneInfo[sceneUid]
 	if not sceneInfo then
 		return
 	end
 
-	if not self:agentConnectScene(fighter.agentId,sceneInfo.serverId) then
+	if not self:agentConnectScene(worldUser.agentId,sceneInfo.serverId) then
 		return
 	end
 
-	if not switch then
-		serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighter})
-		fighter:onEnterScene(sceneId,sceneUid)
+	if fighter then
+		serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = worldUser.userUid,fighter = fighter})
+		worldUser:onEnterScene(sceneId,sceneUid)
 		return
 	end
 
 	local fighterInfo
 	if fighter.sceneUid == sceneUid then
 		serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighter})
-		fighter:onEnterScene(sceneId,sceneUid)
+		worldUser:onEnterScene(sceneId,sceneUid)
 		return
 	else
 		local oSceneInfo = _sceneInfo[fighter.sceneUid]
 		if oSceneInfo.serverId = sceneInfo.sceneId then
 			serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","transferInside",{userUid = userUid,sceneUid = sceneUid})
-			fighter:onEnterScene(sceneId,sceneUid)
+			worldUser:onEnterScene(sceneId,sceneUid)
 			return
 		else
 			fighterInfo = serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","leaveScene",{userUid = userUid})
@@ -124,7 +124,7 @@ function enterScene(self,fighter,switch,sceneId,sceneUid)
 	end
 
 	serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","enterScene",{userUid = userUid,fighterInfo = fighterInfo})
-	fighter:onEnterScene(sceneId,sceneUid)
+	worldUser:onEnterScene(sceneId,sceneUid)
 end
 
 function leaveScene(self,args)

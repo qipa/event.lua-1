@@ -14,11 +14,11 @@ classCtx = classCtx or {}
 objectCtx = objectCtx or {}
 objectMgr = objectMgr or setmetatable({},{__mode = "v"})
 
-cObject = cObject or { __name = "root", __childs = {}}
+cObject = cObject or { __name = "root", __childs = {}, __saveFields = {["__name"] = true}, __packFields = {["__name"] = true}}
 
 classCtx[cObject.__name] = cObject
 
-local function _cleanClsFunc(cls)
+local function _resetChildMethod(cls)
 	for name in pairs(cls.__childs) do
 		local childCls = classCtx[name]
 		for method in pairs(childCls.__method) do
@@ -26,7 +26,35 @@ local function _cleanClsFunc(cls)
 		end
 		childCls.__method = {}
 		
-		_cleanClsFunc(childCls)
+		_resetChildMethod(childCls)
+	end
+end
+
+local function _resetChildSaveFiled(cls,field)
+	for name in pairs(cls.__childs) do
+		local childCls = classCtx[name]
+		childCls.__saveFields[field] = true
+		_resetChildSaveFiled(childCls,field)
+	end
+end
+
+local function _resetChildPackField(cls,field)
+	for name in pairs(cls.__childs) do
+		local childCls = classCtx[name]
+		childCls.__packFields[field] = true
+		_resetChildPackField(childCls,field)
+	end
+end
+
+local function _resetChildMeta(cls)
+	for name in pairs(cls.__childs) do
+		local childCls = classCtx[name]
+		setmetatable(childCls,{ __index = function (obj,method)
+			local func = cls[method]
+			childCls.__method[method] = true
+			childCls[method] = func
+			return func
+		end})
 	end
 end
 
@@ -43,6 +71,7 @@ end
 
 function cObject:inherit(name,...)
 	local parent = classCtx[self.__name]
+	assert(name ~= parent.__name)
 
 	local cls = {}
 	cls.__name = name
@@ -52,52 +81,45 @@ function cObject:inherit(name,...)
 	cls.__saveFields = {}
 	cls.__packFields = {}
 
-	if parent.__saveFields then
-		for f in pairs(parent.__saveFields) do
-			cls.__saveFields[f] = true
-		end
-	end
-	if parent.__packFields then
-		for f in pairs(parent.__packFields) do
-			cls.__packFields[f] = true
-		end
+	for f in pairs(parent.__saveFields) do
+		cls.__saveFields[f] = true
 	end
 
-	cls.__packFields["__name"] = true
+	for f in pairs(parent.__packFields) do
+		cls.__packFields[f] = true
+	end
 
-	assert(name ~= parent.__name)
-
-	local meta = { __index = function (obj,method)
+	setmetatable(cls,{ __index = function (obj,method)
 		local func = parent[method]
 		cls.__method[method] = true
 		cls[method] = func
 		return func
-	end}
+	end})
 
-	local oCls = classCtx[name]
-	classCtx[name] = setmetatable(cls,meta)
-
-	if oCls ~= nil then
+	local ocls = classCtx[name]
+	if ocls ~= nil then
 		--热更
-		_cleanClsFunc(oCls)
+		cls.__childs = ocls.__childs
 
-		for name in pairs(oCls.__childs) do
-			local childCls = classCtx[name]
-			local childCls = setmetatable(childCls,{ __index = function (obj,method)
-				local func = cls[method]
-				childCls.__method[method] = true
-				childCls[method] = func
-				return func
-			end})
-		end
+		_resetChildMethod(cls)
+
+		_resetChildMeta(cls)
 
 		_resetObjectMeta(name)
 	else
+
+		local objectSet = objectCtx[name]
+		assert(objectSet == nil,name)
+		objectSet = setmetatable({},{__mode = "k"})
+		objectCtx[name] = objectSet
+
 		if select("#",...) > 0 then
 			model.registerBinder(name,...)
 		end
 	end
 	parent.__childs[name] = true
+
+	classCtx[name] = cls
 
 	return cls
 end
@@ -124,12 +146,7 @@ local function _newObject(self,object)
 
 	setmetatable(object,{__index = self})
 
-	local objectType = self.__name
-	local objectSet = objectCtx[objectType]
-	if objectSet == nil then
-		objectSet = setmetatable({},{__mode = "k"})
-		objectCtx[objectType] = objectSet
-	end
+	local objectSet = objectCtx[self.__name]
 	objectSet[object] = {createTime = os.time(),debugInfo = nil}
 	objectMgr[object.__objectId] = object
 end
@@ -202,12 +219,14 @@ function cObject:saveData()
 	return result
 end
 
-function cObject:saveField(field,readOnly)
-	self.__saveFields[field] = readOnly or false
+function cObject:saveField(field)
+	self.__saveFields[field] = true
+	_resetChildSaveFiled(self,field)
 end
 
 function cObject:packField(field)
 	self.__packFields[field] = true
+	_resetChildPackField(self,field)
 end
 
 function cObject:registerEvent(ev,inst,method)

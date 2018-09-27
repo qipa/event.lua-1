@@ -1,8 +1,8 @@
 local util = require "util"
 local vector2 = require "common.vector2"
-local object = import "module.object"
+local stateCtrl = import "module.scene.ctrl.state_ctrl"
 
-cSkillCtrl = object.cObject:inherit("skillCtrl")
+cSkillCtrl = stateCtrl.cStateCtrl:inherit("skillCtrl")
 
 
 function cSkillCtrl:ctor(sceneObj,skillId)
