@@ -362,6 +362,66 @@ lrsa_decrypt(lua_State* L) {
     return 1;
 }
 
+static int
+lauthcode(lua_State* L) {
+    size_t insize;
+    const char* instr = luaL_checklstring(L, 1, &insize);
+
+    size_t keysize;
+    const char* key = luaL_checklstring(L, 2, &keysize);
+
+    int timestamp = luaL_checkinteger(L, 3);
+
+    int encode = luaL_checkinteger(L, 4);
+
+    RC4_KEY rc4_key;
+    RC4_set_key(&rc4_key,keysize,(unsigned char*)key);
+
+    if (encode) {
+        size_t length = insize + sizeof(int) + 16;
+        unsigned char* block = malloc(length * 2);
+        memcpy(block, instr, insize);
+        memcpy(block + insize, &timestamp, sizeof(int));
+
+        unsigned char source_md5[16] = {0};
+        MD5((const unsigned char*)block,insize + sizeof(int),source_md5);
+
+        memcpy(block + insize + sizeof(int), source_md5, 16);
+ 
+
+        RC4(&rc4_key,length,(unsigned char*)block,(unsigned char*)block + length);
+
+        lua_pushlstring(L, (const char*)block + length,length);
+        free(block);
+        return 1;
+    }
+    char* block = malloc(insize);
+    RC4(&rc4_key,insize,(unsigned char*)instr,(unsigned char*)block);
+    unsigned char omd5[16] = {0};
+    memcpy(omd5,block + (insize - 16),16);
+
+    unsigned char cmd5[16] = {0};
+    MD5((const unsigned char*)block,insize-16,cmd5);
+
+    if (memcmp(omd5,cmd5,16) != 0) {
+        free(block);
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, "authcode decode error");
+        return 2;
+    }
+
+    int lasttimestamp = 0;
+    memcpy(&lasttimestamp, block + (insize - 16 - sizeof(int)), sizeof(int));
+    if (lasttimestamp < timestamp) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, "authcode timeout");
+        return 2;
+    }
+    lua_pushlstring(L, block, insize - 16 - sizeof(int));
+    free(block);
+    return 1;
+}
+
 int
 lload_script(lua_State* L) {
     size_t size;
@@ -703,52 +763,6 @@ lrpc_pack(lua_State* L) {
     lua_pushlightuserdata(L,buffer);
     lua_pushinteger(L,total);
     return 2;
-}
-
-static int
-lauthcode(lua_State* L) {
-    size_t source_size;
-    const char* source = luaL_checklstring(L, 1, &source_size);
-    
-    size_t key_size;
-    const char* key = luaL_checklstring(L, 2, &key_size);
-
-    int encode = luaL_optinteger(L ,3, 1);
-
-    RC4_KEY rc4_key;
-    RC4_set_key(&rc4_key,key_size,(unsigned char*)key);
-
-    if (encode) {
-        unsigned char source_md5[16] = {0};
-        MD5((const unsigned char*)source,source_size,source_md5);
-
-        size_t length = source_size + 16;
-        char* block = malloc(length * 2);
-        memcpy(block,source_md5,16);
-        memcpy(block+16,source,source_size);
-
-        RC4(&rc4_key,length,(unsigned char*)block,(unsigned char*)block + length);
-
-        lua_pushlstring(L, block + length,length);
-        free(block);
-        return 1;
-    }
-    char* block = malloc(source_size);
-    RC4(&rc4_key,source_size,(unsigned char*)source,(unsigned char*)block);
-    unsigned char omd5[16] = {0};
-    memcpy(omd5,block,16);
-
-    unsigned char cmd5[16] = {0};
-    MD5((const unsigned char*)block+16,source_size-16,cmd5);
-
-    if (memcmp(omd5,cmd5,16) != 0) {
-        free(block);
-        luaL_error(L,"authcode decode error");
-    }
-
-    lua_pushlstring(L, block+16,source_size-16);
-    free(block);
-    return 1;
 }
 
 static inline void 
