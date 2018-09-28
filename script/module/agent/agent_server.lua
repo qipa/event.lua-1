@@ -85,11 +85,8 @@ function leave(self,cid)
 		return
 	end
 
-	local accountInfo = _accountMgr[user.account]
-	
-	event.fork(function ()
-		accountInfo.mutex(userLeave,self,user)
-	end)
+	local mutex = _accountMgr[user.account]
+	mutex(userLeave,self,user)
 end
 
 function userRegister(self,token,time)
@@ -102,13 +99,13 @@ function userKick(self,uid)
 		return false
 	end
 
-	clientMgr:close(user.cid)
+	if user.cid then
+		clientMgr:close(user.cid)
+	end
 
-	local accountInfo = _accountMgr[user.account]
+	local mutex = _accountMgr[user.account]
 
-	accountInfo.mutex(userLeave,self,user)
-
-	accountInfo.userUid = nil
+	mutex(userLeave,self,user)
 
 	return true
 end
@@ -137,21 +134,12 @@ function userAuth(self,cid,token)
 
 	local info = cjson.decode(str)
 
-	local accountInfo = _accountMgr[info.account]
-	if not accountInfo then
-		accountInfo = {mutex = event.mutex()}
-		_accountMgr[info.account] = accountInfo
+	local mutex = _accountMgr[info.account]
+	if not mutex then
+		_accountMgr[info.account] = event.mutex()
 	end
 	
-	if accountInfo.userUid then
-		accountInfo.mutex(function ()
-			self:userKick(accountInfo.userUid)
-			self:userEnter(cid,info.uid,info.account)
-			accountInfo.userUid = info.uid
-		end)
-	else
-		accountInfo.mutex(userEnter,self,cid,info.uid,info.account)
-	end
+	mutex(userEnter,self,cid,info.uid,info.account)
 end
 
 function userEnter(self,cid,uid,account)
@@ -164,7 +152,7 @@ function userEnter(self,cid,uid,account)
 
 	user:enterGame()
 
-	local msg = {user_id = user.uid,agent_id = env.dist_id}
+	local msg = {userUid = user.uid,agentId = env.distId}
 	serverMgr:sendWorld("handler.world_handler","enterWorld",msg)
 end
 
