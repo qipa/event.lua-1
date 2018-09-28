@@ -208,12 +208,13 @@ _rsa_load_prikey(const char* prikeyname) {
         fclose(fp);
         return NULL;
     }
+    fclose(fp);
     return rsa_private;
 }
 
 RSA*
 _rsa_load_pubkey(const char* pubkeyname) {
-     FILE *fp = fopen(pubkeyname, "rb");
+    FILE *fp = fopen(pubkeyname, "rb");
     if (!fp) {
         fprintf(stderr, "fopen error(%s)", strerror(errno));
         return NULL;
@@ -229,6 +230,7 @@ _rsa_load_pubkey(const char* pubkeyname) {
         fclose(fp);
         return NULL;
     }
+    fclose(fp);
     return rsa_public;
 }
 
@@ -312,6 +314,7 @@ lrsa_encrypt(lua_State* L) {
 
     RSA* rsa_pubic = _rsa_load_pubkey(pubkeyname);
     if (NULL == rsa_pubic) {
+        RSA_free(rsa_pubic);
         lua_pushboolean(L, 0);
         lua_pushfstring(L, "load public key error(%s)", pubkeyname);
         return 2;
@@ -326,10 +329,13 @@ lrsa_encrypt(lua_State* L) {
         lua_pushboolean(L, 0);
         lua_pushfstring(L, "RSA_public_encrypt error(%s:%s)", errret, err);
         free(outstr);
+        RSA_free(rsa_pubic);
         return 2;
     }
 
     lua_pushlstring(L, (char*)outstr, outsize);
+    RSA_free(rsa_pubic);
+    free(outstr);
     return 1;
 }
 
@@ -341,6 +347,7 @@ lrsa_decrypt(lua_State* L) {
 
     RSA* rsa_private = _rsa_load_prikey(prikeyname);
     if (NULL == rsa_private) {
+        RSA_free(rsa_private);
         lua_pushboolean(L, 0);
         lua_pushfstring(L, "load private key error(%s)", rsa_private);
         return 2;
@@ -355,10 +362,13 @@ lrsa_decrypt(lua_State* L) {
         lua_pushboolean(L, 0);
         lua_pushfstring(L, "RSA_private_decrypt error(%s:%s)", errret, err);
         free(outstr);
+        RSA_free(rsa_private);
         return 2;
     }
 
     lua_pushlstring(L, (char*)outstr, outsize);
+    RSA_free(rsa_private);
+    free(outstr);
     return 1;
 }
 
