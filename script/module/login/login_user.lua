@@ -81,9 +81,9 @@ function cLoginUser:enterAgent(uid)
 	local agentId,agentAddr = agentMgr:selectAgent()
 	local time = util.time()
 	local json = cjson.encode({account = self.account,uid = uid})
-	local token = util.authcode(json,tostring(time),1)
+	local token = util.authcode(json,tostring(time),time + 60,1)
 
-	serverMgr:sendAgent(agentId,"handler.agent_handler","userRegister",{token = token,time = time,uid = uid,account = self.account},function ()
+	serverMgr:sendAgent(agentId,"handler.agent_handler","userRegister",{token = token,time = time},function ()
 		local user = model.fetch_login_user_with_cid(info.cid)
 		if not user then
 			return

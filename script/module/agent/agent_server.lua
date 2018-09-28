@@ -16,6 +16,7 @@ local kAUTH_TIME = 60
 
 _tokenMgr = _tokenMgr or {}
 _enterUserMgr = _enterUserMgr or {}
+_accountMgr = _accountMgr or {}
 _server_stop = _server_stop or false
 
 function __init__(self)
@@ -74,13 +75,7 @@ end
 
 function leave(self,cid)
 	print(string.format("client leave:%d,%s",cid,addr))
-	local enterInfo = _enterUserMgr[cid]
-	_enterUserMgr[cid] = nil
-	if not enterInfo then
-		return
-	end
-
-	local user = model.fetch_agent_user_with_uid(enterInfo.uid)
+	local user = model.fetch_agent_user_with_uid(cid)
 	if not user then
 		return
 	end
@@ -89,13 +84,16 @@ function leave(self,cid)
 	if user.hookTime then
 		return
 	end
+
+	local accountInfo = _accountMgr[user.account]
+	
 	event.fork(function ()
-		enterInfo.mutex(userLeave,self,user)
+		accountInfo.mutex(userLeave,self,user)
 	end)
 end
 
-function userRegister(self,account,uid,token,time)
-	_tokenMgr[token] = {time = time,uid = uid,account = account}
+function userRegister(self,token,time)
+	_tokenMgr[token] = time
 end
 
 function userKick(self,uid)
@@ -104,13 +102,14 @@ function userKick(self,uid)
 		return false
 	end
 
-	local enter_info = _enterUserMgr[user.cid]
-	_enterUserMgr[user.cid] = nil
-	if not enter_info then
-		return false
-	end
 	clientMgr:close(user.cid)
-	_enterUserMgr.mutex(user_leave,user)
+
+	local accountInfo = _accountMgr[user.account]
+
+	accountInfo.mutex(userLeave,self,user)
+
+	accountInfo.userUid = nil
+
 	return true
 end
 
@@ -120,23 +119,46 @@ function userAuth(self,cid,token)
 		return
 	end
 
-	local tokenInfo = _tokenMgr[token]
+	local time = _tokenMgr[token]
 	_tokenMgr[token] = nil
 
 	local now = util.time()
-	if now - tokenInfo.time >= 60 * 100 then
+	if now - time >= 60 * 100 then
 		clientMgr:close(cid)
 		return
 	end
 
-	local enterInfo = {mutex = event.mutex(),uid = tokenInfo.uid}
-	_enterUserMgr[cid] = enterInfo
+	local str,err = util.authcode(token,tostring(time),now,0)
+	if not str then
+		event.error(string.format("client:%d auth error:%s",cid,err))
+		clientMgr:close(cid)
+		return
+	end
 
-	enterInfo.mutex(userEnter,self,cid,tokenInfo.uid,tokenInfo.account)
+	local info = cjson.decode(str)
+
+	local accountInfo = _accountMgr[info.account]
+	if not accountInfo then
+		accountInfo = {mutex = event.mutex()}
+		_accountMgr[info.account] = accountInfo
+	end
+	
+	if accountInfo.userUid then
+		accountInfo.mutex(function ()
+			self:userKick(accountInfo.userUid)
+			self:userEnter(cid,info.uid,info.account)
+			accountInfo.userUid = info.uid
+		end)
+	else
+		accountInfo.mutex(userEnter,self,cid,info.uid,info.account)
+	end
 end
 
 function userEnter(self,cid,uid,account)
 	local user = agentUser.cAgentUser:new(cid,uid,account)
+	model.bind_agentUser_with_uid(uid,user)
+	model.bind_agentUser_with_cid(cid,user)
+
 	user:onCreate(cid,uid,account)
 	user:load()
 
@@ -147,6 +169,9 @@ function userEnter(self,cid,uid,account)
 end
 
 function userLeave(self,user)
+	if not model.fetch_agentUser_with_uid(user.uid) then
+		return
+	end
 	local ok,err = xpcall(user.leaveGame,debug.traceback,user)
 	if not ok then
 		event.error(err)
@@ -163,6 +188,9 @@ function userLeave(self,user)
 
 	serverMgr:sendWorld("handler.world_handler","leaveWorld",{userUid = user.uid})
 	serverMgr:sendLogin("handler.login_handler","leaveAgent",{account = user.account})
+
+	model.unbind_agentUser_with_uid(user.uid)
+	model.unbind_agentUser_with_cid(user.cid)
 end
 
 function get_all_enter_user(self)
