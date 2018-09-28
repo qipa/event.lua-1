@@ -17,8 +17,8 @@
 #define MAX_FREQ 			500
 #define ALIVE_TIME 			60
 #define WARN_OUTPUT_FLOW 	10 * 1024
-#define MAX_SEQMENT 		64 * 1024
-#define HEADER 				2
+#define MAX_PACKET_SIZE		1024 * 6
+#define HEADER_SIZE			2
 
 __thread uint8_t CACHED_BUFFER[CACHED_SIZE];
 
@@ -102,6 +102,22 @@ get_client(struct gate_ctx* gate,uint32_t id) {
 	return client;
 }
 
+static inline uint8_t*
+get_buffer(uint32_t size) {
+	uint8_t* data = CACHED_BUFFER;
+	if (size > CACHED_SIZE) {
+		data = malloc(size);
+	}
+	return data;
+}
+
+void
+free_buffer(uint8_t* buffer) {
+	if (buffer != CACHED_BUFFER) {
+    	free(buffer);
+    }
+}
+
 static void
 error_happen(struct ev_session* session,void* ud) {
 	struct ev_client* client = ud;
@@ -115,17 +131,17 @@ error_happen(struct ev_session* session,void* ud) {
 static inline int 
 read_header(struct ev_client* client) {
 	size_t total = ev_session_input_size(client->session);
-	if (total < HEADER) {
+	if (total < HEADER_SIZE) {
 		return -1;
 	}
 
-	uint8_t header[HEADER];
-	ev_session_read(client->session,(char*)header,HEADER);
+	uint8_t header[HEADER_SIZE];
+	ev_session_read(client->session,(char*)header,HEADER_SIZE);
 
 	client->need = header[0] | header[1] << 8;
-	client->need -= HEADER;
+	client->need -= HEADER_SIZE;
 
-	if (client->need > MAX_SEQMENT) {
+	if (client->need > MAX_PACKET_SIZE) {
 		error_happen(client->session, client);
 		return -1;
 	}
@@ -139,16 +155,12 @@ read_body(struct ev_client* client) {
 		return -1;
 	}
 
-	uint8_t* data = CACHED_BUFFER;
-	if (client->need > CACHED_SIZE) {
-		data = malloc(client->need);
-	}
+	uint8_t* data = get_buffer(client->need);
+
 	ev_session_read(client->session,(char*)data,client->need);
 	
 	if (message_decrypt(&client->seed, data, client->need) < 0) {
-		if (data != CACHED_BUFFER) {
-	    	free(data);
-	    }
+		free_buffer(data);
 	    error_happen(client->session, client);
 		return -1;
 	}
@@ -158,12 +170,9 @@ read_body(struct ev_client* client) {
     client->freq++;
     client->tick = loop_ctx_now(client->gate->loop_ctx);
     client->gate->cb.data(client->gate->ud,client->id,id,&data[4],client->need - 4);
-
-    if (data != CACHED_BUFFER) {
-    	free(data);
-    }
-
     client->need = 0;
+
+    free_buffer(data);
 
     return 0;
 }
