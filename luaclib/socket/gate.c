@@ -111,7 +111,7 @@ get_buffer(uint32_t size) {
 	return data;
 }
 
-void
+static inline void
 free_buffer(uint8_t* buffer) {
 	if (buffer != CACHED_BUFFER) {
     	free(buffer);
