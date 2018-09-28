@@ -199,7 +199,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 }	
 
 static void
-timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
+client_update(struct ev_loop* loop,struct ev_timer* io,int revents) {
 	assert(revents & EV_TIMER);
 	struct ev_client* client = io->data;
 	grab_client(client);
@@ -256,7 +256,7 @@ accept_client(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	ev_session_enable(client->session,EV_READ);
 
 	client->timer.data = client;
-	ev_timer_init(&client->timer,timeout,1,1);
+	ev_timer_init(&client->timer,client_update,1,1);
 	ev_timer_start(loop_ctx_get(gate->loop_ctx),&client->timer);
 
 	gate->cb.accept(gate->ud,client->id,addr);

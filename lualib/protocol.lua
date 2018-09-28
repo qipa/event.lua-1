@@ -2,7 +2,7 @@ local parser = require "protocolparser"
 local dump = require "dump.core"
 local protocolcore = require "protocolcore"
 local util = require "util"
-
+local clientMgr = import "module.client_manager"
 
 local _ctx = protocolcore.new()
 
@@ -124,12 +124,27 @@ function _M.dump(id)
 	table.print(map)
 end
 
-_M.handler = setmetatable({},{__newindex = function (self,proto,func)
-	if not _name_id[proto] then
-		print(string.format("no such protocol:%s",proto))
+_M.reader = setmetatable({},{__newindex = function (self,pto,func)
+	if not _name_id[pto] then
+		print(string.format("no such pto:%s",pto))
 		return
 	end
-	rawset(self,proto,func)
+	local id = _name_id[pto]
+	local decode = _ctx.decode
+	local pto_func = function (data,size)
+		local message =  decode(_ctx,id,data,size)
+		func(message)
+	end
+	rawset(self,id,pto_func)
 end})
+
+_M.writer = {}
+for name,id in pairs(_name_id) do
+	local encode = _ctx.encode
+	_M.writer[name] = function (cid,args)
+		local message = encode(_ctx,id,args)
+		clientMgr:sendClientData(cid,id,message)
+	end
+end
 
 return _M
