@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include <errno.h>
 
 #include <openssl/evp.h>  
 #include <openssl/bio.h>  
@@ -19,6 +20,9 @@
 #include <openssl/rc4.h>  
 #include <openssl/md5.h>  
 #include <openssl/sha.h> 
+#include <openssl/err.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
 
 #include <unistd.h>
 #include <sys/prctl.h> 
@@ -186,6 +190,177 @@ lrc4(lua_State* L) {
     return 1;
 }
 
+RSA*
+_rsa_load_prikey(const char* prikeyname) {
+    FILE *fp = fopen(prikeyname, "rb");
+    if (!fp) {
+        fprintf(stderr, "fopen error(%s)", strerror(errno));
+        return NULL;
+    }
+
+    RSA* rsa_private = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
+    if(NULL == rsa_private) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        fprintf(stderr, "PEM_read_RSAPrivateKey error(%s:%s)", errret, err);
+
+        fclose(fp);
+        return NULL;
+    }
+    return rsa_private;
+}
+
+RSA*
+_rsa_load_pubkey(const char* pubkeyname) {
+     FILE *fp = fopen(pubkeyname, "rb");
+    if (!fp) {
+        fprintf(stderr, "fopen error(%s)", strerror(errno));
+        return NULL;
+    }
+
+    RSA* rsa_public = PEM_read_RSAPublicKey(fp, NULL, NULL, NULL);
+    if(NULL == rsa_public) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        fprintf(stderr, "PEM_read_RSAPublicKey error(%s:%s)", errret, err);
+
+        fclose(fp);
+        return NULL;
+    }
+    return rsa_public;
+}
+
+
+int
+lrsa_generate_key(lua_State* L) {
+    const char* pubkeyname = luaL_checkstring(L, 1);
+    const char* prikeyname = luaL_checkstring(L, 2);
+    int keysize = luaL_optinteger(L, 3, 1024);
+
+    RSA* rsa = NULL;
+    FILE *fp = NULL;
+
+    if ((rsa = RSA_generate_key(keysize, 0x10001, NULL, NULL)) == NULL) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "RSA_generate_key error(%s:%s)", errret, err);
+        return 2;
+    }
+
+    if (!RSA_check_key(rsa)) {
+        RSA_free(rsa);
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, "invalid RSA Key");
+        return 2;
+    }
+
+    fp = fopen(prikeyname, "w");
+    if (!fp) {
+        RSA_free(rsa);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "fopen prikeyname error(%s)", strerror(errno));
+        return 2;
+    }
+
+    if (!PEM_write_RSAPrivateKey(fp, rsa, NULL, NULL, 0, 0, NULL)) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "PEM_write_RSAPrivateKey error(%s:%s)", errret, err);
+        fclose(fp);
+        RSA_free(rsa);
+        return 2;
+    }
+
+    fclose(fp);
+    fp = fopen(pubkeyname, "w");
+    if (!fp) {
+        RSA_free(rsa);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "fopen pubkeyname error(%s)", strerror(errno));
+        return 2;
+    }
+
+    if (!PEM_write_RSAPublicKey(fp, rsa)) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "PEM_write_RSAPublicKey error(%s:%s)", errret, err);
+        fclose(fp);
+        RSA_free(rsa);
+        return 2;
+    }
+
+    RSA_free(rsa);
+    fclose(fp);
+
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+int
+lrsa_encrypt(lua_State* L) {
+    size_t insize;
+    const char* instr = lua_tolstring(L, 1, &insize);
+    const char* pubkeyname = lua_tostring(L, 2);
+
+    RSA* rsa_pubic = _rsa_load_pubkey(pubkeyname);
+    if (NULL == rsa_pubic) {
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "load public key error(%s)", pubkeyname);
+        return 2;
+    }
+
+    unsigned char* outstr = calloc(RSA_size(rsa_pubic) + 1, sizeof(unsigned char*));
+    int outsize = RSA_public_encrypt(insize, (unsigned char*)instr, outstr, rsa_pubic, RSA_PKCS1_OAEP_PADDING);
+    if (outsize < 0) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "RSA_public_encrypt error(%s:%s)", errret, err);
+        free(outstr);
+        return 2;
+    }
+
+    lua_pushlstring(L, (char*)outstr, outsize);
+    return 1;
+}
+
+int
+lrsa_decrypt(lua_State* L) {
+    size_t insize;
+    const char* instr = lua_tolstring(L, 1, &insize);
+    const char* prikeyname = lua_tostring(L, 2);
+
+    RSA* rsa_private = _rsa_load_prikey(prikeyname);
+    if (NULL == rsa_private) {
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "load private key error(%s)", rsa_private);
+        return 2;
+    }
+
+    unsigned char* outstr = calloc(RSA_size(rsa_private) + 1, sizeof(unsigned char*));
+    int outsize = RSA_private_decrypt(insize, (unsigned char*)instr, outstr, rsa_private, RSA_PKCS1_OAEP_PADDING);
+    if (outsize < 0) {
+        ERR_load_crypto_strings();
+        char err[1024];
+        char* errret = ERR_error_string(ERR_get_error(), err);
+        lua_pushboolean(L, 0);
+        lua_pushfstring(L, "RSA_private_decrypt error(%s:%s)", errret, err);
+        free(outstr);
+        return 2;
+    }
+
+    lua_pushlstring(L, (char*)outstr, outsize);
+    return 1;
+}
 
 int
 lload_script(lua_State* L) {
@@ -685,6 +860,9 @@ luaopen_util_core(lua_State* L){
         { "md5", lmd5 },
         { "sha1", lsha1 },
         { "rc4", lrc4 },
+        { "rsa_generate_key", lrsa_generate_key },
+        { "rsa_encrypt", lrsa_encrypt },
+        { "rsa_decrypt", lrsa_decrypt },
         { "authcode", lauthcode },
         { "load_script", lload_script },
         { "thread_name", lthread_name },
