@@ -34,6 +34,7 @@ function cServerChannel:dispatch(message,size)
 	else
 		if not self.id then
 			event.error(string.format("channle:%s not register,drop message",self))
+			self:close_immediately()
 		else
 			channel.dispatch(self,message,size)
 		end
