@@ -107,12 +107,6 @@ function cObject:inherit(name,...)
 
 		_resetObjectMeta(name)
 	else
-
-		local objectSet = objectCtx[name]
-		assert(objectSet == nil,name)
-		objectSet = setmetatable({},{__mode = "k"})
-		objectCtx[name] = objectSet
-
 		if select("#",...) > 0 then
 			model.registerBinder(name,...)
 		end
@@ -147,6 +141,10 @@ local function _newObject(self,object)
 	setmetatable(object,{__index = self})
 
 	local objectSet = objectCtx[self.__name]
+	if not objectSet then
+		objectSet = setmetatable({},{__mode = "k"})
+		objectCtx[self.__name] = objectSet
+	end
 	objectSet[object] = {createTime = os.time(),debugInfo = nil}
 	objectMgr[object.__objectId] = object
 end

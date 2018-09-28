@@ -56,8 +56,7 @@ struct ev_client {
 	uint32_t need;
 	int freq;
 	int markdead;
-	uint8_t seed;
-	uint16_t order;
+	uint16_t seed;
 	double tick;
 };
 
@@ -146,28 +145,19 @@ read_body(struct ev_client* client) {
 	}
 	ev_session_read(client->session,(char*)data,client->need);
 	
-	int i;
-    for (i = 0; i < client->need; ++i) {
-        data[i] = data[i] ^ client->seed;
-        client->seed += data[i];
-    }
-
-    uint16_t sum = checksum((uint16_t*)data,client->need);
-    uint16_t order = data[2] | data[3] << 8;
-    uint16_t id = data[4] | data[5] << 8;
-
-    if (sum != 0 || order != client->order) {
-	    if (data != CACHED_BUFFER) {
+	if (message_decrypt(&client->seed, data, client->need) < 0) {
+		if (data != CACHED_BUFFER) {
 	    	free(data);
 	    }
 	    error_happen(client->session, client);
 		return -1;
-    } else {
-    	client->order++;
-    }
+	}
+
+	uint16_t id = data[2] | data[3] << 8;
+
     client->freq++;
     client->tick = loop_ctx_now(client->gate->loop_ctx);
-    client->gate->cb.data(client->gate->ud,client->id,id,&data[6],client->need - 6);
+    client->gate->cb.data(client->gate->ud,client->id,id,&data[4],client->need - 4);
 
     if (data != CACHED_BUFFER) {
     	free(data);

@@ -659,30 +659,13 @@ lclone_string(lua_State* L) {
 }
 
 struct packet {
-    uint8_t rseed;
-    uint16_t rorder;
-    uint8_t wseed;
-    uint16_t worder;
+    uint16_t wseed;
 };
-
-static int
-lpacket_unpack(lua_State* L) {
-    struct packet* packet = lua_touserdata(L, 1);
-    uint8_t* data = lua_touserdata(L, 2);
-    size_t size = lua_tointeger(L, 3);
-
-    ushort id = data[0] | data[1] << 8;
-
-    lua_pushinteger(L, id);
-    lua_pushlightuserdata(L, &data[2]);
-    lua_pushinteger(L, size - 2);
-    return 3;
-}
 
 static int
 lpacket_pack(lua_State* L) {
     struct packet* packet = lua_touserdata(L, 1);
-    int id = lua_tointeger(L, 2);
+    uint16_t id = lua_tointeger(L, 2);
     size_t size;
     const char* data = NULL;
     switch(lua_type(L,3)) {
@@ -699,29 +682,9 @@ lpacket_pack(lua_State* L) {
             luaL_error(L,"unkown type:%s",lua_typename(L,lua_type(L,3)));
     }
 
-    size_t total = size + sizeof(short) * 4;
-
-    uint8_t* mb = malloc(total);
-    memset(mb,0,total);
-    memcpy(mb,&total,2);
-
-    memcpy(mb+4,&packet->worder,2);
-    memcpy(mb+6,&id,2);
-    memcpy(mb+8,data,size);
-
-    uint16_t sum = checksum((uint16_t*)(mb + 4),total - 4);
-    memcpy(mb + 2,&sum,2);
-
-    packet->worder++;
-
-    int i;
-    for (i = 2; i < total; ++i) {
-        uint8_t tmp = mb[i];
-        mb[i] = mb[i] ^ packet->wseed;
-        packet->wseed += tmp;
-    }
+    uint16_t* mb = message_encrypt(&packet->wseed,id,(const uint8_t*)data,size);
     lua_pushlightuserdata(L, mb);
-    lua_pushinteger(L, total);
+    lua_pushinteger(L, size + 6);
     return 2;
 }
 
@@ -733,7 +696,6 @@ lpacket_new(lua_State* L) {
     if (luaL_newmetatable(L, "meta_packte")) {
         const luaL_Reg meta_packte[] = {
             { "pack", lpacket_pack },
-            { "unpack", lpacket_unpack },
             { NULL, NULL },
         };
         luaL_newlib(L,meta_packte);

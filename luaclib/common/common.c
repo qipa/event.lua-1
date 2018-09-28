@@ -22,7 +22,7 @@ checksum(uint16_t* addr,size_t size) {
 }
 
 uint8_t*
-message_encrypt(uint16_t* wseed,uint16_t id,uint8_t* message,size_t size) {
+message_encrypt(uint16_t* wseed,uint16_t id,const uint8_t* message,size_t size) {
     uint16_t total = sizeof(uint16_t) * 3 + size;
     uint8_t* data = malloc(total);
 
@@ -63,11 +63,15 @@ message_encrypt(uint16_t* wseed,uint16_t id,uint8_t* message,size_t size) {
 
 int
 message_decrypt(uint16_t* rseed,uint8_t* message,size_t size) {
+    if (size < sizeof(uint16_t) * 2) {
+        return -1;
+    }
+
     uint16_t* data = (uint16_t*)message;
 
-    uint32_t sum = data[1];
-    uint16_t* addr = &data[2];
-    size_t length = size - sizeof(uint16_t) * 2;
+    uint32_t sum = data[0];
+    uint16_t* addr = &data[1];
+    size_t length = size - sizeof(uint16_t);
     while(length > 1) {
         uint16_t tmp = *addr;
 
