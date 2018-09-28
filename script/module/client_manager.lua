@@ -120,6 +120,14 @@ function broadcastClient(cids,pto,message)
 	_doBroadcastClient(cids,mid,data)
 end
 
+function sendClientData(cid,mid,data)
+	if type(cid) == "number" then
+		_doSendClient(cid,mid,data)
+	else
+		_doBroadcastClient(cid,mid,data)
+	end
+end
+
 rawset(_G,"sendClient",sendClient)
 rawset(_G,"broadcastClient",broadcastClient)
 
