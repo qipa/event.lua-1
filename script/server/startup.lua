@@ -56,10 +56,7 @@ function run(serverId,distId,stat,dbAddr,cfgPath,ptoPath)
 	end
 
 	if ptoPath then
-		local list = util.list_dir(ptoPath,true,"protocol",true)
-		for _,file in pairs(list) do
-			protocol.parse(file)
-		end
+		protocol.parse_dir(ptoPath)
 	end
 end
 

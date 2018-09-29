@@ -1,7 +1,8 @@
-local route = require "route"
+
 local event = require "event"
 local monitor = require "monitor"
 local util = require "util"
+local import = require "import"
 
 local channel = {}
 
@@ -62,7 +63,7 @@ function channel:read_util(sep)
 end
 
 local function call_method(channel,session,file,method,args)
-	local ok,result = xpcall(route.dispatch,debug.traceback,file,method,channel,args)
+	local ok,result = xpcall(import.dispatch,debug.traceback,file,method,channel,args)
 	if not ok then
 		event.error(result)
 	end

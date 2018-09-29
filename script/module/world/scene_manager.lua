@@ -114,7 +114,7 @@ function enterScene(self,worldUser,sceneId,sceneUid,fighter)
 		return
 	else
 		local oSceneInfo = _sceneInfo[fighter.sceneUid]
-		if oSceneInfo.serverId = sceneInfo.sceneId then
+		if oSceneInfo.serverId == sceneInfo.sceneId then
 			serverMgr:callScene(sceneInfo.serverId,"module.scene.scene_server","transferInside",{userUid = userUid,sceneUid = sceneUid})
 			worldUser:onEnterScene(sceneId,sceneUid)
 			return

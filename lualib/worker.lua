@@ -1,5 +1,5 @@
 local event = require "event"
-local route = require "route"
+local import = require "import"
 local worker = require "worker.core"
 
 local _M = {}
@@ -46,7 +46,7 @@ function _M.create(args)
 				end
 			else
 
-				local ok,result = xpcall(route.dispatch,debug.traceback,message.file,message.method,message.args)
+				local ok,result = xpcall(import.dispatch,debug.traceback,message.file,message.method,message.args)
 				if session ~= 0 then
 					if not ok then
 						worker:push(source,session,table.tostring({ret = true,err = result}))

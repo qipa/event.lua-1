@@ -88,7 +88,9 @@ local _M = {}
 
 function _M.login(channel,account)
 	channel.account = account
-	channel:write(channel.packet:pack(protocol.encode.c2s_login_auth({account = account})))	
+	local ptr,size = channel.packet:pack(protocol.encode.cLoginAuth({account = account}))
+	print(size)
+	channel.buffer:write(ptr,size,1)	
 end
 
 
@@ -112,8 +114,11 @@ function bench(count)
 end
 
 event.fork(function ()
-	startup.run(nil,nil,env.config,env.protocol)
+	-- startup.run(nil,nil,nil,nil,nil,env.protocol)
+
+	protocol.parse_dir(env.protocol)
 	
+	event.sleep(2)
 	bench(1)
 end)
 

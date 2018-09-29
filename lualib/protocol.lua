@@ -2,13 +2,13 @@ local parser = require "protocolparser"
 local dump = require "dump.core"
 local protocolcore = require "protocolcore"
 local util = require "util"
-local clientMgr = import "module.client_manager"
 
+
+local clientMgr = import "module.client_manager"
+print(debug.traceback(),env.name)
 local _ctx = protocolcore.new()
 
 local _pto_meta = {}
-local _pto_raw = {}
-
 local _name_id = {}
 local _id_name = {}
 
@@ -48,7 +48,7 @@ local function replace_sub_protocol(info,func)
 	end
 end
 
-function _M.parse(fullfile)
+function _M.parse(fullfile,all_pto)
 	local path_info = fullfile:split("/")
 	local path = {}
 	for i = 1,#path_info - 1 do
@@ -82,11 +82,32 @@ function _M.parse(fullfile)
 		end
 	end
 
-	for name,proto in pairs(tbl.root.children) do
-		_M.import(name,proto)
+	for name,pto in pairs(tbl.root.children) do
+		all_pto[name] = pto
 	end
 end
 
+function _M.parse_dir(path)
+	local all_pto = {}
+	local list = util.list_dir(path,true,"protocol",true)
+	for _,file in pairs(list) do
+		_M.parse(file,all_pto)
+	end
+
+	local ptos = {}
+
+	for name,pto in pairs(all_pto) do
+		table.insert(ptos,{name = name,pto = pto})
+	end
+
+	table.sort(ptos,function (l,r)
+		return l.name < r.name
+	end)
+
+	for _,info in pairs(ptos) do
+		_M.import(info.name,info.pto)
+	end
+end
 
 function _M.import(name, proto) 
 	local id = _name_id[name]
@@ -119,7 +140,6 @@ function _M.dump(id)
 		end
 		return
 	end
-	print(id)
 	local map = _ctx:dump(id)
 	table.print(map)
 end
@@ -135,8 +155,11 @@ _M.reader = setmetatable({},{__newindex = function (self,pto,func)
 		local message =  decode(_ctx,id,data,size)
 		func(cid,message)
 	end
+	print(self,pto,id,env.name)
 	rawset(self,id,pto_func)
 end})
+
+print("_M.reader",env.name,_M.reader)
 
 _M.writer = {}
 for name,id in pairs(_name_id) do

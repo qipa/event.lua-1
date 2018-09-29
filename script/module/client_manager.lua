@@ -10,6 +10,8 @@ local ipairs = ipairs
 
 _gate = _gate
 
+_sendGate = _sendGate
+
 _onAccept = _onAccept
 _onClose = _onClose
 
@@ -20,6 +22,7 @@ function __init__(self)
 end
 
 local function _onClientData(cid,mesasgeId,data,size)
+	table.print(protocol.reader)
 	local reader = protocol.reader[messageId]
 	if not reader then
 		event.error(string.format("no such pto id:%d",mesasgeId))
@@ -62,6 +65,8 @@ function start(conf)
 
 	_gate = gate
 
+	_sendGate = _gate.send
+
 	return port
 end
 
@@ -79,16 +84,15 @@ end
 local _doSendClient
 local _doBroadcastClient
 if env.name == "login" or env.name == "agent" then
-	local sendGate = _gate.send
 	_doSendClient = function (cid,mid,data)
 		cid = modf(cid / 100) 
-		sendGate(_gate,cid,mid,data)
+		_sendGate(_gate,cid,mid,data)
 	end
 
 	_doBroadcastClient = function (cids,mid,data)
 		for _,cid in pairs(cids) do
 			cid = modf(cid / 100) 
-			sendGate(_gate,cid,mid,data)
+			_sendGate(_gate,cid,mid,data)
 		end
 	end
 else

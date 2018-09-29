@@ -35,7 +35,7 @@ function start(self)
 end
 
 function timeout(self)
-	table.print(self)
+
 end
 
 function userEnterAgent(self,account,userUid,agentId)

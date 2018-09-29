@@ -10,12 +10,13 @@ local loginServer = import "module.login.login_server"
 _server_status = _server_status or nil
 
 function __init__()
-	protocol.handler["c2s_login_auth"] = reqAuth 
-	protocol.handler["c2s_login_enter"] = reqEnterGame 
-	protocol.handler["c2s_create_role"] = reqCreateRole 
+	protocol.reader["cLoginAuth"] = reqAuth 
+	protocol.reader["cCreateRole"] = reqCreateRole 
+	protocol.reader["cLoginEnter"] = reqEnterGame 
 end
 
 function reqAuth(cid,args)
+	print("reqAuth")
 	loginServer:userAuth(cid,args.account)
 end
 
