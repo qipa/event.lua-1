@@ -5,6 +5,6 @@ local server_manager = import "module.server_manager"
 import "handler.logger_handler"
 
 event.fork(function ()
-	env.dist_id = 0
+	env.distId = 0
 	server_manager:listenServer("logger")
 end)

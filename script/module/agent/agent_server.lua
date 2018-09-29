@@ -185,10 +185,10 @@ function get_all_enter_user(self)
 	local result = {}
 	for cid,info in pairs(_enterUserMgr) do
 		local user = model.fetch_agent_user_with_uid(info.uid)
-		result[user.account] = {uid = user.uid,agent_server = env.dist_id}
+		result[user.account] = {uid = user.uid,agent_server = env.distId}
 	end
 	for _,info in pairs(_user_token) do
-		result[info.account] = {uid = info.uid,agent_server = env.dist_id}
+		result[info.account] = {uid = info.uid,agent_server = env.distId}
 	end
 	return result
 end
@@ -239,10 +239,10 @@ function server_stop()
 	local updater = {}
 	updater["$inc"] = {version = 1}
 	updater["$set"] = {time = os.time()}
-	db_channel:findAndModify("common","agent_version",{query = {uid = env.dist_id},update = updater,upsert = true})
+	db_channel:findAndModify("common","agent_version",{query = {uid = env.distId},update = updater,upsert = true})
 
 	local world_channel = model.get_world_channel()
-	world_channel:send("handler.world_handler","server_stop",{id = env.dist_id})
+	world_channel:send("handler.world_handler","server_stop",{id = env.distId})
 end
 
 function scene_server_update()

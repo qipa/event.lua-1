@@ -17,9 +17,9 @@ local xpcall = xpcall
 local traceback = debug.traceback
 
 event.fork(function ()
-	env.dist_id = startup.reserveId()
+	env.distId = startup.reserveId()
 
-	startup.run(env.uid,env.dist_id,env.monitor,env.mongodb,env.config,env.protocol)
+	startup.run(env.serverId,env.distId,env.monitor,env.mongodb,env.config,env.protocol)
 	
 	serverMgr:connectServer("world")
 
@@ -57,7 +57,7 @@ event.fork(function ()
 	}
 	local port = clientMgr.start(gate_conf)
 
-	serverMgr:sendLogin("module.login.agent_manager","reportAgentAddr",{id = env.dist_id,addr = {ip = "0.0.0.0",port = port}})
+	serverMgr:sendLogin("module.login.agent_manager","reportAgentAddr",{id = env.distId,addr = {ip = "0.0.0.0",port = port}})
 
 	event.error("start success")
 end)

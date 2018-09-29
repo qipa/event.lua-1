@@ -14,7 +14,7 @@ function mem()
 	if env.name == "server/world" then
 		local result = server_manager:broadcast("handler.cmd_handler","mem")
 		local mem = collectgarbage("count")
-		result[env.dist_id] = string.format("lua mem:%fkb,c mem:%fkb",mem,helper.allocated() / 1024)
+		result[env.distId] = string.format("lua mem:%fkb,c mem:%fkb",mem,helper.allocated() / 1024)
 		return result
 	end
 	local mem = collectgarbage("count")
@@ -28,7 +28,7 @@ function gc()
 	if env.name == "server/world" then
 		local result = server_manager:broadcast("handler.cmd_handler","gc")
 		local mem = collectgarbage("count")
-		result[env.dist_id] = string.format("lua mem:%fkb,c mem:%fkb",mem,helper.allocated() / 1024)
+		result[env.distId] = string.format("lua mem:%fkb,c mem:%fkb",mem,helper.allocated() / 1024)
 		return result
 	end
 	local mem = collectgarbage("count")
@@ -40,7 +40,7 @@ function flush()
 		local result = server_manager:broadcast("handler.cmd_handler","flush")
 		local world_server = import.import "module.world_server"
 		world_server:flush()
-		result[env.dist_id] = "ok"
+		result[env.distId] = "ok"
 		return result
 	elseif env.name == "server/agent" then
 		local agent_server = import.import "module.agent_server"
@@ -59,7 +59,7 @@ function monitor_dump()
 	if env.name == "server/world" then
 		monitor.dump()
 		local result = server_manager:broadcast("handler.cmd_handler","monitor_dump")
-		result[env.dist_id] = "ok"
+		result[env.distId] = "ok"
 		return result
 	else
 		monitor.dump()
@@ -85,7 +85,7 @@ function reload(_,file)
 		else
 			list = import.auto_reload()
 		end
-		result[env.dist_id] = list
+		result[env.distId] = list
 		return result
 
 	end

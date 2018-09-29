@@ -52,7 +52,7 @@ local list = name:split("/")
 env.path = name
 env.name = list[#list]
 env.tid = util.thread_id()
-env.command = string.format("%s@%07d",env.name,env.uid)
+env.command = string.format("%s@%07d",env.name,env.serverId)
 
 util.thread_name(env.command)
 

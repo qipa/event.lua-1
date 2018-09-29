@@ -52,13 +52,13 @@ function cAgentUser:enterGame()
 
 	self:fireEvent("ENTER_GAME")
 	sendClient(self.cid,"sAgentEnter",{user_uid = self.uid})
-	event.error(string.format("user:%d enter agent:%d",self.uid,env.dist_id))
+	event.error(string.format("user:%d enter agent:%d",self.uid,env.distId))
 end
 
 function cAgentUser:leaveGame()
 	self.itemMgr:onLeaveGame(self)
 	self:fireEvent("LEAVE_GAME")
-	event.error(string.format("user:%d leave agent:%d",self.uid,env.dist_id))
+	event.error(string.format("user:%d leave agent:%d",self.uid,env.distId))
 end
 
 function cAgentUser:sendScene(file,method,args)

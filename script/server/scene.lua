@@ -15,14 +15,14 @@ local mongo_indexes = import "common.mongo_indexes"
 
 
 event.fork(function ()
-	env.dist_id = startup.reserveId()
+	env.distId = startup.reserveId()
 	
 	server_manager:connectServer("world")
 	server_manager:connectServer("logger")
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 
-	id_builder:init(env.dist_id)
+	id_builder:init(env.distId)
 
 	local listener,reason = server_manager:listenScene()
 	if not listener then
@@ -31,7 +31,7 @@ event.fork(function ()
 	end
 
 	local addr = listener:addr()
-	server_manager:sendWorld("module.server_manager","register_scene_addr",{id = env.dist_id,addr = addr})
+	server_manager:sendWorld("module.server_manager","register_scene_addr",{id = env.distId,addr = addr})
 
 	import "handler.scene_handler"
 

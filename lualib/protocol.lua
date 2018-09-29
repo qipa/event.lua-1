@@ -131,9 +131,9 @@ _M.reader = setmetatable({},{__newindex = function (self,pto,func)
 	end
 	local id = _name_id[pto]
 	local decode = _ctx.decode
-	local pto_func = function (data,size)
+	local pto_func = function (cid,data,size)
 		local message =  decode(_ctx,id,data,size)
-		func(message)
+		func(cid,message)
 	end
 	rawset(self,id,pto_func)
 end})
@@ -143,7 +143,7 @@ for name,id in pairs(_name_id) do
 	local encode = _ctx.encode
 	_M.writer[name] = function (cid,args)
 		local message = encode(_ctx,id,args)
-		clientMgr:sendClientData(cid,id,message)
+		clientMgr:sendClient(cid,id,message)
 	end
 end
 

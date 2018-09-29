@@ -14,7 +14,7 @@ model.set_db_channel(db_channel)
 
 event.fork(function ()
 	local buidler = import "module.id_builder"
-buidler:init(env.uid,1)
+buidler:init(env.serverId,1)
 
 	print(buidler.alloc_user_uid())
 	print(buidler.alloc_item_uid())
