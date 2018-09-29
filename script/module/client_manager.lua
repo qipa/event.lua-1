@@ -21,11 +21,12 @@ function __init__(self)
 
 end
 
-local function _onClientData(cid,mesasgeId,data,size)
-	table.print(protocol.reader)
+local function _onClientData(cid,messageId,data,size)
+	
+
 	local reader = protocol.reader[messageId]
 	if not reader then
-		event.error(string.format("no such pto id:%d",mesasgeId))
+		event.error(string.format("no such pto id:%d",messageId))
 		return
 	end
 	local cid = cid * 100 + env.distId
