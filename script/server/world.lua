@@ -41,8 +41,8 @@ end)
 
 
 event.fork(function ()
-	env.dist_id = server_manager:reserveId()
-	startup.run(env.uid,env.dist_id,env.monitor,env.mongodb,env.config,env.protocol)
+	env.distId = server_manager:reserveId()
+	startup.run(env.serverId,env.distId,env.monitor,env.mongodb,env.config,env.protocol)
 
 
 	local listener,reason = server_manager:listenServer("world")

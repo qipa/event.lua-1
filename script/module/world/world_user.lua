@@ -30,7 +30,7 @@ function cWorldUser:dbIndex()
 end
 
 function cWorldUser:enter()
-	event.error(string.format("user:%d enter world:%d",self.userUid,env.dist_id))
+	event.error(string.format("user:%d enter world:%d",self.userUid,env.distId))
 
 	if not self.chatUser then
 		self.chatUser = chatUser.cChatUser:new()
@@ -54,7 +54,7 @@ function cWorldUser:override(agentId)
 end
 
 function cWorldUser:leave()
-	event.error(string.format("user:%d leave world:%d",self.userUid,env.dist_id))
+	event.error(string.format("user:%d leave world:%d",self.userUid,env.distId))
 
 	self.chatUser:onLeave()
 	self.teamUser:onLeave()

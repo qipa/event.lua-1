@@ -68,7 +68,7 @@ function registerServer(channel,args)
 	_serverNameCtx[args.name] = args.id
 	_eventListener:fireEvent("SERVER_CONNECT",args.name,args.id)
 
-	return env.dist_id
+	return env.distId
 end
 
 function increaseAgent()
@@ -129,7 +129,7 @@ end
 function listenScene(self)
 	local addr
 	if env.scene == "ipc" then
-		addr = string.format("ipc://scene%02d.ipc",env.dist_id)
+		addr = string.format("ipc://scene%02d.ipc",env.distId)
 	else
 		addr = "tcp://0.0.0.0:0"
 	end
@@ -145,7 +145,7 @@ function connectServer(self,name,reconnect,try,addr)
 		
 		channel.monitor = event.gen_session()
 
-		local id = channel:call("module.server_manager","registerServer",{id = env.dist_id,name = env.name})
+		local id = channel:call("module.server_manager","registerServer",{id = env.distId,name = env.name})
 		channel.id = id
 		channel.name = name
 

@@ -34,9 +34,9 @@ if not db_channel then
 end
 
 event.fork(function ()
-	env.dist_id = 1
+	env.distId = 1
 	startup.run(false,env.mongodb,env.config)
-	idBuilder:init(env.uid,1)
+	idBuilder:init(env.serverId,1)
 	local container = itemContainer.cItemContainer:load(nil,db_channel,"user",{userUid = 5})
 	if not container then
 		container = itemContainer.cItemContainer:new()

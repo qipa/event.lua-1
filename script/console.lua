@@ -53,9 +53,9 @@ event.fork(function ()
 		local role_list = channel:findAll("login_user","role_list",{selector = {list = 1}})
 		for _,each_list in pairs(role_list) do
 			for _,info in pairs(each_list.list) do
-				local dist_id = util.decimal_sub(info.uid,1,2)
-				if not max_uid_ctx[dist_id] or info.uid > max_uid_ctx[dist_id] then
-					max_uid_ctx[dist_id] = info.uid
+				local distId = util.decimal_sub(info.uid,1,2)
+				if not max_uid_ctx[distId] or info.uid > max_uid_ctx[distId] then
+					max_uid_ctx[distId] = info.uid
 				end
 			end
 		end
