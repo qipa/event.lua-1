@@ -13,8 +13,11 @@ function client_channel:disconnect()
 end
 
 function client_channel:data(data,size)
+
 	local id,data,size = self.packet:unpack(data,size)
+
 	local name,message = protocol.decode[id](data,size)
+
 	if response[name] then
 		response[name](self,message)
 	end
@@ -27,8 +30,11 @@ function agent_channel:disconnect()
 end
 
 function agent_channel:data(data,size)
+
 	local id,data,size = self.packet:unpack(data,size)
+
 	local name,message = protocol.decode[id](data,size)
+
 	if response[name] then
 		response[name](self,message)
 	end
@@ -45,21 +51,25 @@ function response.s2c_login_enter(channel,message)
 	channel:write(channel.packet:pack(protocol.encode.c2s_agent_auth({token = message.token})))
 end
 
-function response.s2c_create_role(channel,message)
+function response.sCreateRole(channel,message)
+	table.print(message,"sCreateRole")
 	channel.list = message.list
 	local uid = channel.list[1].uid
-	channel:write(channel.packet:pack(protocol.encode.c2s_login_enter({account = channel.account,uid = uid})))
+	local ptr,size = channel.packet:pack(protocol.encode.cLoginEnter({account = channel.account,uid = uid}))
+	channel.buffer:write(ptr,size,1)
 end
 
-function response.s2c_login_auth(channel,message)
+function response.sLoginAuth(channel,message)
 	channel.list = message.list
 	table.print(message)
 	if #channel.list > 0 then
 		local uid = channel.list[1].uid
 		print("uid",uid)
-		channel:write(channel.packet:pack(protocol.encode.c2s_login_enter({account = channel.account,uid = uid})))
+		local ptr,size = channel.packet:pack(protocol.encode.cLoginEnter({account = channel.account,uid = uid}))
+		channel.buffer:write(ptr,size,1)
 	else
-		channel:write(channel.packet:pack(protocol.encode.c2s_create_role({career = 1})))
+		local ptr,size = channel.packet:pack(protocol.encode.cCreateRole({career = 1}))
+		channel.buffer:write(ptr,size,1)
 	end
 end
 

@@ -660,6 +660,7 @@ lclone_string(lua_State* L) {
 
 struct packet {
     uint16_t wseed;
+    uint16_t rseed;
 };
 
 static int
@@ -689,6 +690,20 @@ lpacket_pack(lua_State* L) {
 }
 
 static int
+lpacket_unpack(lua_State* L) {
+    struct packet* packet = lua_touserdata(L, 1);
+    uint8_t* data = lua_touserdata(L, 2);
+    int size = lua_tointeger(L, 3);
+ 
+    uint16_t id = data[0] | data[1] << 8;
+
+    lua_pushinteger(L, id);
+    lua_pushlightuserdata(L, &data[2]);
+    lua_pushinteger(L, size - 2);
+    return 3;
+}
+
+static int
 lpacket_new(lua_State* L) {
     struct packet* packet = lua_newuserdata(L, sizeof(*packet));
     memset(packet,0,sizeof(*packet));
@@ -696,6 +711,7 @@ lpacket_new(lua_State* L) {
     if (luaL_newmetatable(L, "meta_packte")) {
         const luaL_Reg meta_packte[] = {
             { "pack", lpacket_pack },
+            { "unpack", lpacket_unpack },
             { NULL, NULL },
         };
         luaL_newlib(L,meta_packte);

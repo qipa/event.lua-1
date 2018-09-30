@@ -1,24 +1,25 @@
 local event = require "event"
 local model = require "model"
 
-local server_manager = import "module.server_manager"
+local serverMgr = import "module.server_manager"
 local id_builder = import "module.id_builder"
 
 
-_agent_ctx = _agent_ctx or {}
+_agentServerMgr = _agentServerMgr or {}
 
 function __init__(self)
-	server_manager:registerEvent("SERVER_DOWN",self,"server_down")
+	serverMgr:registerEvent("SERVER_DOWN",self,"onServerDown")
 end
 
-function server_down(self,name,srv_id)
+function onServerDown(self,name,serverId)
 	if name ~= "agent" then
 		return
 	end
+	_agentServerMgr[serverId] = nil
 end
 
 function reportAgentAddr(_,args)
-	_agent_ctx[args.id] = {
+	_agentServerMgr[args.id] = {
 		addr = args.addr,
 		amount = 0
 	}
@@ -26,12 +27,15 @@ end
 
 function selectAgent(self)
 	local min
-	local srv_id
-	for agent_id,agent_info in pairs(_agent_ctx) do
-		if not min or agent_info.amount < min then
-			min = agent_info.amount
-			srv_id = agent_id
+	local serverId
+	for agentId,agentInfo in pairs(_agentServerMgr) do
+		if not min or agentInfo.amount < min then
+			min = agentInfo.amount
+			serverId = agentId
 		end
 	end
-	return srv_id,_agent_ctx[srv_id].addr
+	if not serverId then
+		return
+	end
+	return serverId,_agentServerMgr[serverId].addr
 end

@@ -34,4 +34,5 @@ event.fork(function ()
 	local port = clientMgr.start(gateConf)
 
 	loginServer:start()
+	
 end)

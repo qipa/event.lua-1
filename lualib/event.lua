@@ -347,6 +347,10 @@ function _M.breakout(reason)
 	_event:breakout()
 end
 
+function _M.now()
+	return _event:now()
+end
+
 local EV = {}
 
 EV[EV_TIMEOUT] = function (timer)

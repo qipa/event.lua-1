@@ -4,14 +4,14 @@ local model = require "model"
 local util = require "util"
 local protocol = require "protocol"
 
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 local dbObject = import "module.database_object"
 local serverMgr = import "module.server_manager"
 local agentMgr = import "module.login.agent_manager"
 local clientMgr = import "module.client_manager"
-local loginServer = import "module.login.login_server"
 
-cLoginUser = dbObject.cDatabase:inherit("login_user","account","cid")
+
+cLoginUser = dbObject.cDatabase:inherit("loginUser","account","cid")
 
 function __init__(self)
 	self.cLoginUser:saveField("accountInfo")
@@ -39,11 +39,11 @@ function cLoginUser:auth()
 		table.insert(result,{uid = role.uid,name = role.name})
 	end
 
-	sendClient(self.cid,"sLoginAuth",{list = result})
+	protocol.writer.sLoginAuth(self.cid,{list = result})
 end
 
 function cLoginUser:createRole(career,name)
-	local role = {career = career,name = "mrq",uid = id_builder:alloc_user_uid()}
+	local role = {career = career,name = "mrq",uid = idBuilder:alloc_user_uid()}
 	table.insert(self.accountInfo.list,role)
 	self:markDirty("accountInfo")
 
@@ -52,7 +52,7 @@ function cLoginUser:createRole(career,name)
 		table.insert(result,{uid = role.uid,name = role.name})
 	end
 
-	sendClient(self.cid,"sCreateRole",{list = result})
+	protocol.writer.sCreateRole(self.cid,{list = result})
 end
 
 function cLoginUser:delete_role(uid)
@@ -78,6 +78,17 @@ function cLoginUser:leave()
 end
 
 function cLoginUser:enterAgent(uid)
+	util.time_diff("event.now",function ()
+		for i = 1,1024 * 1024 * 100 do
+			event.now()
+		end
+	end)
+	util.time_diff("os.time",function ()
+		for i = 1,1024 * 1024 * 100 do
+			os.time()
+		end
+	end)
+	print(event.now(),os.time())
 	local agentId,agentAddr = agentMgr:selectAgent()
 	local time = util.time()
 	local json = cjson.encode({account = self.account,uid = uid})
@@ -88,6 +99,7 @@ function cLoginUser:enterAgent(uid)
 		if not user then
 			return
 		end
+		local loginServer = import "module.login.login_server"
 		loginServer:userEnterAgent(user.account,user.uid,agentId)
 		sendClient(user.cid,"s2c_login_enter",{token = token,ip = agentAddr.ip,port = agentAddr.port})
 		clientMgr:close(user.cid)

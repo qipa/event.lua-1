@@ -20,11 +20,13 @@ function reqAuth(cid,args)
 	loginServer:userAuth(cid,args.account)
 end
 
-function reqCreateRole(loginUser,args)
+function reqCreateRole(cid,args)
+	local loginUser = model.fetch_loginUser_with_cid(cid)
 	loginUser:createRole(args.career,args.name)
 end
 
-function reqEnterGame(loginUser,args)
+function reqEnterGame(cid,args)
+	local loginUser = model.fetch_loginUser_with_cid(cid)
 	loginUser:enterAgent(args.uid)
 end
 

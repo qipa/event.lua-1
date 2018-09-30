@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 local route = require "route"
 local timer = require "timer"
-
+local loginUser = import "module.login.login_user"
 local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
 
@@ -66,20 +66,20 @@ function leave(self,cid)
 	_loginCtx[cid] = nil
 
 	if info.account then
-		local user = model.fetch_login_user_with_account(info.account)
+		local user = model.fetch_loginUser_with_account(info.account)
 		if user and user.cid == cid then
 			if user.phase == eUSER_PHASE.DONE then
 				user:save()
 			end
 			user.phase = eUSER_PHASE.LEAVE
 			user:leave()
-			model.unbind_login_user_with_account(info.account)
+			model.unbind_loginUser_with_account(info.account)
 		end
 	end
 end
 
 function dispatch_client(self,cid,message_id,data,size)
-	local user = model.fetch_login_user_with_cid(cid)
+	local user = model.fetch_loginUser_with_cid(cid)
 	if not user then
 		route.dispatch_client(cid,message_id,data,size)
 	else
@@ -90,7 +90,7 @@ end
 local function _userDoAuth(self,cid,account)
 	local info = _loginCtx[cid]
 	info.account = account
-	local user = model.fetch_login_user_with_account(info.account)
+	local user = model.fetch_loginUser_with_account(info.account)
 	if user then
 		if _loginCtx[user.cid] then
 			clientMgr:close(user.cid)
@@ -105,9 +105,11 @@ local function _userDoAuth(self,cid,account)
 		end
 
 	end
-	local loginUser = import "module.login.login_user"
 	user = loginUser.cLoginUser:new()
-	model.bind_login_user_with_account(account,user)
+	
+	model.bind_loginUser_with_account(account,user)
+	model.bind_loginUser_with_cid(cid,user)
+
 	user:onCreate(cid,account)
 	user.phase = eUSER_PHASE.LOADING
 	user:load()
@@ -159,7 +161,7 @@ function server_stop(self)
 	local client_manager = model.get_client_manager()
 	client_manager:stop()
 
-	local all = model.fetch_login_user()
+	local all = model.fetch_loginUser()
 	for _,user in pairs(all) do
 		user:leave()
 	end

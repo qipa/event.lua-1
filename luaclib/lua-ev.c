@@ -1066,6 +1066,12 @@ _clean(lua_State* L) {
 	return 0;
 }
 
+static int
+_now(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lua_pushinteger(L, loop_ctx_now(lev->loop_ctx));
+	return 1;
+}
 //-------------------------endof event api---------------------------
 
 static int
@@ -1100,6 +1106,7 @@ luaopen_ev_core(lua_State* L) {
 		{ "breakout", _break },
 		{ "dispatch", _dispatch },
 		{ "clean", _clean },
+		{ "now", _now },
 		{ "release", _release },
 		{ NULL, NULL },
 	};
