@@ -5,7 +5,7 @@ local serverMgr = import "module.server_manager"
 local scene_manager = import "module.world.scene_manager"
 local dbObject = import "module.database_object"
 local worldUser = import "module.world.world_user"
-import "handler.world_handler"
+
 
 model.registerValue("dbCommon")
 model.registerBinder("simpleUser","uid")

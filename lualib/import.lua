@@ -38,7 +38,7 @@ function _M.import(file)
 	local fullfile,change = string.format("./script/%s.lua",string.gsub(file,"%.","/"))
 
 	local ctx = {}
-	_script_ctx[file] = ctx
+	
 	
 	ctx.env = setmetatable({},{__index = _G,__pairs = function (self) return env_pairs,self end})
 	ctx.env.__name = fullfile
@@ -50,6 +50,8 @@ function _M.import(file)
 		ctx.env["__init__"](ctx.env)
 	end
 
+	_script_ctx[file] = ctx
+	
 	return ctx.env
 end
 

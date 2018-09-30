@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 local route = require "route"
 local timer = require "timer"
-local loginUser = import "module.login.login_user"
+
 local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
 
@@ -105,6 +105,7 @@ local function _userDoAuth(self,cid,account)
 		end
 
 	end
+	local loginUser = import "module.login.login_user"
 	user = loginUser.cLoginUser:new()
 	model.bind_login_user_with_account(account,user)
 	user:onCreate(cid,account)

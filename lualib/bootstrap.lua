@@ -12,6 +12,7 @@ local model = require "model"
 local debugger = require "debugger"
 local helper = require "helper"
 local worker = require "worker"
+local protocol = require "protocol"
 
 table.print = util.dump
 table.encode = serialize.pack

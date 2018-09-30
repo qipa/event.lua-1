@@ -4,8 +4,6 @@ local protocolcore = require "protocolcore"
 local util = require "util"
 
 
-local clientMgr = import "module.client_manager"
-print(debug.traceback(),env.name)
 local _ctx = protocolcore.new()
 
 local _pto_meta = {}
@@ -144,30 +142,32 @@ function _M.dump(id)
 	table.print(map)
 end
 
-_M.reader = setmetatable({},{__newindex = function (self,pto,func)
-	if not _name_id[pto] then
-		print(string.format("no such pto:%s",pto))
-		return
-	end
-	local id = _name_id[pto]
-	local decode = _ctx.decode
-	local pto_func = function (cid,data,size)
-		local message =  decode(_ctx,id,data,size)
-		func(cid,message)
-	end
-	print(self,pto,id,env.name)
-	rawset(self,id,pto_func)
-end})
+function _M.ready(clientMgr)
+	_M.reader = setmetatable({},{__newindex = function (self,pto,func)
+		if not _name_id[pto] then
+			print(string.format("no such pto:%s",pto))
+			return
+		end
+		local id = _name_id[pto]
+		local decode = _ctx.decode
+		local pto_func = function (cid,data,size)
+			local message =  decode(_ctx,id,data,size)
+			func(cid,message)
+		end
+		rawset(self,id,pto_func)
+	end})
 
-print("_M.reader",env.name,_M.reader)
 
-_M.writer = {}
-for name,id in pairs(_name_id) do
-	local encode = _ctx.encode
-	_M.writer[name] = function (cid,args)
-		local message = encode(_ctx,id,args)
-		clientMgr:sendClient(cid,id,message)
+	_M.writer = {}
+	for name,id in pairs(_name_id) do
+		local encode = _ctx.encode
+		_M.writer[name] = function (cid,args)
+			local message = encode(_ctx,id,args)
+			clientMgr:sendClient(cid,id,message)
+		end
 	end
 end
+
+
 
 return _M

@@ -3,17 +3,14 @@ local event = require "event"
 local model = require "model"
 local channel = require "channel"
 local mongo = require "mongo"
-
-print("@@@@1",_G.package.loaded.protocol)
 local protocol = require "protocol"
-
-print("@@@@2",_G.package.loaded.protocol)
 local monitor = require "monitor"
 local util = require "util"
 local http = require "http"
 local logger = require "module.logger"
 local idBuilder = import "module.id_builder"
 local serverMgr = import "module.server_manager"
+local clientMgr = import "module.client_manager"
 
 local mongodbChannel = mongo:inherit()
 function mongodbChannel:disconnect()
@@ -61,6 +58,7 @@ function run(serverId,distId,stat,dbAddr,cfgPath,ptoPath)
 
 	if ptoPath then
 		protocol.parse_dir(ptoPath)
+		protocol.ready(clientMgr)
 	end
 end
 
