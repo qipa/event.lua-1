@@ -95,8 +95,7 @@ function cSceneObj:getWitness()
 	local result = {}
 	local sceneInst = self.scene
 
-	for aoiEntityId in pairs(self.witnessCtx) do
-		local sceneObjUid = sceneInst.witnessCtx[aoiEntityId]
+	for sceneObjUid in pairs(self.witnessCtx) do
 		local sceneObj = sceneInst.objMgr[sceneObjUid]
 		table.insert(result,sceneObj)
 	end
@@ -108,8 +107,7 @@ function cSceneObj:getWitnessCid()
 	local result = {}
 	local sceneInst = self.scene
 
-	for aoiEntityId in pairs(self.witnessCtx) do
-		local sceneObjUid = sceneInst.witnessCtx[aoiEntityId]
+	for sceneObjUid in pairs(self.witnessCtx) do
 		local sceneObj = sceneInst.objMgr[sceneObjUid]
 		if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 			table.insert(result,sceneObj.cid)
