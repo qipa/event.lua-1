@@ -1,37 +1,37 @@
 
-protocol role_info
+protocol roleInfo
 {
 	int uid
 	string name
 }
 
-protocol c2s_login_auth
+protocol cLoginAuth
 {
 	string account
 }
 
-protocol s2c_login_auth
+protocol sLoginAuth
 {
-	role_info[] list
+	roleInfo[] list
 }
 
-protocol c2s_create_role
+protocol cCreateRole
 {
 	int career
 }
 
-protocol s2c_create_role
+protocol sCreateRole
 {
-	role_info[] list
+	roleInfo[] list
 }
 
-protocol c2s_login_enter
+protocol cLoginEnter
 {
 	string account
 	int uid
 }
 
-protocol s2c_login_enter
+protocol sLoginEnter
 {
 	string token
 	string ip

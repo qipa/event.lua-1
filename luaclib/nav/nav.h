@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
-
 #include "common/minheap.h"
 #include "common/list.h"
-
+#include <stdbool.h>
 #ifdef _MSC_VER
 #define inline __inline
 #endif
@@ -63,16 +61,18 @@ struct nav_node
 
 	int mask;
 
+	int dt_recorded;
+
 	double area;
 
-	//¶à±ßÐÎµÄÖÐÐÄµã
+	//多边形的中心点
 	struct vector3 center;
 
 	double G;
 	double H;
 	double F;
 
-	//»º´æA*Ñ°Â·³öÀ´µÄÏàÁÚ¶à±ßÐÎºÍÓëÏàÁÚ¶à±ßÐÎ¹²±ßµÄ±ß
+	//缓存A*寻路出来的相邻多边形和与相邻多边形共边的边
 	struct nav_node* link_parent;
 	int link_border;
 
@@ -104,23 +104,22 @@ struct nav_tile
 
 struct nav_mesh_context
 {
-	//¶¥µã
+	//顶点
 	struct vector3 * vertices;
 	int vertices_size;
 
-	//ËùÓÐ±ß(Í¬Ò»Ìõ±ßÓÐabºÍbaÁ½Ìõ)
+	//所有边(同一条边有ab和ba两条)
 	struct nav_border* borders;
 	int border_size;
 	int border_offset;
 
-	//¶à±ßÐÎ½Úµã
+	//多边形节点
 	struct nav_node* node;
 	int node_size;
 
-	//×ÜÃæ»ý
 	double area;
-
-	//¸ñ×ÓÐÅÏ¢
+	
+	//格子信息
 	struct nav_tile* tile;
 	uint32_t tile_unit;
 	uint32_t tile_width;
@@ -132,13 +131,13 @@ struct nav_mesh_context
 	uint32_t width;
 	uint32_t heigh;
 
-	//¶à±ßÐÎ½ÚµãµÄmask
+	//多边形节点的mask
 	struct nav_mesh_mask mask_ctx;
 
-	//Ñ°Â·½á¹û»º´æ
+	//寻路结果缓存
 	struct nav_path result;
 
-	//»ñÈ¡ÏàÁÚ¶à±ßÐÎ»º´æ
+	//获取相邻多边形缓存
 	struct list linked;
 
 	struct minheap* openlist;
@@ -158,7 +157,7 @@ bool raycast(struct nav_mesh_context* ctx, struct vector3* pt_start, struct vect
 void set_mask(struct nav_mesh_mask* ctx,int mask,int enable);
 
 struct vector3* around_movable(struct nav_mesh_context*, double x, double z, int range, int* center_node, search_dumper, void*);
-bool point_movable(struct nav_mesh_context* ctx, double x, double z);
+bool point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, double* dt_offset);
 bool point_height(struct nav_mesh_context* ctx, double x, double z, double* height);
 void point_random(struct nav_mesh_context* ctx, struct vector3* result, int poly);
 

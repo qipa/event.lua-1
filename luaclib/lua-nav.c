@@ -335,7 +335,7 @@ meta_around_movable(struct lua_State* L) {
 	double x = lua_tonumber(L, 2);
 	double z = lua_tonumber(L, 3);
 
-	int val = point_movable(ctx, x, z);
+	int val = point_movable(ctx, x, z, 0, NULL);
 	if ( val ) {
 		lua_pushnumber(L, x);
 		lua_pushnumber(L, z);
@@ -368,10 +368,13 @@ meta_movable(struct lua_State* L) {
 	struct nav_mesh_context* ctx = scene_ctx->ctx;
 	double x = lua_tonumber(L, 2);
 	double z = lua_tonumber(L, 3);
+	double fix = luaL_optnumber(L, 4, 50);
 
-	bool val = point_movable(ctx, x, z);
+	double offset = 0;
+	bool val = point_movable(ctx, x, z, fix, &offset);
 	lua_pushboolean(L, val);
-	return 1;
+	lua_pushnumber(L, offset);
+	return 2;
 }
 
 static int

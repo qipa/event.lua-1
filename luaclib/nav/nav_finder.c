@@ -728,45 +728,149 @@ around_movable(struct nav_mesh_context* ctx, double x, double z, int range, int*
 	return result;
 }
 
+#define INIT_RECORD_SIZE 8
+struct dt_poly_record {
+	int init[INIT_RECORD_SIZE];
+	int offset;
+	int size;
+	int* record;
+};
+
+static inline void
+dt_record_init(struct dt_poly_record* dt_record) {
+	dt_record->record = dt_record->init;
+	dt_record->offset = 0;
+	dt_record->size = INIT_RECORD_SIZE;
+}
+
+static inline void
+dt_record_add(struct dt_poly_record* dt_record, int poly) {
+	if ( dt_record->offset >= dt_record->size ) {
+		int nsize = dt_record->size * 2;
+		int* nrecord = (int*)malloc(sizeof(int)* nsize);
+		memcpy(nrecord, dt_record->record, sizeof(int)* dt_record->size);
+		if (dt_record->record != dt_record->init) {
+			free(dt_record->record);
+		}
+		dt_record->record = nrecord;
+		dt_record->size = nsize;
+	}
+
+	dt_record->record[dt_record->offset++] = poly;
+}
+
+static inline void
+dt_record_release(struct dt_poly_record* dt_record) {
+	if ( dt_record->record != dt_record->init ) {
+		free(dt_record->record);
+	}
+}
+
+#define MOVABLE_USE_RECORD
+
 bool
-point_movable(struct nav_mesh_context* ctx, double x, double z) {
+point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, double* dt_offset) {
 	if ( x < ctx->lt.x || x > ctx->br.x )
 		return false;
+
 	if ( z < ctx->lt.z || z > ctx->br.z )
 		return false;
 
+	if (ctx->tile == NULL) {
+		return false;
+	}
+
+	if ( dt_offset ) {
+		*dt_offset = 0;
+	}
+
 	struct nav_node* node = NULL;
 
-	if ( ctx->tile == NULL ) {
-		int i;
-		for ( i = 0; i < ctx->node_size; i++ ) {
-			if ( inside_node(ctx, i, x, 0, z) ) {
-				node = &ctx->node[i];
-				break;
-			}
+	int x_index = ( x - ctx->lt.x ) / ctx->tile_unit;
+	int z_index = ( z - ctx->lt.z ) / ctx->tile_unit;
+	int index = x_index + z_index * ctx->tile_width;
+
+	struct nav_tile* tile = &ctx->tile[index];
+
+	int i;
+	for ( i = 0; i < tile->offset; i++ ) {
+		if ( inside_node(ctx, tile->node[i], x, 0, z) ) {
+			node = &ctx->node[tile->node[i]];
+			break;
 		}
 	}
-	else {
-		int x_index = ( x - ctx->lt.x ) / ctx->tile_unit;
-		int z_index = ( z - ctx->lt.z ) / ctx->tile_unit;
-		int index = x_index + z_index * ctx->tile_width;
-
-		struct nav_tile* tile = &ctx->tile[index];
-
-		int i;
-		for ( i = 0; i < tile->offset; i++ ) {
-			if ( inside_node(ctx, tile->node[i], x, 0, z) ) {
-				node = &ctx->node[tile->node[i]];
-				break;
-			}
-		}
-	}
-
 	if ( node ) {
 		if ( get_mask(ctx->mask_ctx, node->mask) == 1 ) {
 			return true;
 		}
+		return false;
 	}
+
+	if ( fix == 0 ) {
+		return false;
+	}
+
+#ifdef MOVABLE_USE_RECORD
+	struct dt_poly_record dt_record;
+	dt_record_init(&dt_record);
+#endif
+
+	struct vector3 pt = { x, 0, z };
+	double dt_min = -1;
+
+	int x_axis;
+	for ( x_axis = x_index - 1; x_axis <= x_index + 1; x_axis++ ) {
+		if ( x_axis < 0 || x_axis >= ctx->tile_width ) {
+			continue;
+		}
+		int z_axis;
+		for ( z_axis = z_index - 1; z_axis <= z_index + 1; z_axis++ ) {
+			if ( z_axis < 0 || z_axis >= ctx->tile_heigh ) {
+				continue;
+			}
+			index = x_axis + z_axis * ctx->tile_width;
+			tile = &ctx->tile[index];
+			int i;
+			for ( i = 0; i < tile->offset; i++ ) {
+				int poly_id = tile->node[i];
+#ifdef MOVABLE_USE_RECORD
+				node = get_node(ctx, poly_id);
+				if ( node->dt_recorded == 0 ) {
+					node->dt_recorded = 1;
+					dt_record_add(&dt_record, poly_id);
+					double dt = dot2poly(ctx, poly_id, &pt);
+					if ( dt_min < 0 || dt_min > dt ) {
+						dt_min = dt;
+					}
+				}
+#else
+				double dt = dot2poly(ctx, poly_id, &pt);
+				if ( dt_min < 0 || dt_min > dt ) {
+					dt_min = dt;
+				}
+#endif
+
+			}
+		}
+	}
+
+#ifdef MOVABLE_USE_RECORD
+	for ( i = 0; i < dt_record.offset; i++ ) {
+		int poly_id = dt_record.record[i];
+		node = get_node(ctx, poly_id);
+		assert(node->dt_recorded == 1);
+		node->dt_recorded = 0;
+	}
+	dt_record_release(&dt_record);
+#endif
+
+	if (dt_offset) {
+		*dt_offset = dt_min;
+	}
+	if ( dt_min > 0 && dt_min <= fix ) {
+		return true;
+	}
+	
 	return false;
 }
 
