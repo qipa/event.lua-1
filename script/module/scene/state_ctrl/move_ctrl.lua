@@ -18,7 +18,7 @@ function cMoveCtrl:onDestroy()
 end
 
 function cMoveCtrl:onUpdate(now)
-	return self:updatePos(now)
+	return self:doMove(now)
 end
 
 function cMoveCtrl:onClientMoveStart(path)
@@ -27,31 +27,53 @@ function cMoveCtrl:onClientMoveStart(path)
 	if not stateMgr:canAddState("MOVE") then
 		return false
 	end
-
-	if stateMgr:hasState("MOVE") then
-		self:updatePos()
-	end
-
-
-	self.pathList = path
-	self.pathIndex = 1
-	self.pathIndexMax = #path
-	self.lastTime = event.now()
-
-	stateMgr:addState("MOVE")
+	return self:prepareMove(path)
 end
 
 function cMoveCtrl:onClientMoveStop(pos,angle)
+	local stateMgr = self.owner.stateMgr
+	if stateMgr:hasState("MOVE") then
+		self:doMove()
+		stateMgr:delState("MOVE")
+	end
 
+	local ownerPos = self.owner.pos
+	local dt = util.distance(pos[1],pos[2],ownerPos[1],ownerPos[2])
+	if dt <= 5 then
+		self.owner:setPos(pos[1],pos[2])
+	else
+		protocol.writer.sObjFixPos(self.owner.cid,ownerPos)
+	end
+
+	local witness = self.owner:getWitnessCid()
+	protocol.writer.sObjMoveStop(witness,ownerPos)
 end
 
 function cMoveCtrl:onServerMoveStart(path)
-	self.pathIndex = 1
-	self.pathList = path
-	self.lastTime = event.now()
+	return self:prepareMove(path)
 end
 
-function cMoveCtrl:updatePos(now)
+function cMoveCtrl:prepareMove(path)
+	local stateMgr = self.owner.stateMgr
+
+	if stateMgr:hasState("MOVE") then
+		self:doMove()
+	end
+
+	self.pathIndex = 1
+	self.pathIndexMax = #path
+	self.pathList = path
+	
+	self.lastTime = event.now()
+
+	stateMgr:addState("MOVE")
+
+	local witness = self.owner:getWitnessCid()
+
+	protocol.writer.sObjMove(witness,self.pathList)
+end
+
+function cMoveCtrl:doMove(now)
 	local now = now or event.now()
 
 	local interval = now - self.lastTime
@@ -63,8 +85,8 @@ function cMoveCtrl:updatePos(now)
 	local dtMove = self.owner.speed * interval
 	
 	local pathNode = pathList[pathIndex]
-	local ownerPos = self.owner.pos
-	local dtNext = util.distance(ownerPos[1],ownerPos[2],pathNode[1],pathNode[2])
+	local location = self.owner.pos
+	local dtNext = util.distance(location[1],location[2],pathNode[1],pathNode[2])
 
 	while dtMove - dtNext >= 0.1 do
 		dtMove = dtMove - dtNext
@@ -75,9 +97,9 @@ function cMoveCtrl:updatePos(now)
 		if pathIndex > pathIndexMax then
 			break
 		end
-		ownerPos = self.owner.pos
+		location = self.owner.pos
 		pathNode = pathList[pathIndex]
-		dtNext = util.distance(ownerPos[1],ownerPos[2],pathNode[1],pathNode[2])
+		dtNext = util.distance(location[1],location[2],pathNode[1],pathNode[2])
 	end
 
 	self.pathIndex = pathIndex
@@ -87,8 +109,8 @@ function cMoveCtrl:updatePos(now)
 	if pathIndex > pathIndexMax then
 		return true
 	else
-		ownerPos = util.move_forward(ownerPos[1],ownerPos[2],pathNode[1],pathNode[2],dtMove)
-		self.owner:setPos(ownerPos[1],ownerPos[2])
+		location = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
+		self.owner:setPos(location[1],location[2])
 	end
 
 	return false
