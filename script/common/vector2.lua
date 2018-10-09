@@ -26,7 +26,7 @@ function _M.rotation(x,z,center_x,center_z,angle)
 	local sin = math.sin(radian)
 	local cos = math.cos(radian)
 	local rx = (x - center_x) * cos - (z - center_z) * sin + center_x
-	local rz = (x - center_x) * sin - (z - center_z) * cos + center_z
+	local rz = (x - center_x) * sin + (z - center_z) * cos + center_z
 	return rx,rz
 end
 

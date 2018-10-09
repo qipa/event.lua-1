@@ -8,7 +8,7 @@
 
 #define PI  (3.141592653589793238462643383279502884)
 
-#define rad(angle) (angle/PI)
+#define rad(angle) ((angle) * (PI/180))
 
 static const vector2_t VECTOR2_ZERO = {0,0};
 
@@ -169,7 +169,7 @@ rotation(vector2_t* dot, vector2_t* center,float angle) {
     float x = dot->x;
     float z = dot->z;
     dot->x = (x - center->x) * co - (z - center->z) * si + center->x;
-    dot->z = (x - center->x) * si - (z - center->z) * co + center->z;
+    dot->z = (x - center->x) * si + (z - center->z) * co + center->z;
 }
 
 static inline float
@@ -209,7 +209,7 @@ rectangle_intersect(vector2_t* src, float length, float width, float angle, vect
     delta_center.x = center->x - rt_center.x;
     delta_center.z = center->z - rt_center.z;
 
-    rotation(&delta_center, (vector2_t*)&VECTOR2_ZERO, angle);
+    rotation(&delta_center, (vector2_t*)&VECTOR2_ZERO, 360 - angle);
 
     vector2_t h;
     h.x = length / 2;
