@@ -42,6 +42,7 @@
 #include "common/common.h"
 
 
+
 #define LOG_ERROR   "\033[40;31m%s\033[0m"
 #define LOG_WARN    "\033[40;33m%s\033[0m"
 #define LOG_INFO    "\033[40;36m%s\033[0m"
@@ -819,7 +820,8 @@ partition(lua_State *L, int lo, int up) {
 }
 
 
-static int ltopK(lua_State* L) {
+static int 
+ltopK(lua_State* L) {
     luaL_checktype(L, 1, LUA_TTABLE);
     size_t narr = lua_rawlen(L, 1);
     if ( narr < 2 )
@@ -847,6 +849,51 @@ static int ltopK(lua_State* L) {
     }
     return 0;
 }
+
+static int
+lcapsule_intersect(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+
+    float cr = lua_tonumber(L, 5);
+
+    float x = lua_tonumber(L, 6);
+    float z = lua_tonumber(L, 7);
+
+    float r = lua_tonumber(L, 8);
+
+    vector2_t dot = {x0, z0};
+    vector2_t u = {x1 - x0, z1 - z0};
+    vector2_t center = {x, z};
+
+    int ok = capsule_intersect(&dot, &u, cr, &center, r);
+    lua_pushboolean(L, ok);
+    return 1;
+} 
+
+static int
+lrectangle_intersect(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float length = lua_tonumber(L, 3);
+    float width = lua_tonumber(L, 4);
+    float angle = lua_tonumber(L, 5);
+
+    float x = lua_tonumber(L, 6);
+    float z = lua_tonumber(L, 7);
+
+    float r = lua_tonumber(L, 8);
+
+    vector2_t dot = {x0, z0};
+    vector2_t center = {x, z};
+
+    int ok = rectangle_intersect(&dot, length, width, angle, &center, r);
+    lua_pushboolean(L, ok);
+    return 1;
+} 
 
 extern int lsize_of(lua_State* L);
 extern int lprofiler_start(lua_State* L);
@@ -879,6 +926,8 @@ luaopen_util_core(lua_State* L){
         { "packet_new", lpacket_new },
         { "rpc_pack", lrpc_pack },
         { "topK", ltopK },
+        { "capsule_intersect", lcapsule_intersect },
+        { "rectangle_intersect", lrectangle_intersect },
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },
