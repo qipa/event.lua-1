@@ -111,7 +111,7 @@ message_decrypt(uint16_t* rseed,uint8_t* message,size_t size) {
     return 0;
 }
 
-
+//https://zhuanlan.zhihu.com/p/23903445
 static inline void
 vector2_sub(vector2_t* result, vector2_t* a, vector2_t* b) {
     result->x = a->x - b->x;
@@ -199,11 +199,11 @@ capsule_intersect(vector2_t* src, vector2_t* u, float cr, vector2_t* center, flo
 
 int
 rectangle_intersect(vector2_t* src, float length, float width, float angle, vector2_t* center, float r) {
-    float rd = rad(angle);
+    float radian = rad(angle);
 
     vector2_t rt_center;
-    rt_center.x = src->x + (cos(rd) * (length / 2));
-    rt_center.z = src->z + (sin(rd) * (length / 2));
+    rt_center.x = src->x + (cos(radian) * (length / 2));
+    rt_center.z = src->z + (sin(radian) * (length / 2));
 
     vector2_t delta_center;
     delta_center.x = center->x - rt_center.x;
@@ -224,4 +224,45 @@ rectangle_intersect(vector2_t* src, float length, float width, float angle, vect
     u.z = v.z - h.z < 0 ? 0 : v.z - h.z;
 
     return sqrt_vector2_magnitude(&u) <= r * r;
+}
+
+int
+sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* center, float r) {
+    vector2_t dt;
+    vector2_sub(&dt, center, src);
+
+    float range = l + r;
+
+    float sqrt_magnitude = sqrt_vector2_magnitude(&dt);
+    if ( sqrt_magnitude > range * range) {
+        return 0;
+    }
+
+    float radian = rad(angle);
+
+    vector2_t u;
+    u.x = sin(radian);
+    u.z = cos(radian);
+
+    vector2_t abs_u;
+    abs_u.x = -u.z;
+    abs_u.z = u.x;
+
+    float px = vector2_dot(&dt, &u);
+    float pz = abs(vector2_dot(&dt, &abs_u));
+
+    float theta = rad(degree / 2);
+    if (px > sqrt(sqrt_magnitude) * cos(theta)) {
+        return 1;
+    }
+
+    vector2_t q;
+    q.x = l * cos(theta);
+    q.z = l * sin(theta);
+
+    vector2_t p;
+    p.x = px;
+    p.z = pz;
+
+    return sqrt_dot2segment((vector2_t*)&VECTOR2_ZERO, &q, &p) <= r * r;
 }
