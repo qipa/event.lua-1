@@ -914,7 +914,80 @@ lsector_intersect(lua_State* L) {
     int ok = sector_intersect(&dot, angle, degree, l, &center, r);
     lua_pushboolean(L, ok);
     return 1;
-} 
+}
+
+static int
+ldot2dot(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+
+    vector2_t from = {x0, z0};
+    vector2_t to = {x1, z1};
+
+    float dt = dot2dot(&from, &to);
+
+    lua_pushnumber(L, dt);
+    return 1;
+}
+
+static int
+lrotation(lua_State* L) {
+    float x = lua_tonumber(L, 1);
+    float z = lua_tonumber(L, 2);
+    float cx = lua_tonumber(L, 3);
+    float cz = lua_tonumber(L, 4);
+    float angle = lua_tonumber(L, 5);
+
+    vector2_t dot = {x, z};
+    vector2_t center = {cx, cz};
+
+    rotation(&dot, &center, angle);
+
+    lua_pushnumber(L, dot.x);
+    lua_pushnumber(L, dot.z);
+    return 2;
+}
+
+static int
+lmove_torward(lua_State* L) {
+    float x = lua_tonumber(L, 1);
+    float z = lua_tonumber(L, 2);
+    float radian = lua_tonumber(L, 3);
+    float distance = lua_tonumber(L, 4);
+
+    vector2_t result;
+    vector2_t dot = {x, z};
+    vector2_t u;
+    u.x = cos(radian);
+    u.z = sin(radian);
+
+    move_torward(&result, &dot, &u, distance);
+
+    lua_pushnumber(L, result.x);
+    lua_pushnumber(L, result.z);
+    return 2;
+}
+
+static int
+lmove_forward(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+    float pass = lua_tonumber(L, 5);
+
+    vector2_t result;
+    vector2_t from = {x0, z0};
+    vector2_t to = {x1, z1};
+
+    move_forward(&result, &from, &to, pass);
+
+    lua_pushnumber(L, result.x);
+    lua_pushnumber(L, result.z);
+    return 2;
+}
 
 extern int lsize_of(lua_State* L);
 extern int lprofiler_start(lua_State* L);
@@ -950,6 +1023,10 @@ luaopen_util_core(lua_State* L){
         { "capsule_intersect", lcapsule_intersect },
         { "rectangle_intersect", lrectangle_intersect },
         { "sector_intersect", lsector_intersect },
+        { "dot2dot", ldot2dot },
+        { "rotation", lrotation },
+        { "move_torward", lmove_torward },
+        { "move_forward", lmove_forward },
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },

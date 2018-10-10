@@ -133,17 +133,23 @@ vector2_magnitude(vector2_t* u) {
     return sqrt(sqrt_vector2_magnitude(u));
 }
 
-static inline float
+static inline void
+lerp(vector2_t* result, vector2_t* from, vector2_t* to, float ratio) {
+    result->x = from->x + (to->x - from->x) * ratio;
+    result->z = from->z + (to->z - from->z) * ratio;
+}
+
+inline float
 sqrt_dot2dot(vector2_t* a, vector2_t* b) {
     return (a->x - b->x) * (a->x - b->x) + (a->z - b->z) * (a->z - b->z);
 }
 
-static inline float
+inline float
 dot2dot(vector2_t* a, vector2_t* b) {
     return sqrt(sqrt_dot2dot(a, b));
 }
 
-static inline void
+void
 rotation(vector2_t* dot, vector2_t* center,float angle) {
     float r = rad(angle);
     float si = sin(r);
@@ -153,6 +159,30 @@ rotation(vector2_t* dot, vector2_t* center,float angle) {
     float z = dot->z;
     dot->x = (x - center->x) * co - (z - center->z) * si + center->x;
     dot->z = (x - center->x) * si + (z - center->z) * co + center->z;
+}
+
+
+void
+move_torward(vector2_t* result, vector2_t* src,vector2_t* dir, float dt) {
+    float radian = atan2(dir->z, dir->x);
+    result->x = cos(radian) * dt + src->x;
+    result->z = sin(radian) * dt + src->z;
+}
+
+void
+move_forward(vector2_t* result, vector2_t* from, vector2_t* to, float pass) {
+    float dt = dot2dot(from, to);
+    if (dt == 0) {
+        result->x = from->x;
+        result->z = from->z;
+        return;
+    }
+    float ratio = pass / dt;
+    if (ratio > 1) {
+        ratio = 1;
+    }
+
+    lerp(result, from, to, ratio);
 }
 
 static inline float

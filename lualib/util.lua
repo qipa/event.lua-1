@@ -277,7 +277,7 @@ function _M.sqrt_distance(from_x,from_z,to_x,to_z)
 end
 
 
-function _M.move_forward(from_x,from_z,to_x,to_z,pass)
+function _M.move_forward1(from_x,from_z,to_x,to_z,pass)
     local distance = _M.distance(from_x,from_z,to_x,to_z)
     local ratio = pass / distance
     if ratio > 1 then
@@ -291,6 +291,10 @@ function _M.move_toward(from_x,from_z,dir,distance)
     local x = math.cos(radian) * distance + from_x
     local z = math.sin(radian) * distance + from_z
     return x,z
+end
+
+function _M.angle2dir(angle)
+    return math.cos(angle),math.sin(angle)
 end
 
 function _M.rotation(x,z,center_x,center_z,angle)

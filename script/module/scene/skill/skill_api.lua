@@ -46,9 +46,17 @@ function onSkillExecute(self, attacker, skillInfo, hitInfo)
 	local hitterObjs = self:selectHitter(attacker,skillInfo,hitInfo.atkBox)
 	if hitInfo.event == eSKILL_EVENT.DAMAGE then
 		for _,hitterObj in pairs(hitterObjs) do
-
+			self:onDamage(attacker,hitterObj,hitInfo)
 		end
-	elseif 
+	elseif hitInfo.event == eSKILL_EVENT.HIT_FLY then
+		for _,hitterObj in pairs(hitterObjs) do
+			self:onHitFly(attacker,hitterObj,hitInfo)
+		end
+	elseif hitInfo.event == eSKILL_EVENT.HIT_BACK then
+		for _,hitterObj in pairs(hitterObjs) do
+			self:onHitBack(attacker,hitterObj,hitInfo)
+		end
+	end
 
 end
 
@@ -66,10 +74,51 @@ function selectHitter(self,attacker,skillInfo,atkBoxInfo)
 	return resultObjs
 end
 
+
+function calcDamage(self,attacker,hitter)
+
+end
+
 function onDamage(self,attacker,hitter)
 	local damage = self:calcDamage(attacker,hitter)
 end
 
-function calcDamage(self,attacker,hitter)
+function onHitFly(self,attacker,hitter,hitInfo)
+	local hitterStateMgr = hitter.stateMgr
+	if hitterStateMgr:hasState("MOVE") then
+		hitterStateMgr:delState("MOVE")
+	end
 
+	if hitterStateMgr:hasState("HIT_BACK") then
+		return
+	end
+
+	if hitterStateMgr:hasState("HIT_FLY") then
+		return
+	end
+
+	local flyInfo = {endTime = event.time() + hitInfo.flyInterval}
+
+	hitterStateMgr:addState("HIT_FLY",flyInfo)
+end
+
+function onHitBack(self,attacker,hitter)
+	local hitterStateMgr = hitter.stateMgr
+	if hitterStateMgr:hasState("MOVE") then
+		hitterStateMgr:delState("MOVE")
+	end
+
+	if hitterStateMgr:hasState("HIT_BACK") then
+		return
+	end
+
+	if hitterStateMgr:hasState("HIT_FLY") then
+		return
+	end
+
+	local interval = hitInfo.flyBackInterval
+	local speed = hitInfo.flyBackSpeed
+	local flyInfo = {endTime = event.time() + interval,interval = interval,speed}
+
+	hitterStateMgr:addState("HIT_BACK",flyInfo)
 end
