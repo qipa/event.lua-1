@@ -241,8 +241,8 @@ sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* 
     float radian = rad(angle);
 
     vector2_t u;
-    u.x = sin(radian);
-    u.z = cos(radian);
+    u.x = cos(radian);
+    u.z = sin(radian);
 
     vector2_t abs_u;
     abs_u.x = -u.z;

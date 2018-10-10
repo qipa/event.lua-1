@@ -895,6 +895,27 @@ lrectangle_intersect(lua_State* L) {
     return 1;
 } 
 
+static int
+lsector_intersect(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float angle = lua_tonumber(L, 3);
+    float degree = lua_tonumber(L, 4);
+    float l = lua_tonumber(L, 5);
+
+    float x = lua_tonumber(L, 6);
+    float z = lua_tonumber(L, 7);
+
+    float r = lua_tonumber(L, 8);
+
+    vector2_t dot = {x0, z0};
+    vector2_t center = {x, z};
+
+    int ok = sector_intersect(&dot, angle, degree, l, &center, r);
+    lua_pushboolean(L, ok);
+    return 1;
+} 
+
 extern int lsize_of(lua_State* L);
 extern int lprofiler_start(lua_State* L);
 extern int lprofiler_stack_start(lua_State *L);
@@ -928,6 +949,7 @@ luaopen_util_core(lua_State* L){
         { "topK", ltopK },
         { "capsule_intersect", lcapsule_intersect },
         { "rectangle_intersect", lrectangle_intersect },
+        { "sector_intersect", lsector_intersect },
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },

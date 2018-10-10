@@ -17,4 +17,5 @@ uint8_t* message_encrypt(uint16_t* wseed,uint16_t id,const uint8_t* message,size
 
 int capsule_intersect(vector2_t* src, vector2_t* u, float cr, vector2_t* center, float r);
 int rectangle_intersect(vector2_t* src, float length, float width, float angle, vector2_t* center, float r);
+int sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* center, float r);
 #endif
