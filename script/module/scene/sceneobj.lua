@@ -78,7 +78,7 @@ function cSceneObj:onCommonUpdate(now)
 
 end
 
-function cSceneObj:getViewer(range)
+function cSceneObj:getViewer()
 	local result = {}
 	local objMgr = self.scene.objMgr
 
@@ -128,7 +128,7 @@ function cSceneObj:getSceneObjInRectangle(length,width,angle)
 
 	local result = {}
 
-	local allObjs = self:getWitness()
+	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
 		if util.rectangle_intersect(x,z,length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
@@ -144,7 +144,7 @@ function cSceneObj:getSceneObjInCircle(range)
 	local z = pos[1]
 
 	local result = {}
-	local allObjs = self:getWitness()
+	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
 		local totalRange = range + obj.range
 		if util.sqrt_distance(x,z,obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
@@ -162,7 +162,7 @@ function cSceneObj:getSceneObjInSector(angle,degree,range)
 
 	local result = {}
 
-	local allObjs = self:getWitness()
+	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
 		if util.sector_intersect(x,z,angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
