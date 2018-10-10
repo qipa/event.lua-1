@@ -123,23 +123,6 @@ vector2_dot(vector2_t* a, vector2_t* b) {
     return a->x * b->x + a->z * b->z;
 }
 
-static inline void
-vector2_max(vector2_t* result, vector2_t* a, vector2_t* b) {
-    float x,z;
-    if (a->x < b->x) {
-        x = b->x;
-    } else {
-        x = a->x;
-    }
-    if (a->z < b->z) {
-        z = b->z;
-    } else {
-        z = a->z;
-    }
-    result->x = x;
-    result->z = z;
-}
-
 static inline float
 sqrt_vector2_magnitude(vector2_t* u) {
     return u->x * u->x + u->z * u->z;
