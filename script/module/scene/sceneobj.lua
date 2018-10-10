@@ -121,7 +121,7 @@ function cSceneObj:getSceneObjInLine(range,findType)
 
 end
 
-function cSceneObj:getSceneObjInRectangle(length,width,angle)
+function cSceneObj:getSceneObjInRectangle(angle,length,width)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]

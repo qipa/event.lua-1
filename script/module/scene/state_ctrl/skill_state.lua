@@ -40,7 +40,6 @@ function cStateSkill:onUpdate(now)
 	end
 
 	if skillOver then
-		self:release()
 		return true
 	end
 
