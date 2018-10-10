@@ -121,19 +121,54 @@ function cSceneObj:getSceneObjInLine(range,findType)
 
 end
 
-function cSceneObj:getSceneObjInRectangle(range,findType)
+function cSceneObj:getSceneObjInRectangle(length,width,angle)
+	local pos = self.pos
+	local x = pos[1]
+	local z = pos[1]
 
+	local result = {}
+
+	local allObjs = self:getWitness()
+	for _,obj in pairs(allObjs) do
+		if util.rectangle_intersect(x,z,length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
+			table.insert(result,obj)
+		end
+	end
+
+	return result
 end
 
-function cSceneObj:getSceneObjInCircle(range,findType)
+function cSceneObj:getSceneObjInCircle(range)
+	local pos = self.pos
+	local x = pos[1]
+	local z = pos[1]
+
 	local result = {}
 	local allObjs = self:getWitness()
 	for _,obj in pairs(allObjs) do
-
+		local totalRange = range + obj.range
+		if util.sqrt_distance(x,z,obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
+			table.insert(result,obj)
+		end
 	end
+
+	return result
 end
 
-function cSceneObj:getSceneObjInSector(range,findType)
+function cSceneObj:getSceneObjInSector(angle,degree,range)
+	local pos = self.pos
+	local x = pos[1]
+	local z = pos[1]
 
+	local result = {}
+
+	local allObjs = self:getWitness()
+	for _,obj in pairs(allObjs) do
+		if util.sector_intersect(x,z,angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
+			table.insert(result,obj)
+		end
+	end
+
+	return result
 end
 

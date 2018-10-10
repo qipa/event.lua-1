@@ -272,6 +272,11 @@ function _M.distance(from_x,from_z,to_x,to_z)
     return math.sqrt((from_x - to_x)^2 + (from_z - to_z)^2)
 end
 
+function _M.sqrt_distance(from_x,from_z,to_x,to_z)
+    return (from_x - to_x)^2 + (from_z - to_z)^2
+end
+
+
 function _M.move_forward(from_x,from_z,to_x,to_z,pass)
     local distance = _M.distance(from_x,from_z,to_x,to_z)
     local ratio = pass / distance
