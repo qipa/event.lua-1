@@ -722,38 +722,6 @@ lpacket_new(lua_State* L) {
     return 1;
 }
 
-static int
-lrpc_pack(lua_State* L) {
-    size_t size;
-    void* data = NULL;
-    int need_free = 0;
-    switch(lua_type(L,1)) {
-        case LUA_TSTRING: {
-            data = (void*)lua_tolstring(L, 1, &size);
-            break;
-        }
-        case LUA_TLIGHTUSERDATA:{
-            need_free = 1;
-            data = lua_touserdata(L, 1);
-            size = lua_tointeger(L, 2);
-            break;
-        }
-        default:
-            luaL_error(L,"unkown type:%s",lua_typename(L,lua_type(L,1)));
-    }
-
-    int total = size + 4;
-    char* buffer = malloc(total);
-    memcpy(buffer,&total,4);
-    memcpy(buffer+4,data,size);
-    if (need_free)
-        free(data);
-
-    lua_pushlightuserdata(L,buffer);
-    lua_pushinteger(L,total);
-    return 2;
-}
-
 static inline void 
 swap(lua_State* L, int from, int to) {
     lua_geti(L, 1, from);
@@ -1133,7 +1101,6 @@ luaopen_util_core(lua_State* L){
         { "abort", labort },
         { "clone_string", lclone_string },
         { "packet_new", lpacket_new },
-        { "rpc_pack", lrpc_pack },
         { "topK", ltopK },
         { "capsule_intersect", lcapsule_intersect },
         { "rectangle_intersect", lrectangle_intersect },

@@ -27,10 +27,10 @@ hash_frame_find(hash_frame_t* self, const char* name) {
 
 void 
 hash_frame_free(hash_frame_t *self) {
-	char* name;
+	const char* name;
 	frame_t* fm;
 	hash_frame_foreach(self, name, fm, {
-		free(name);
+		free((void*)name);
 		free(fm);
 	});
 	kh_destroy(frame, self);
