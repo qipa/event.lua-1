@@ -1,4 +1,3 @@
-local aoi_core = require "simpleaoi.core"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 
@@ -8,12 +7,14 @@ function __init__(self)
 	
 end
 
-function cMonster:create(uid,x,z)
-	sceneobj.cSceneObj.create(self,uid,x,z)
+function cMonster:onCreate(id,face,x,z)
+	self.id = id
+	self.uid = idBuilder:pop_monster_tid()
+	sceneobj.cSceneObj.onCreate(self,self.uid,x,z)
 end
 
-function cMonster:destroy()
-	sceneobj.cSceneObj.destroy(self)
+function cMonster:onDestroy()
+	sceneobj.cSceneObj.onDestroy(self)
 end
 
 function cMonster:sceneObjType()

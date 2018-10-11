@@ -3,6 +3,7 @@ local navCore= require "nav.core"
 local cjson = require "cjson"
 local timer = require "timer"
 local object = import "module.object"
+local monster = import "module.scene.monster"
 local sceneConst = import "module.scene.scene_const"
 
 cScene = object.cObject:inherit("scene")
@@ -299,7 +300,10 @@ function cScene:addFailEvent(ev,...)
 end
 
 function cScene:spawnMonster(id,pos,face,...)
+	local monsterObj = monster.cMonster:new()
+	monsterObj:onCreate(id,pos[1],pos[2],face)
 
+	monsterObj:enterScene(self,pos[1],pos[2])
 end
 
 function cScene:spawnMonsterArea(areaId)
