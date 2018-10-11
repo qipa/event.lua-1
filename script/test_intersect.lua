@@ -19,7 +19,9 @@ local vector2 = require "common.vector2"
 -- end)
 
 while true do
-	local line = util.readline(">>")
+	local line = util.readline(":",nil,function (str)
+		return {"mem"}
+	end)
 	if line == "q" then
 		break
 	end
