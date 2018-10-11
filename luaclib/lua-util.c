@@ -544,7 +544,7 @@ ltype(lua_State* L) {
 static lua_State* gL = NULL;
 
 void completion(const char* str,linenoiseCompletions* lc) {
-    lua_pushvalue(gL,2);
+    lua_pushvalue(gL,3);
     lua_pushstring(gL,str);
     int r = lua_pcall(gL,1,1,0);
     if (r != LUA_OK)  {
@@ -566,12 +566,19 @@ void completion(const char* str,linenoiseCompletions* lc) {
 
 static int
 lreadline(lua_State* L) {
-    linenoiseSetCompletionCallback(completion);
     const char* prompt = lua_tostring(L,1);
+    const char* history = luaL_optstring(L, 2, "history.txt");
+
+    linenoiseHistorySetMaxLen(10);
+    linenoiseSetCompletionCallback(completion);
+    linenoiseHistoryLoad(history);
+
     gL = L;
     char* line = linenoise(prompt);
     if (line) {
         linenoiseHistoryAdd(line);
+        linenoiseHistorySave(history);
+
         gL = NULL;
         lua_pushstring(L,line);
         free(line);

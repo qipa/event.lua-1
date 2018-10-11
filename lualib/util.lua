@@ -134,7 +134,7 @@ local function completion(str)
 end
 
 function _M.readline(prompt,func)
-    return util_core.readline(prompt or ">>",func or completion)
+    return util_core.readline(prompt or ">>",nil,func or completion)
 end
 
 function _M.to_date(unix_time)
