@@ -258,52 +258,24 @@ function _M.decimal_sub(value,from,to)
     return l
 end
 
+_M.rectangle_intersect = util_core.rectangle_intersect
+_M.capsule_intersect = util_core.capsule_intersect
+_M.sector_intersect = util_core.sector_intersect
+_M.dot2dot = util_core.dot2dot
+_M.sqrt_dot2dot = util_core.sqrt_dot2dot
+_M.dot2segment = util_core.dot2segment
+_M.rotation = util_core.rotation
+_M.move_torward = util_core.move_torward
+_M.move_forward = util_core.move_forward
+
 --vector2
 function _M.normalize(x,z)
     local dt = math.sqrt(x * x + z * z)
     return x / dt, z / dt
 end
 
-function _M.lerp(from_x,from_z,to_x,to_z,ratio)
-    return from_x + (to_x - from_x) * ratio,from_z + (to_z - from_z) * ratio
-end
-
-function _M.distance(from_x,from_z,to_x,to_z)
-    return math.sqrt((from_x - to_x)^2 + (from_z - to_z)^2)
-end
-
-function _M.sqrt_distance(from_x,from_z,to_x,to_z)
-    return (from_x - to_x)^2 + (from_z - to_z)^2
-end
-
-
-function _M.move_forward1(from_x,from_z,to_x,to_z,pass)
-    local distance = _M.distance(from_x,from_z,to_x,to_z)
-    local ratio = pass / distance
-    if ratio > 1 then
-        ratio = 1
-    end
-    return _M.lerp(from_x,from_z,to_x,to_z,ratio)
-end
-
-function _M.move_toward(from_x,from_z,dir,distance)
-    local radian = math.atan2(dir.z / dir.x)
-    local x = math.cos(radian) * distance + from_x
-    local z = math.sin(radian) * distance + from_z
-    return x,z
-end
-
 function _M.angle2dir(angle)
     return math.cos(angle),math.sin(angle)
-end
-
-function _M.rotation(x,z,center_x,center_z,angle)
-    local radian = math.rad(angle)
-    local sin = math.sin(radian)
-    local cos = math.cos(radian)
-    local rx = (x - center_x) * cos - (z - center_z) * sin + center_x
-    local rz = (x - center_x) * sin + (z - center_z) * cos + center_z
-    return rx,rz
 end
 
 function _M.inside_circle(src_x,src_z,range,x,z)
@@ -475,27 +447,5 @@ function vector2:cross(vt)
 end
 
 _M.vector2 = vector2
-
-function _M.dot2segment(src_x,src_z,u_x,u_z,x,z)
-    local pt_over = vector2:new(x,z)
-    local pt_start = vector2:new(src_x,src_z)
-    local vt_u = vector2:new(u_x,u_z)
-    
-    local vt_src = pt_over - pt_start
-
-    local t = vt_src:dot(vt_u) / vt_u:sqrmagnitude()
-
-    if t < 0 then
-        t = 0
-    elseif t > 1 then
-        t = 1
-    end
-
-    vt_u[1] = vt_u[1] * t
-    vt_u[2] = vt_u[2] * t
-
-    local result = (pt_over - (pt_start + vt_u)):sqrmagnitude()
-    return result
-end
 
 return _M

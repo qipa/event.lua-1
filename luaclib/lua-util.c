@@ -933,6 +933,40 @@ ldot2dot(lua_State* L) {
 }
 
 static int
+lsqrt_dot2dot(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+
+    vector2_t from = {x0, z0};
+    vector2_t to = {x1, z1};
+
+    float dt = sqrt_dot2dot(&from, &to);
+
+    lua_pushnumber(L, dt);
+    return 1;
+}
+
+static int
+ldot2segment(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+    float x = lua_tonumber(L, 5);
+    float z = lua_tonumber(L, 6);
+
+    vector2_t start = {x0, z0};
+    vector2_t over = {x1, z1};
+    vector2_t dot = {x, z};
+
+    float dt = dot2segment(&start, &over, &dot);
+    lua_pushnumber(L, dt);
+    return 1;
+}
+
+static int
 lrotation(lua_State* L) {
     float x = lua_tonumber(L, 1);
     float z = lua_tonumber(L, 2);
@@ -1024,6 +1058,8 @@ luaopen_util_core(lua_State* L){
         { "rectangle_intersect", lrectangle_intersect },
         { "sector_intersect", lsector_intersect },
         { "dot2dot", ldot2dot },
+        { "sqrt_dot2dot", lsqrt_dot2dot },
+        { "dot2segment", ldot2segment },
         { "rotation", lrotation },
         { "move_torward", lmove_torward },
         { "move_forward", lmove_forward },

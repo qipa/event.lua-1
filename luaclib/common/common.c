@@ -205,6 +205,14 @@ sqrt_dot2segment(vector2_t* x0, vector2_t* u, vector2_t* x) {
     return sqrt_dot2dot(x, &dot);
 }
 
+float
+dot2segment(vector2_t* x0, vector2_t* x1, vector2_t* x) {
+    vector2_t u;
+    u.x = x1->x - x0->x;
+    u.z = x1->z - x0->z;
+    return sqrt(sqrt_dot2segment(x0, &u, x));
+}
+
 int
 capsule_intersect(vector2_t* src, vector2_t* u, float cr, vector2_t* center, float r) {
     return sqrt_dot2segment(src, u, center) <= (cr + r) * (cr + r);
