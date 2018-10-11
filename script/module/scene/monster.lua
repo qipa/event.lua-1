@@ -40,7 +40,7 @@ end
 
 function cMonster:move(x,z)
 	sceneobj.cSceneObj.onEnterScene(self,x,z)
-	self.scene:moveAoiTrigger(x,z)
+	self.scene:moveAoiTrigger(self,x,z)
 end
 
 function cMonster:onObjEnter(objList)

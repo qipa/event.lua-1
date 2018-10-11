@@ -30,7 +30,7 @@ function cStateSkill:onUpdate(now)
 	for i = self.skillInfo.hitIndex, #self.skillInfo.hitInfo do
 		local info = self.skillInfo.hitInfo[i]
 		
-		if timeLapse <= info.time then
+		if timeLapse >= info.time then
 			skillApi:onSkillExecute(self.attacker,self.skillId,self.skillInfo,info)
 		else
 			skillOver = false

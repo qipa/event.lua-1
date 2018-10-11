@@ -57,9 +57,12 @@ end
 function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
 
-	local oPos = self.pos
-	self.pos = {x,z}
-	self.face = (self.pos[2] - oPos[2]) / (self.pos[1] - oPos[1])
+	local opos = self.pos
+
+	self.pos[1] = x
+	self.pos[2] = z
+	
+	self.face = (z - opos[2]) / (x - opos[1])
 end
 
 function cSceneObj:onObjEnter(sceneObjList)

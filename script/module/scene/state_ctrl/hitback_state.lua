@@ -44,7 +44,7 @@ function cStateHitBack:onUpdate(now)
 	local dir = util.angle2dir(self.angle)
 	local nx,nz = util.move_forward(opos[1],opos[2],dir,dtFly)
 
-	self.owner:setPos(nx,nz)
+	self.owner:move(nx,nz)
 	
 	self.lastTime = now
 

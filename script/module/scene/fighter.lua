@@ -48,7 +48,7 @@ end
 
 function cFighter:move(x,z)
 	sceneobj.cSceneObj.move(self,x,z)
-	self.scene:moveAoiTrigger(x,z)
+	self.scene:moveAoiTrigger(self,x,z)
 end
 
 function cFighter:onObjEnter(sceneObjList)

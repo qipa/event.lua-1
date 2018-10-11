@@ -37,16 +37,16 @@ function cMoveCtrl:onClientMoveStop(pos,angle)
 		stateMgr:delState("MOVE")
 	end
 
-	local ownerPos = self.owner.pos
-	local dt = util.distance(pos[1],pos[2],ownerPos[1],ownerPos[2])
-	if dt <= 5 then
-		self.owner:setPos(pos[1],pos[2])
+	local location = self.owner.pos
+	local dt = util.distance(pos[1],pos[2],location[1],location[2])
+	if dt <= 0.1 then
+		self.owner:move(pos[1],pos[2])
 	else
-		protocol.writer.sObjFixPos(self.owner.cid,ownerPos)
+		protocol.writer.sObjFixPos(self.owner.cid,location)
 	end
 
 	local witness = self.owner:getWitnessCid()
-	protocol.writer.sObjMoveStop(witness,ownerPos)
+	protocol.writer.sObjMoveStop(witness,location)
 end
 
 function cMoveCtrl:onServerMoveStart(path)
@@ -58,6 +58,7 @@ function cMoveCtrl:prepareMove(path)
 
 	if stateMgr:hasState("MOVE") then
 		self:doMove()
+		stateMgr:delState("MOVE")
 	end
 
 	self.pathIndex = 1
@@ -86,12 +87,12 @@ function cMoveCtrl:doMove(now)
 	
 	local pathNode = pathList[pathIndex]
 	local location = self.owner.pos
-	local dtNext = util.distance(location[1],location[2],pathNode[1],pathNode[2])
+	local dtNext = util.dot2dot(location[1],location[2],pathNode[1],pathNode[2])
 
 	while dtMove - dtNext >= 0.1 do
 		dtMove = dtMove - dtNext
 		
-		self.owner:setPos(pathNode[1],pathNode[2])
+		self.owner:move(pathNode[1],pathNode[2])
 
 		pathIndex = pathIndex + 1
 		if pathIndex > pathIndexMax then
@@ -99,7 +100,7 @@ function cMoveCtrl:doMove(now)
 		end
 		location = self.owner.pos
 		pathNode = pathList[pathIndex]
-		dtNext = util.distance(location[1],location[2],pathNode[1],pathNode[2])
+		dtNext = util.dot2dot(location[1],location[2],pathNode[1],pathNode[2])
 	end
 
 	self.pathIndex = pathIndex
@@ -108,10 +109,10 @@ function cMoveCtrl:doMove(now)
 
 	if pathIndex > pathIndexMax then
 		return true
-	else
-		location = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
-		self.owner:setPos(location[1],location[2])
 	end
+
+	location = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
+	self.owner:move(location[1],location[2])
 
 	return false
 end
