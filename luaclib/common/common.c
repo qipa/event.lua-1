@@ -9,6 +9,7 @@
 #define PI  (3.141592653589793238462643383279502884)
 
 #define rad(angle) ((angle) * (PI/180))
+#define deg(radian) ((radian) * (180/PI))
 
 static const vector2_t VECTOR2_ZERO = {0,0};
 
@@ -163,8 +164,8 @@ rotation(vector2_t* dot, vector2_t* center,float angle) {
 
 
 void
-move_torward(vector2_t* result, vector2_t* src,vector2_t* dir, float dt) {
-    float radian = atan2(dir->z, dir->x);
+move_torward(vector2_t* result, vector2_t* src, float angle, float dt) {
+    float radian = rad(angle);
     result->x = cos(radian) * dt + src->x;
     result->z = sin(radian) * dt + src->z;
 }
@@ -286,4 +287,89 @@ sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* 
     p.z = pz;
 
     return sqrt_dot2segment((vector2_t*)&VECTOR2_ZERO, &q, &p) <= r * r;
+}
+
+int
+circle_intersect(vector2_t* src, float l, vector2_t* center, float r) {
+    vector2_t d;
+    vector2_sub(&d, src, center);
+    return sqrt_vector2_magnitude(&d) <= (l+r) * (l+r);
+}
+
+int
+inside_circle(vector2_t* center, float range, vector2_t* dot, float r) {
+    vector2_t delta;
+    vector2_sub(&delta, dot, center);
+
+    float real_range = range + r;
+
+    if (abs(delta.x) <= real_range && abs(delta.z) <= real_range) {
+        return sqrt_vector2_magnitude(&delta) <= real_range * real_range;
+    }
+
+    return 0;
+}
+
+int
+inside_sector(vector2_t* center, float angle, float degree, float l, vector2_t* dot, float r) {
+    vector2_t delta;
+    vector2_sub(&delta, dot, center);
+
+    if (delta.x == 0 && delta.z == 0) {
+        return 1;
+    }
+
+    if (inside_circle(center, l, dot, r) == 0) {
+        return 0;
+    }
+
+    float z_angle = deg(atan2(delta.x, delta.z));
+
+    float diff_z_angle = z_angle - angle;
+    float trans_z_angle = diff_z_angle + degree / 2;
+
+    while (trans_z_angle > 360) {
+        trans_z_angle -= 360;
+    }
+
+    while (trans_z_angle < 0) {
+        trans_z_angle += 360;
+    }
+
+    return trans_z_angle <= degree;
+}
+
+int
+inside_rectangle(vector2_t* src, float angle, float length, float width, vector2_t* dot, float r) {
+    vector2_t delta;
+    vector2_sub(&delta, dot, src);
+
+    if (delta.x == 0 && delta.z == 0) {
+        return 1;
+    }
+
+    float z_angle = deg(atan2(delta.x, delta.z));
+    float diff_z_angle = z_angle - angle;
+
+    if (diff_z_angle >= 270) {
+        diff_z_angle -= 360;
+    } else if (diff_z_angle <= -270) {
+        diff_z_angle += 360;
+    }
+
+    if (diff_z_angle < -90 || diff_z_angle > 90) {
+        return 0;
+    }
+
+    float diff_z_radian = deg(abs(diff_z_angle));
+
+    float diff_len = sqrt(sqrt_vector2_magnitude(&delta));
+
+    float change_x = diff_len * cos(diff_z_radian);
+    float change_z = diff_len * sin(diff_z_radian);
+
+    if ((change_x < 0 || change_x > length) || (change_z < 0 ||  change_z > (width / 2))) {
+        return 0;
+    }
+    return 1;
 }

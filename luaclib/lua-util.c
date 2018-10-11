@@ -684,7 +684,7 @@ lpacket_pack(lua_State* L) {
             luaL_error(L,"unkown type:%s",lua_typename(L,lua_type(L,3)));
     }
 
-    uint16_t* mb = message_encrypt(&packet->wseed,id,(const uint8_t*)data,size);
+    uint8_t* mb = message_encrypt(&packet->wseed,id,(const uint8_t*)data,size);
     lua_pushlightuserdata(L, mb);
     lua_pushinteger(L, size + 6);
     return 2;
@@ -692,7 +692,7 @@ lpacket_pack(lua_State* L) {
 
 static int
 lpacket_unpack(lua_State* L) {
-    struct packet* packet = lua_touserdata(L, 1);
+    // struct packet* packet = lua_touserdata(L, 1);
     uint8_t* data = lua_touserdata(L, 2);
     int size = lua_tointeger(L, 3);
  
@@ -988,16 +988,13 @@ static int
 lmove_torward(lua_State* L) {
     float x = lua_tonumber(L, 1);
     float z = lua_tonumber(L, 2);
-    float radian = lua_tonumber(L, 3);
+    float angle = lua_tonumber(L, 3);
     float distance = lua_tonumber(L, 4);
 
     vector2_t result;
     vector2_t dot = {x, z};
-    vector2_t u;
-    u.x = cos(radian);
-    u.z = sin(radian);
 
-    move_torward(&result, &dot, &u, distance);
+    move_torward(&result, &dot, angle, distance);
 
     lua_pushnumber(L, result.x);
     lua_pushnumber(L, result.z);
@@ -1021,6 +1018,90 @@ lmove_forward(lua_State* L) {
     lua_pushnumber(L, result.x);
     lua_pushnumber(L, result.z);
     return 2;
+}
+
+static int
+linside_circle(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float r0 = lua_tonumber(L, 3);
+    float x1 = lua_tonumber(L, 4);
+    float z1 = lua_tonumber(L, 5);
+    float r1 = lua_tonumber(L, 6);
+
+    vector2_t center = {x0, z0};
+    vector2_t dot = {x1, z1};
+
+    int ok = inside_circle(&center, r0, &dot, r1);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
+linside_sector(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float angle = lua_tonumber(L, 3);
+    float degree = lua_tonumber(L, 4);
+    float l = lua_tonumber(L, 5);
+    float x1 = lua_tonumber(L, 6);
+    float z1 = lua_tonumber(L, 7);
+    float r = lua_tonumber(L, 8);
+
+    vector2_t center = {x0, z0};
+    vector2_t dot = {x1, z1};
+
+    int ok = inside_sector(&center, angle, degree, l, &dot, r);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
+linside_rectangle(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float angle = lua_tonumber(L, 3);
+    float length = lua_tonumber(L, 4);
+    float width = lua_tonumber(L, 5);
+    float x1 = lua_tonumber(L, 6);
+    float z1 = lua_tonumber(L, 7);
+    float r = lua_tonumber(L, 8);
+
+    vector2_t center = {x0, z0};
+    vector2_t dot = {x1, z1};
+
+    int ok = inside_rectangle(&center, angle, length, width, &dot, r);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
+ldecimal_bit(lua_State* L) {
+    int value = lua_tointeger(L, 1);
+    int bit = lua_tointeger(L, 2);
+
+    int result = ((value % (int)pow(10, bit)) / pow(10, bit - 1));
+    lua_pushinteger(L, result);
+    return 1;
+}
+
+static int
+ldecimal_sub(lua_State* L) {
+    int value = lua_tointeger(L, 1);
+    int from = lua_tointeger(L, 2);
+    int to = lua_tointeger(L, 3);
+
+    int result = 0;
+    int i;
+    for(i = from;i<=to;i++) {
+        int bit = ((value % (int)pow(10, i)) / pow(10, i - 1));
+        result += bit * pow(10, i - from);
+    }
+    lua_pushinteger(L, result);
+    return 1;
 }
 
 extern int lsize_of(lua_State* L);
@@ -1063,6 +1144,11 @@ luaopen_util_core(lua_State* L){
         { "rotation", lrotation },
         { "move_torward", lmove_torward },
         { "move_forward", lmove_forward },
+        { "inside_circle", linside_circle },
+        { "inside_sector", linside_sector },
+        { "inside_rectangle", linside_rectangle },
+        { "decimal_bit", ldecimal_bit },
+        { "decimal_sub", ldecimal_sub },
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },

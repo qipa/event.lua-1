@@ -242,31 +242,58 @@ function _M.time_diff(desc,func)
 end
 
 --十进制右边数起第b位
-function _M.decimal_bit(value,b)
-    local l,r = math.modf((value % (10^b)) / (10^(b-1)))
-    return l
-end
+_M.decimal_bit = util_core.decimal_bit
 
 --十进制右边数起第from到to位的数字
-function _M.decimal_sub(value,from,to)
-    local result = 0
-    for i=from,to do
-        local var = _M.decimal_bit(value,i)
-        result = result + var * 10^(i-from)
-    end
-    local l,r = math.modf(result)
-    return l
-end
+_M.decimal_sub = util_core.decimal_sub
 
+--严格的矩形与圆形相交检测
+--args:x0(矩形.起点.x),z0(矩形.起点.z),length(矩形.长度),width(矩形.宽度),angle(矩形.朝向),x(圆.x),z(圆.z),r(圆.r)
 _M.rectangle_intersect = util_core.rectangle_intersect
+
+--严格的圆柱与圆形相交检测
+--args:x0(圆柱.起点.x),z0(圆柱.起点.z),x1(圆柱.终点.x),z1(圆柱.终点.z),x(圆.x),z(圆.z),r(圆.r)
 _M.capsule_intersect = util_core.capsule_intersect
+
+--严格的扇形与圆形相交检测
+--args:x0(扇形.x),z0(扇形.z),angle(扇形.朝向),degree(扇形.跨过的角度),l(扇形.长度),x1(圆.x),z1(圆.z),r1(圆.r)
 _M.sector_intersect = util_core.sector_intersect
+
+--点到点的距离
+--args:x0,z0,x1,z1
 _M.dot2dot = util_core.dot2dot
+
+--点到点的距离的平方
+--args:x0,z0,x1,z1
 _M.sqrt_dot2dot = util_core.sqrt_dot2dot
+
+--点到线段的距离
+--args:x0(线段.起点.x),z0(线段.起点.z),x1(线段.终点.x),z1(线段.终点.z),x(点.x),z(点.z)
 _M.dot2segment = util_core.dot2segment
+
+--求点相对某点逆时针旋转指定角度的坐标
+--args:x0,z0,x1,z1,angle
 _M.rotation = util_core.rotation
+
+--求点往某个角度移动指定长度后的坐标
+--args:x,z,angle,distance
 _M.move_torward = util_core.move_torward
+
+--求两点之前移动指定长度后的坐标
+--args:x0,z0,x1,z1,distance
 _M.move_forward = util_core.move_forward
+
+--简单的圆形与圆形的相交检测
+--args:x0(圆0.x),z0(圆0.z),r0(圆0.r),x1(圆1.x),z1(圆1.z),r1(圆1.r)
+_M.inside_circle = util_core.inside_circle
+
+--不严谨的扇形与圆形的相交检测
+--args:x0(扇形.x),z0(扇形.z),angle(扇形.朝向),degree(扇形.跨过的角度),l(扇形.长度),x1(圆.x),z1(圆.z),r1(圆.r)
+_M.inside_sector = util_core.inside_sector
+
+--不严谨的矩形与圆形的相交检测
+--args:x0(矩形.起点x),z0(矩形.起点z),angle(矩形.朝向),length(矩形.长度),width(矩形.宽度),x1(圆.x),z1(圆.z),r1(圆.r)
+_M.inside_rectangle = util_core.inside_rectangle
 
 --vector2
 function _M.normalize(x,z)
@@ -276,63 +303,6 @@ end
 
 function _M.angle2dir(angle)
     return math.cos(angle),math.sin(angle)
-end
-
-function _M.inside_circle(src_x,src_z,range,x,z)
-    local dx = src_x - x
-    local dz = src_z - z
-
-    if math.abs(dx) > range or math.abs(dz) > range then
-        return false
-    end
-    return dx * dx + dz * dz <= range * range
-end
-
-function _M.inside_sector(src_x,src_z,range,toward_angle,degree,x,z)
-    if not _M.inside_circle(src_x,src_z,range,x,z) then
-        return false
-    end
-
-    local dx = x - src_x
-    local dz = z - src_z
-
-    local z_angle = math.deg(math.atan2(dx,dz)) - toward_angle + degree / 2
-
-    while z_angle > 360 do
-        z_angle = z_angle - 360
-    end
-
-    while z_angle < 0 do
-        z_angle = z_angle + 360
-    end
-
-    return z_angle <= degree
-end
-
-function _M.inside_rectangle(src_x,src_z,toward_angle,length,width,x,z)
-    local dx = x - src_x
-    local dz = z - src_z
-
-    local z_angle = math.deg(math.atan2(dx,dz)) - toward_angle
-    if z_angle >= 270 then
-        z_angle = z_angle - 360
-    elseif z_angle <= -270 then
-        z_angle = z_angle + 360
-    end
-
-    if z_angle < -90 or z_angle > 90 then
-        return false
-    end
-
-    local z_radian = math.rad(math.abs(z_angle))
-    local dt = math.sqrt(dx * dx + dz * dz)
-    local x_change = dt * math.cos(z_radian)
-    local z_change = dt * math.sin(z_radian)
-
-    if (x_change < 0 or x_change > length) or (z_change < 0 or z_change > width) then
-        return false
-    end
-    return true
 end
 
 --vector2
