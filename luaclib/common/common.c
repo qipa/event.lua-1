@@ -297,6 +297,14 @@ circle_intersect(vector2_t* src, float l, vector2_t* center, float r) {
 }
 
 int
+segment_intersect(vector2_t* a, vector2_t* b, vector2_t* center, float r) {
+    vector2_t u;
+    vector2_sub(&u, b, a);
+
+    return sqrt_dot2segment(a, &u, center) <= (r * r);
+}
+
+int
 inside_circle(vector2_t* center, float range, vector2_t* dot, float r) {
     vector2_t delta;
     vector2_sub(&delta, dot, center);

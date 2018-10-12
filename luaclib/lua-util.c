@@ -887,6 +887,30 @@ lsector_intersect(lua_State* L) {
     vector2_t center = {x, z};
 
     int ok = sector_intersect(&dot, angle, degree, l, &center, r);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
+lsegment_intersect(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+
+    float x = lua_tonumber(L, 5);
+    float z = lua_tonumber(L, 6);
+
+    float r = lua_tonumber(L, 7);
+
+    vector2_t a = {x0, z0};
+    vector2_t b = {x1, z1};
+    vector2_t c = {x, z};
+
+    int ok = segment_intersect(&a, &b, &c, r);
+    
     lua_pushboolean(L, ok);
     return 1;
 }
@@ -1129,6 +1153,7 @@ luaopen_util_core(lua_State* L){
         { "capsule_intersect", lcapsule_intersect },
         { "rectangle_intersect", lrectangle_intersect },
         { "sector_intersect", lsector_intersect },
+        { "segment_intersect", lsegment_intersect },
         { "dot2dot", ldot2dot },
         { "sqrt_dot2dot", lsqrt_dot2dot },
         { "dot2segment", ldot2segment },

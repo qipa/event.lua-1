@@ -120,8 +120,21 @@ function cSceneObj:getWitnessCid()
 	return result
 end
 
-function cSceneObj:getSceneObjInLine(range,findType)
+function cSceneObj:getSceneObjInLine(to)
+	local pos = self.pos
+	local x = pos[1]
+	local z = pos[1]
 
+	local result = {}
+
+	local allObjs = self:getViewer()
+	for _,obj in pairs(allObjs) do
+		if util.segment_intersect(x,z,length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
+			table.insert(result,obj)
+		end
+	end
+
+	return result
 end
 
 function cSceneObj:getSceneObjInRectangle(angle,length,width)
