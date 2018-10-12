@@ -218,13 +218,11 @@ end
 
 function _M.format_to_daytime(unix_time,str)
     local hour,min = string.match(str,"(%d+):(%d+)")
-    return _M.daytime(unix_time,tonumber(hour),tonumber(min))
+    return _M.day_time(unix_time,tonumber(hour),tonumber(min))
 end
 
-function _M.daytime(unix_time,hour,min,sec)
-    local unix_time = unix_time + 8 * 3600
-    local tmp = math_modf(unix_time / 86400)
-    local result = tmp * 86400 - 8 * 3600
+function _M.day_time(unix_time,hour,min,sec)
+    local result = unix_time - (unix_time + 8 * 3600) % 86400
     if hour then
         result = result + hour * 3600
     end
@@ -238,30 +236,30 @@ function _M.daytime(unix_time,hour,min,sec)
 end
 
 function _M.next_time(unix_time,sec)
-    return _M.daytime(unix_time) + sec
+    return _M.day_time(unix_time) + sec
 end
 
 function _M.day_start(unix_time)
-    return _M.daytime(unix_time)
+    return _M.day_time(unix_time)
 end
 
 function _M.day_over(unix_time)
-    return _M.daytime(unix_time) + 24 * 3600
+    return _M.day_time(unix_time) + 24 * 3600
 end
 
 function _M.week_start(unix_time)
-    local day_start = _M.day_start(unix_time)
-    local result = os.date("*t",day_start)
+    local time = _M.day_start(unix_time)
+    local result = os.date("*t",time)
 
     local wday = result.wday
     if wday == 2 then
-        return day_start
+        return time
     end
 
     if wday == 1 then
         wday = 8
     end
-    return day_start - (wday-2) * 24 * 3600
+    return time - (wday-2) * 24 * 3600
 end
 
 function _M.week_over(unix_time)
@@ -271,7 +269,7 @@ end
 function _M.same_day(ti0,ti1,sep)
     assert(ti0 ~= nil and ti1 ~= nil)
     local sep = sep or 0
-    return _M.daytime(ti0 - sep) == _M.daytime(ti1 - sep)
+    return _M.day_time(ti0 - sep) == _M.day_time(ti1 - sep)
 end
 
 function _M.same_week(ti1,ti2,sep)
