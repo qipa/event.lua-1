@@ -1,8 +1,16 @@
 local util = require "util"
 
 
+local count = 1024 * 1024
 
-local words = {"q","quit","fuck","cai"}
-while true do
-	print(util.readline(nil,nil,words))
-end
+util.time_diff("!",function ()
+	for i = 1,count do
+		util.strtod_fast("123.456abc")
+	end
+end)
+
+util.time_diff("#",function ()
+	for i = 1,count do
+		tonumber("123.456")
+	end
+end)
