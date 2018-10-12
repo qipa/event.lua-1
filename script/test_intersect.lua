@@ -1,22 +1,31 @@
 local util = require "util"
+local cjson = require "cjson"
+local dumpcore = require "dump.core"
 
 
-local count = 1024 * 1024
+local t = {
+	a = 1,
+	b = "mrq",
+	c = 1989.1006,
+	d = {
+		e = "a",
+		f = 1
+	}
+}
 
-util.time_diff("!",function ()
+local count = 1024 * 1024 
+
+util.time_diff("cjson",function ()
 	for i = 1,count do
-		util.strtod_fast0("1.23456")
+		cjson.encode(t)
 	end
 end)
 
-util.time_diff("#",function ()
+util.time_diff("dumpcore",function ()
 	for i = 1,count do
-		util.strtod_fast1("1.23456")
+		dumpcore.tostring(t)
 	end
 end)
 
-util.time_diff("$",function ()
-	for i = 1,count do
-		tonumber("1.23456")
-	end
-end)
+print(cjson.encode(t))
+print(dumpcore.tostring(t))

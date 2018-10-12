@@ -1200,8 +1200,6 @@ luaopen_util_core(lua_State* L){
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },
-        { "strtod_fast0", lstrtod_fast0 },
-        { "strtod_fast1", lstrtod_fast1 },
         { NULL, NULL },
     };
     luaL_newlib(L,l);
