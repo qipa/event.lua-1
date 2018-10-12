@@ -373,3 +373,28 @@ inside_rectangle(vector2_t* src, float angle, float length, float width, vector2
     }
     return 1;
 }
+
+int
+in_front_of(vector2_t* src, float angle, vector2_t* dot) {
+    vector2_t delta;
+    vector2_sub(&delta, dot, src);
+
+    if (delta.x == 0 && delta.z == 0) {
+        return 1;
+    }
+
+    float z_angle = deg(atan2(delta.x, delta.z));
+    float diff_z_angle = z_angle - angle;
+
+    if (diff_z_angle >= 270) {
+        diff_z_angle -= 360;
+    } else if (diff_z_angle <= -270) {
+        diff_z_angle += 360;
+    }
+
+    if (diff_z_angle < -90 || diff_z_angle > 90) {
+        return 0;
+    }
+
+    return 1;
+}

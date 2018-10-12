@@ -1054,6 +1054,23 @@ linside_rectangle(lua_State* L) {
 }
 
 static int
+lin_front_of(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float angle = lua_tonumber(L, 3);
+    float x1 = lua_tonumber(L, 4);
+    float z1 = lua_tonumber(L, 5);
+
+    vector2_t src = {x0, z0};
+    vector2_t dot = {x1, z1};
+
+    int ok = in_front_of(&src, angle, &dot);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
 ldecimal_bit(lua_State* L) {
     int value = lua_tointeger(L, 1);
     int bit = lua_tointeger(L, 2);
@@ -1121,6 +1138,7 @@ luaopen_util_core(lua_State* L){
         { "inside_circle", linside_circle },
         { "inside_sector", linside_sector },
         { "inside_rectangle", linside_rectangle },
+        { "in_front_of", lin_front_of },
         { "decimal_bit", ldecimal_bit },
         { "decimal_sub", ldecimal_sub },
         { "size_of", lsize_of },

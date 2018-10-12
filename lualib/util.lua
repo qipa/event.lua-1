@@ -305,4 +305,8 @@ function _M.angle2dir(angle)
     return math.cos(angle),math.sin(angle)
 end
 
+function _M.dir2angle(x,z)
+    return math.deg(math.atan2(x, z))
+end
+
 return _M

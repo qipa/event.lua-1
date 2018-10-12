@@ -30,4 +30,6 @@ int sector_intersect(vector2_t* src, float angle, float degree, float l, vector2
 int inside_circle(vector2_t* center, float range, vector2_t* dot, float r);
 int inside_sector(vector2_t* center, float angle, float degree, float l, vector2_t* dot, float r);
 int inside_rectangle(vector2_t* src, float angle, float length, float width, vector2_t* dot, float r);
+
+int in_front_of(vector2_t* src, float angle, vector2_t* dot);
 #endif
