@@ -1095,6 +1095,36 @@ lin_front_of(lua_State* L) {
 }
 
 static int
+lsegment_intersect_segment(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float x1 = lua_tonumber(L, 3);
+    float z1 = lua_tonumber(L, 4);
+
+    float x2 = lua_tonumber(L, 5);
+    float z2 = lua_tonumber(L, 6);
+    float x3 = lua_tonumber(L, 7);
+    float z3 = lua_tonumber(L, 8);
+
+    vector2_t p0 = {x0, z0};
+    vector2_t p1 = {x1, z1};
+    vector2_t p2 = {x2, z2};
+    vector2_t p3 = {x3, z3};
+
+    vector2_t cross;
+
+    int ok = segment_intersect_segment(&cross, &p0, &p1, &p2, &p3);
+
+    lua_pushboolean(L, ok);
+    if (!ok) {
+        return 1;
+    }
+    lua_pushnumber(L, cross.x);
+    lua_pushnumber(L, cross.z);
+    return 3;
+}
+
+static int
 ldecimal_bit(lua_State* L) {
     int value = lua_tointeger(L, 1);
     int bit = lua_tointeger(L, 2);
@@ -1164,6 +1194,7 @@ luaopen_util_core(lua_State* L){
         { "inside_sector", linside_sector },
         { "inside_rectangle", linside_rectangle },
         { "in_front_of", lin_front_of },
+        { "segment_intersect_segment", lsegment_intersect_segment },
         { "decimal_bit", ldecimal_bit },
         { "decimal_sub", ldecimal_sub },
         { "size_of", lsize_of },

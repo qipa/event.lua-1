@@ -406,3 +406,47 @@ in_front_of(vector2_t* src, float angle, vector2_t* dot) {
 
     return 1;
 }
+
+int
+segment_intersect_segment(vector2_t* cross, vector2_t* p1, vector2_t* p2, vector2_t* p3, vector2_t* p4) {
+    float p0_x = p1->x;
+    float p0_z = p1->z;
+    float p1_x = p2->x;
+    float p1_z = p2->z;
+    float p2_x = p3->x;
+    float p2_z = p3->z;
+    float p3_x = p4->x;
+    float p3_z = p4->z;
+
+    float s10_x = p1_x - p0_x;
+    float s10_z = p1_z - p0_z;
+    float s32_x = p3_x - p2_x;
+    float s32_z = p3_z - p2_z;
+
+    float denom = s10_x * s32_z - s32_x * s10_z;
+    if (denom == 0)//平行或共线
+        return 0; // Collinear
+
+    int demon_positive = denom > 0;
+
+    float s02_x = p0_x - p2_x;
+    float s02_z = p0_z - p2_z;
+    float s_numer = s10_x * s02_z - s10_z * s02_x;
+    if ((s_numer < 0) == demon_positive)
+        return 0; // No collision
+
+    float t_numer = s32_x * s02_z - s32_z * s02_x;
+    if ((t_numer < 0) == demon_positive)
+        return 0; // No collision
+
+    if (fabs(s_numer) > fabs(denom) || fabs(t_numer) > fabs(denom))
+        return 0; // No collision
+    // Collision detected
+    float t = t_numer / denom;
+    
+    cross->x = p0_x + (t * s10_x);
+
+    cross->z = p0_z + (t * s10_z);
+
+    return 1;
+}
