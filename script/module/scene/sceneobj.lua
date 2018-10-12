@@ -120,7 +120,7 @@ function cSceneObj:getWitnessCid()
 	return result
 end
 
-function cSceneObj:getSceneObjInLine(to)
+function cSceneObj:getObjInLine(to)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]
@@ -137,7 +137,7 @@ function cSceneObj:getSceneObjInLine(to)
 	return result
 end
 
-function cSceneObj:getSceneObjInRectangle(angle,length,width)
+function cSceneObj:getObjInRectangle(angle,length,width)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]
@@ -154,7 +154,7 @@ function cSceneObj:getSceneObjInRectangle(angle,length,width)
 	return result
 end
 
-function cSceneObj:getSceneObjInCircle(range)
+function cSceneObj:getObjInCircle(range)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]
@@ -171,7 +171,7 @@ function cSceneObj:getSceneObjInCircle(range)
 	return result
 end
 
-function cSceneObj:getSceneObjInSector(angle,degree,range)
+function cSceneObj:getObjInSector(angle,degree,range)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]
@@ -188,7 +188,7 @@ function cSceneObj:getSceneObjInSector(angle,degree,range)
 	return result
 end
 
-function cSceneObj:getSceneObjInCapsule(to,r)
+function cSceneObj:getObjInCapsule(to,r)
 	local pos = self.pos
 	local x = pos[1]
 	local z = pos[1]
