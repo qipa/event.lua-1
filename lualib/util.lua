@@ -192,7 +192,20 @@ local function completion(str)
 end
 
 function _M.readline(prompt,history,func)
-    return util_core.readline(prompt or ">>",history,func or completion)
+    if type(func) == "function" then
+        return util_core.readline(prompt or ">>",history,func or completion)
+    else
+        return util_core.readline(prompt or ">>",history,function (str)
+            local matchs = {}
+            for _,word in pairs(func) do
+                if  word:find(str) == 1 then
+                    table.insert(matchs, word)
+                end
+            end
+            return matchs
+        end)
+    end
+    
 end
 
 function _M.to_date(unix_time)
