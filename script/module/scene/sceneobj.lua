@@ -129,7 +129,7 @@ function cSceneObj:getSceneObjInLine(to)
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.segment_intersect(x,z,length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
+		if util.segment_intersect(x,z,to[1],to[2],obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
 		end
 	end
