@@ -1,46 +1,19 @@
 local util = require "util"
-local vector2 = require "common.vector2"
-
--- print(util.capsule_intersect(200,50,300,100,50,99,50,50))
 
 
--- local count = 1
+local in_front_of = util.in_front_of
+local count = 1024*1024
 
--- util.time_diff("decimal_bit0",function ()
--- 	for i = 1,count do
--- 		print(util.decimal_sub0(19891006,5,6))
--- 	end
--- end)
-
--- util.time_diff("decimal_bit1",function ()
--- 	for i = 1,count do
--- 		print(util.decimal_sub(19891006,5,6))
--- 	end
--- end)
-
-while true do
-	local line = util.readline(":",nil,function (str)
-		return {"mem"}
-	end)
-	if line == "q" then
-		break
+util.time_diff("infrontof1",function ()
+	for i = 1,count do
+		util.in_front_of(0,0,30,-1,-1)
 	end
-end
--- print(util.sector_intersect(100,100,30,40,100,80,100,50))
+end)
+
+util.time_diff("infrontof2",function ()
+	for i = 1,count do
+		in_front_of(0,0,30,-1,-1)
+	end
+end)
 
 
-
--- local count = 1024*1024
--- util.time_diff("dt0",function ()
-
--- 	for i = 1,count do
--- 		util.sqrt_distance(1,1,100,100,50)
--- 	end
--- end)
-
--- util.time_diff("dt1",function ()
-
--- 	for i = 1,count do
--- 		util.sqrt_dot2dot(1,1,100,100,50)
--- 	end
--- end)
