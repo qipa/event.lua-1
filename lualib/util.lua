@@ -35,7 +35,7 @@ _M.decimal_sub = util_core.decimal_sub
 _M.rectangle_intersect = util_core.rectangle_intersect
 
 --严格的圆柱与圆形相交检测
---args:x0(圆柱.起点.x),z0(圆柱.起点.z),x1(圆柱.终点.x),z1(圆柱.终点.z),x(圆.x),z(圆.z),r(圆.r)
+--args:x0(圆柱.起点.x),z0(圆柱.起点.z),x1(圆柱.终点.x),z1(圆柱.终点.z),cr(圆柱.半径),x(圆.x),z(圆.z),r(圆.r)
 _M.capsule_intersect = util_core.capsule_intersect
 
 --严格的扇形与圆形相交检测

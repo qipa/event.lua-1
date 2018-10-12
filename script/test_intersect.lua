@@ -2,4 +2,17 @@ local util = require "util"
 
 
 
-print(util.segment_intersect(100,100,200,150,150,200,68))
+local count = 1024 * 1024
+
+util.time_diff("s0",function ()
+	for i = 1,count do
+		util.same_day(1539313692,1539187200)
+	end
+end)
+
+util.time_diff("s1",function ()
+	for i = 1,count do
+		util.is_same_day(1539313692,1539187200)
+	end
+end)
+

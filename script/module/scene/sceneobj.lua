@@ -188,3 +188,19 @@ function cSceneObj:getSceneObjInSector(angle,degree,range)
 	return result
 end
 
+function cSceneObj:getSceneObjInCapsule(to,r)
+	local pos = self.pos
+	local x = pos[1]
+	local z = pos[1]
+
+	local result = {}
+
+	local allObjs = self:getViewer()
+	for _,obj in pairs(allObjs) do
+		if util.capsule_intersect(x,z,to[1],to[2],r,obj.pos[1],obj.pos[2],obj.range) then
+			table.insert(result,obj)
+		end
+	end
+
+	return result
+end
