@@ -1150,16 +1150,6 @@ ldecimal_sub(lua_State* L) {
     return 1;
 }
 
-double strtod_fast(const char *str, int length,int* result);
-static int
-lstrtod_fast(lua_State* L) {
-    size_t size;
-    const char* str = lua_tolstring(L, 1, &size);
-    int len;
-    lua_pushnumber(L, strtod_fast(str, size, &len));
-    return 1;
-}
-
 extern int lsize_of(lua_State* L);
 extern int lprofiler_start(lua_State* L);
 extern int lprofiler_stack_start(lua_State *L);
@@ -1210,8 +1200,8 @@ luaopen_util_core(lua_State* L){
         { "size_of", lsize_of },
         { "profiler_start", lprofiler_start },
         { "profiler_stack_start", lprofiler_stack_start },
-        { "strtod_fast", lstrtod_fast },
-        
+        { "strtod_fast0", lstrtod_fast0 },
+        { "strtod_fast1", lstrtod_fast1 },
         { NULL, NULL },
     };
     luaL_newlib(L,l);
