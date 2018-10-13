@@ -826,6 +826,24 @@ ltopK(lua_State* L) {
 }
 
 static int
+lcircle_intersect(lua_State* L) {
+    float x0 = lua_tonumber(L, 1);
+    float z0 = lua_tonumber(L, 2);
+    float r0 = lua_tonumber(L, 3);
+    float x1 = lua_tonumber(L, 4);
+    float z1 = lua_tonumber(L, 5);
+    float r1 = lua_tonumber(L, 6);
+
+    vector2_t center = {x0, z0};
+    vector2_t dot = {x1, z1};
+
+    int ok = circle_intersect(&center, r0, &dot, r1);
+
+    lua_pushboolean(L, ok);
+    return 1;
+}
+
+static int
 lcapsule_intersect(lua_State* L) {
     float x0 = lua_tonumber(L, 1);
     float z0 = lua_tonumber(L, 2);
@@ -1180,6 +1198,7 @@ luaopen_util_core(lua_State* L){
         { "clone_string", lclone_string },
         { "packet_new", lpacket_new },
         { "topK", ltopK },
+        { "circle_intersect", lcircle_intersect },
         { "capsule_intersect", lcapsule_intersect },
         { "rectangle_intersect", lrectangle_intersect },
         { "sector_intersect", lsector_intersect },

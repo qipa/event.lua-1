@@ -27,6 +27,7 @@ int capsule_intersect(vector2_t* src, vector2_t* u, float cr, vector2_t* center,
 int rectangle_intersect(vector2_t* src, float length, float width, float angle, vector2_t* center, float r);
 int sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* center, float r);
 int segment_intersect(vector2_t* a, vector2_t* b, vector2_t* center, float r);
+int circle_intersect(vector2_t* src, float l, vector2_t* center, float r);
 
 int inside_circle(vector2_t* center, float range, vector2_t* dot, float r);
 int inside_sector(vector2_t* center, float angle, float degree, float l, vector2_t* dot, float r);

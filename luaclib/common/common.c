@@ -293,7 +293,12 @@ int
 circle_intersect(vector2_t* src, float l, vector2_t* center, float r) {
     vector2_t d;
     vector2_sub(&d, src, center);
-    return sqrt_vector2_magnitude(&d) <= (l+r) * (l+r);
+
+    float range = l + r;
+    if (abs(d.x) <= range && abs(d.z) <= range) {
+        return sqrt_vector2_magnitude(&d) <= range * range;
+    }
+    return 0;
 }
 
 int
@@ -305,17 +310,8 @@ segment_intersect(vector2_t* a, vector2_t* b, vector2_t* center, float r) {
 }
 
 int
-inside_circle(vector2_t* center, float range, vector2_t* dot, float r) {
-    vector2_t delta;
-    vector2_sub(&delta, dot, center);
-
-    float real_range = range + r;
-
-    if (abs(delta.x) <= real_range && abs(delta.z) <= real_range) {
-        return sqrt_vector2_magnitude(&delta) <= real_range * real_range;
-    }
-
-    return 0;
+inside_circle(vector2_t* center, float l, vector2_t* dot, float r) {
+    return circle_intersect(center, l, dot, r);
 }
 
 int
