@@ -120,16 +120,14 @@ function cSceneObj:getWitnessCid()
 	return result
 end
 
-function cSceneObj:getObjInLine(to)
-	local pos = self.pos
-	local x = pos[1]
-	local z = pos[1]
+function cSceneObj:getObjInLine(from,to)
+	local from = from or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.segment_intersect(x,z,to[1],to[2],obj.pos[1],obj.pos[2],obj.range) then
+		if util.segment_intersect(from[1],from[2],to[1],to[2],obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
 		end
 	end
@@ -137,16 +135,14 @@ function cSceneObj:getObjInLine(to)
 	return result
 end
 
-function cSceneObj:getObjInRectangle(angle,length,width)
-	local pos = self.pos
-	local x = pos[1]
-	local z = pos[1]
+function cSceneObj:getObjInRectangle(pos,angle,length,width)
+	local pos = pos or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.rectangle_intersect(x,z,length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
+		if util.rectangle_intersect(pos[1],pos[2],length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
 		end
 	end
@@ -154,16 +150,14 @@ function cSceneObj:getObjInRectangle(angle,length,width)
 	return result
 end
 
-function cSceneObj:getObjInCircle(range)
-	local pos = self.pos
-	local x = pos[1]
-	local z = pos[1]
+function cSceneObj:getObjInCircle(pos,range)
+	local pos = pos or self.pos
 
 	local result = {}
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
 		local totalRange = range + obj.range
-		if util.sqrt_distance(x,z,obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
+		if util.sqrt_distance(pos[1],pos[2],obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
 			table.insert(result,obj)
 		end
 	end
@@ -171,16 +165,14 @@ function cSceneObj:getObjInCircle(range)
 	return result
 end
 
-function cSceneObj:getObjInSector(angle,degree,range)
-	local pos = self.pos
-	local x = pos[1]
-	local z = pos[1]
+function cSceneObj:getObjInSector(pos,angle,degree,range)
+	local pos = pos or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.sector_intersect(x,z,angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
+		if util.sector_intersect(pos[1],pos[2],angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
 		end
 	end
@@ -188,16 +180,13 @@ function cSceneObj:getObjInSector(angle,degree,range)
 	return result
 end
 
-function cSceneObj:getObjInCapsule(to,r)
-	local pos = self.pos
-	local x = pos[1]
-	local z = pos[1]
-
+function cSceneObj:getObjInCapsule(from,to,r)
+	local from = from or self.pos
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.capsule_intersect(x,z,to[1],to[2],r,obj.pos[1],obj.pos[2],obj.range) then
+		if util.capsule_intersect(from[1],from[2],to[1],to[2],r,obj.pos[1],obj.pos[2],obj.range) then
 			table.insert(result,obj)
 		end
 	end
