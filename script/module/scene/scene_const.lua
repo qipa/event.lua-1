@@ -9,7 +9,8 @@ eSCENEOBJ_TYPE = {
 	FIGHTER = 1,
 	MONSTER = 2,
 	PET = 3,
-	ITEM = 4
+	BULLET = 4,
+	ITEM = 5,
 }
 
 eSCENE_PHASE = {

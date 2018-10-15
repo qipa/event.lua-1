@@ -73,16 +73,20 @@ function onSkillExecute(self, attacker, skillId, skillInfo, hitInfo)
 
 		elseif evType == eSKILL_EVENT.ADD_SELF_BUFFER then
 			self:onAddBuff(attacker,evInfo.bufferId)
+
 		elseif evType == eSKILL_EVENT.DEL_SELF_BUFFER then
 			self:onDelBuff(attacker,evInfo.bufferId)
+
 		elseif evType == eSKILL_EVENT.HIT_FLY then
 			for _,hitterObj in pairs(hitterObjs) do
 				self:onHitFly(attacker,hitterObj,evInfo)
 			end
+
 		elseif evType == eSKILL_EVENT.HIT_BACK then
 			for _,hitterObj in pairs(hitterObjs) do
 				self:onHitBack(attacker,hitterObj,evInfo)
 			end
+			
 		end
 	end
 
