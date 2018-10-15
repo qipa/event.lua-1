@@ -10,8 +10,9 @@ function __init__(self)
 	
 end
 
-function cBullet:onCreate(id,face,x,z)
+function cBullet:onCreate(id,x,z,range)
 	self.id = id
+	self.range = range
 	self.uid = idBuilder:pop_monster_tid()
 	sceneobj.cSceneObj.onCreate(self,self.uid,x,z)
 	self.bulletCtrl = bulletCtrl.cBulletCtrl:new(self)
@@ -43,10 +44,13 @@ end
 
 function cBullet:doCollision(from,to)
 
+	local objs = self:getObjInCapsule(from,to,self.range)
 end
 
 function cBullet:onUpdate(now)
 	sceneobj.cSceneObj.onUpdate(self,now)
 
-	self.bulletCtrl:onUpdate(now)
+	if self.bulletCtrl:onUpdate(now) then
+		self:release()
+	end
 end
