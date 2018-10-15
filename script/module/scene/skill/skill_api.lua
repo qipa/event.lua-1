@@ -31,15 +31,15 @@ function useSkill(self, attacker, skillId)
 end
 
 function onSkillBegin(self, attacker, skillInfo)
-
+	print("onSkillBegin")
 end
 
 function onSkillEnd(self, attacker, skillInfo)
-
+	print("onSkillEnd")
 end
 
 function onSkillExecute(self, attacker, skillId, skillInfo, hitInfo)
-
+	print("onSkillExecute")
 
 	local hitterObjs = self:selectHitter(attacker,skillInfo,hitInfo.atkBox)
 	if hitInfo.event == eSKILL_EVENT.DAMAGE then
