@@ -2,7 +2,7 @@ local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local idBuilder = import "module.id_builder"
 local bulletCtrl = import "module.scene.state_ctrl.bullet_ctrl"
-
+local skillApi = import "module.scene.skill_api"
 
 cBullet = sceneobj.cSceneObj:inherit("bullet")
 
@@ -10,11 +10,16 @@ function __init__(self)
 	
 end
 
-function cBullet:onCreate(id,x,z,range)
+function cBullet:onCreate(id,pos,range,owner)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:pop_monster_tid(),x,z)
+
 	self.id = id
 	self.range = range
-	self.uid = idBuilder:pop_monster_tid()
-	sceneobj.cSceneObj.onCreate(self,self.uid,x,z)
+	self.ownerObj = owner
+	
+	self.lockTarget = nil
+	self.endPos = nil
+
 	self.bulletCtrl = bulletCtrl.cBulletCtrl:new(self)
 end
 
@@ -34,18 +39,37 @@ function cBullet:onObjLeave(objList)
 
 end
 
-function cBullet:setFollowTarget(targetObj)
-	self.bulletCtrl:setTargetObj(targetObj)
+function cBullet:setLockTarget(targetObj)
+	self.lockTarget = targetObj
 end
 
-function cBullet:setFollowPos(targetPos)
-	self.bulletCtrl:setTargetPos(targetPos)
+function cBullet:setEndPos(pos)
+	self.endPos = {pos[1],pos[2]}
+end
+
+function cBullet:getEndPos()
+	if self.endPos then
+		return self.endPos
+	end
+	return self.lockTarget.Pos
 end
 
 function cBullet:doCollision(from,to)
 
-	local objs = self:getObjInCapsule(from,to,self.range)
+	if self.LockTarget then
+		if util.capsule_intersect(from[1],from[2],to[1],to[2],self.range,self.LockTarget.pos[1],self.LockTarget.pos[2],self.LockTarget.range) then
+			skillApi:onDamage(self.ownerObj,self.LockTarget)
+			return true
+		end
+	else
+		local objs = self:getObjInCapsule(from,to,self.range)
 	
+		for _,obj in pairs(objs) do
+			skillApi:onDamage(self.ownerObj,obj)
+		end
+	end
+
+	return false
 end
 
 function cBullet:onUpdate(now)

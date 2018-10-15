@@ -114,6 +114,8 @@ end
 
 function onDamage(self,attacker,hitter)
 	local damage = self:calcDamage(attacker,hitter)
+
+	hitter:onDamage(damage)
 end
 
 function onHitFly(self,attacker,hitter,hitInfo)
