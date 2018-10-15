@@ -4,6 +4,8 @@ local object = import "module.object"
 
 cMoveCtrl = object.cObject:inherit("moveCtrl")
 
+local dtDot2Dot = util.dot2dot
+local moveForward = util.move_forward
 
 function cMoveCtrl:ctor(sceneObj)
 	self.owner = sceneObj
@@ -88,7 +90,7 @@ function cMoveCtrl:doMove(now)
 	local pathNode = pathList[pathIndex]
 
 	local location = self.owner.pos
-	local dtNext = util.dot2dot(location[1],location[2],pathNode[1],pathNode[2])
+	local dtNext = dtDot2Dot(location[1],location[2],pathNode[1],pathNode[2])
 
 	while dtMove - dtNext >= 0.1 do
 		dtMove = dtMove - dtNext
@@ -101,7 +103,7 @@ function cMoveCtrl:doMove(now)
 		end
 		location = self.owner.pos
 		pathNode = pathList[pathIndex]
-		dtNext = util.dot2dot(location[1],location[2],pathNode[1],pathNode[2])
+		dtNext = dtDot2Dot(location[1],location[2],pathNode[1],pathNode[2])
 	end
 
 	self.pathIndex = pathIndex
@@ -112,7 +114,7 @@ function cMoveCtrl:doMove(now)
 		return true
 	end
 
-	local nx,nz = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
+	local nx,nz = moveForward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
 	self.owner:move(nx,nz)
 	return false
 end
