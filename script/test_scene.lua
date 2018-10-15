@@ -59,6 +59,6 @@ event.fork(function ()
 	sceneInst:onCreate(1001,1)
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},30)
 
-	monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200}})
+	monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
 end)
 
