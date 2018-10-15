@@ -1,6 +1,6 @@
 local util = require "util"
 local event = require "event"
-local vector2 = require "common.vector2"
+
 local stateBase = import "module.scene.state_ctrl.state_base"
 local skillApi = import "module.scene.skill.skill_api"
 

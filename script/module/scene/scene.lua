@@ -1,3 +1,4 @@
+local event = require "event"
 local aoiCore = require "toweraoi.core"
 local navCore= require "nav.core"
 local cjson = require "cjson"
@@ -60,6 +61,7 @@ function cScene:getAllObjByType(sceneObjType)
 end
 
 function cScene:enter(sceneObj,pos)
+	local pos = pos or
 	assert(self.objMgr[sceneObj.uid] == nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = sceneObj
 	
@@ -72,7 +74,7 @@ function cScene:enter(sceneObj,pos)
 	end 
 	typeMgr[sceneObj.uid] = sceneObj
 
-	pos[1],pos[2] = self:posAroundMovable(pos[1],pos[2],2)
+	-- pos[1],pos[2] = self:posAroundMovable(pos[1],pos[2],2)
 
 	sceneObj.pos[1] = pos[1]
 	sceneObj.pos[2] = pos[2]
@@ -169,7 +171,7 @@ function cScene:createAoiEntity(sceneObj)
 end
 
 function cScene:removeAoiEntity(sceneObj)
-	local aoiSet = self.aoi:remove_entity(sceneObj.entityId)
+	local aoiSet = self.aoi:remove_entity(sceneObj.aoiEntityId)
 
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
@@ -179,7 +181,7 @@ function cScene:removeAoiEntity(sceneObj)
 end
 
 function cScene:moveAoiEntity(sceneObj,x,z)
-	local enterSet,LeaveSet = self.aoi:move_entity(sceneObj.entityId,x,z)
+	local enterSet,LeaveSet = self.aoi:move_entity(sceneObj.aoiEntityId,x,z)
 
 	for _,otherUid in pairs(enterSet) do
 		local other = self.objMgr[otherUid]
@@ -216,11 +218,11 @@ function cScene:createAoiTrigger(sceneObj)
 end
 
 function cScene:removeAoiTrigger(sceneObj)
-	self.aoi:remove_trigger(sceneObj.triggerId)
+	self.aoi:remove_trigger(sceneObj.aoiTriggerId)
 end
 
 function cScene:moveAoiTrigger(sceneObj,x,z)
-	local enterSet,LeaveSet = self.aoi:move_trigger(sceneObj.triggerId,x,z)
+	local enterSet,LeaveSet = self.aoi:move_trigger(sceneObj.aoiTriggerId,x,z)
 
 	local list = {}
 	local empty = true
@@ -304,6 +306,8 @@ function cScene:spawnMonster(id,pos,face,...)
 	monsterObj:onCreate(id,pos[1],pos[2],face)
 
 	monsterObj:enterScene(self,pos[1],pos[2])
+
+	return monsterObj
 end
 
 function cScene:spawnMonsterArea(areaId)

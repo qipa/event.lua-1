@@ -1,5 +1,4 @@
 local util = require "util"
-local vector2 = require "common.vector2"
 local object = import "module.object"
 
 cStateBase = object.cObject:inherit("stateBase")

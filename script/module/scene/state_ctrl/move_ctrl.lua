@@ -1,6 +1,5 @@
 local util = require "util"
 local event = require "event"
-local vector2 = require "common.vector2"
 local object = import "module.object"
 
 cMoveCtrl = object.cObject:inherit("moveCtrl")
@@ -71,10 +70,11 @@ function cMoveCtrl:prepareMove(path)
 
 	local witness = self.owner:getWitnessCid()
 
-	protocol.writer.sObjMove(witness,self.pathList)
+	-- protocol.writer.sObjMove(witness,self.pathList)
 end
 
 function cMoveCtrl:doMove(now)
+	print("doMove")
 	local now = now or event.now()
 
 	local interval = now - self.lastTime
@@ -111,8 +111,8 @@ function cMoveCtrl:doMove(now)
 		return true
 	end
 
-	location = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
-	self.owner:move(location[1],location[2])
+	local nx,nz = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
+	self.owner:move(nx,nz)
 
 	return false
 end

@@ -1,14 +1,13 @@
 local util = require "util"
-local vector2 = require "common.vector2"
 local object = import "module.object"
 
 
 local eState = {
-	["IDLE"] = import "module.scene.state_ctrl.idle_state",
-	["MOVE"] = import "module.scene.state_ctrl.move_state",
-	["SKILL"] = import "module.scene.state_ctrl.skill_state",
-	["HIT_BACK"] = import "module.scene.state_ctrl.hitback_state",
-	["HIT_FLY"] = import "module.scene.state_ctrl.hitfly_state",
+	["IDLE"] = import("module.scene.state_ctrl.idle_state").cStateIdle,
+	["MOVE"] = import("module.scene.state_ctrl.move_state").cStateMove,
+	["SKILL"] = import("module.scene.state_ctrl.skill_state").cStateSkill,
+	["HIT_BACK"] = import("module.scene.state_ctrl.hitback_state").cStateHitBack,
+	-- ["HIT_FLY"] = import "module.scene.state_ctrl.hitfly_state",
 }
 
 cStateMgr = object.cObject:inherit("stateMgr")
@@ -27,7 +26,6 @@ function cStateMgr:onDestroy()
 end
 
 function cStateMgr:onUpdate(now)
-
 	local removeList = {}
 	for stateType,stateObj in pairs(self.stateMgr) do
 		local isRemove = stateObj:onUpdate(now)
@@ -48,7 +46,7 @@ function cStateMgr:hasState(stateType)
 end
 
 function cStateMgr:canAddState(stateType)
-
+	return true
 end
 
 function cStateMgr:addState(stateType,stateData)

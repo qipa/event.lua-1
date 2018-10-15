@@ -10,10 +10,11 @@ function __init__(self)
 end
 
 function cSceneObj:onCreate(uid,x,z,face)
-	print("cSceneObj:create")
+	print("cSceneObj:create",uid)
 	self.uid = uid
 	self.pos = {x,z}
 	self.face = face
+	self.speed = 10
 	self.hp = hp
 	self.maxHp = hp
 	self.witnessCtx = {}
@@ -33,9 +34,10 @@ function cSceneObj:getSeeInfo()
 end
 
 function cSceneObj:enterScene(scene,x,z)
-	self.pox[1] = x
-	self.pox[2] = z
-	scene:enter(self,x,z)
+	self.pos[1] = x
+	self.pos[2] = z
+	table.print(self)
+	scene:enter(self,{x,z})
 end
 
 function cSceneObj:leaveScene()

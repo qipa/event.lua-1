@@ -36,18 +36,20 @@ end
 function cItemContainer:load(parent,dbChannel,db,dbIndex)
 	local inst = self:new()
 	for field in pairs(self.__saveFields) do
-		local result
-		local cls = class.get(field)
-		assert(cls ~= nil,field)
-		local result = cls:load(inst,dbChannel,db,dbIndex)
-		if result then
-			inst[field] = result
-		else
-			result = cls:new()
-			result:attachDb(inst)
-			inst[field] = result
+		if field ~= "__name" then
+			local result
+			local cls = class.get(field)
+			assert(cls ~= nil,field)
+			local result = cls:load(inst,dbChannel,db,dbIndex)
+			if result then
+				inst[field] = result
+			else
+				result = cls:new()
+				result:attachDb(inst)
+				inst[field] = result
+			end
+			result:onCreate()
 		end
-		result:onCreate()
 	end
 	inst.__dbObject = parent
 	return inst
