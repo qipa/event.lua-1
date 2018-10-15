@@ -39,7 +39,7 @@ function cMoveCtrl:onClientMoveStop(pos,angle)
 	end
 
 	local location = self.owner.pos
-	local dt = util.distance(pos[1],pos[2],location[1],location[2])
+	local dt = dtDot2Dot(pos[1],pos[2],location[1],location[2])
 	if dt <= 0.1 then
 		self.owner:move(pos[1],pos[2])
 	else
