@@ -8,21 +8,42 @@ eATTACK_BOX = {
 }
 
 eSKILL_EVENT = {
-	["DAMAGE"] = 1,
-	["HIT_FLY"] = 2,
-	["HIT_BACK"] = 3,
+	["DAMAGE"] 				= 1,
+	["ADD_SELF_BUFFER"] 	= 2,
+	["DEL_SELF_BUFFER"] 	= 3,
+	["ADD_OTHER_BUFFER"] 	= 4,
+	["DEL_OTHER_BUFFER"] 	= 5,
+	["HIT_FLY"] 			= 6,
+	["HIT_BACK"] 			= 7,
 }
+
+local hitInfo = {
+		[1] = {
+			time = 1,
+			event = { [eSKILL_EVENT.DAMAGE] = {},
+					  [eSKILL_EVENT.ADD_SELF_BUFFER] = {bufferId = 1}},
+			atkBox = { boxType = eATTACK_BOX.SECTOR,range = 100,degree = 60 }
+		},
+		[2] = { 
+			time = 1.5,
+			event = { [eSKILL_EVENT.DAMAGE] = {},
+					  [eSKILL_EVENT.HIT_FLY] = {time = 1} },
+			atkBox = {boxType = eATTACK_BOX.RECTANGLE,length = 100,width = 20}
+		},
+		[3] = { 
+			time = 2.0,
+			event = { [eSKILL_EVENT.DAMAGE] = {},
+					  [eSKILL_EVENT.HIT_BACK] = {time = 0.5,speed = 10},
+					  [eSKILL_EVENT.DEL_SELF_BUFFER] = {bufferId = 1}, },
+			atkBox = {boxType = eATTACK_BOX.CIRCLE,range = 100}
+		} }
 
 function useSkill(self, attacker, skillId)
 
 	local skillInfo = {
 		skillId = skillId,
 		hitIndex = 1,
-		hitInfo = {
-			[1] = {time = 1,event = eSKILL_EVENT.DAMAGE,atkBox = {boxType = eATTACK_BOX.SECTOR,range = 100,degree = 60}},
-			[2] = {time = 1.5,event = eSKILL_EVENT.HIT_FLY,atkBox = {boxType = eATTACK_BOX.RECTANGLE,length = 100,width = 20}},
-			[3] = {time = 2.5,event = eSKILL_EVENT.HIT_BACK,atkBox = {boxType = eATTACK_BOX.CIRCLE,range = 100}},
-		},
+		hitInfo = hitInfo,
 		interval = 2.5
 	}
 
@@ -42,19 +63,29 @@ function onSkillExecute(self, attacker, skillId, skillInfo, hitInfo)
 	print("onSkillExecute")
 
 	local hitterObjs = self:selectHitter(attacker,skillInfo,hitInfo.atkBox)
-	if hitInfo.event == eSKILL_EVENT.DAMAGE then
-		for _,hitterObj in pairs(hitterObjs) do
-			self:onDamage(attacker,hitterObj,hitInfo)
-		end
-	elseif hitInfo.event == eSKILL_EVENT.HIT_FLY then
-		for _,hitterObj in pairs(hitterObjs) do
-			self:onHitFly(attacker,hitterObj,hitInfo)
-		end
-	elseif hitInfo.event == eSKILL_EVENT.HIT_BACK then
-		for _,hitterObj in pairs(hitterObjs) do
-			self:onHitBack(attacker,hitterObj,hitInfo)
+
+	for evType,evInfo in pairs(hitInfo.event) do
+
+		if evType == eSKILL_EVENT.DAMAGE then
+			for _,hitterObj in pairs(hitterObjs) do
+				self:onDamage(attacker,hitterObj,hitInfo)
+			end
+
+		elseif evType == eSKILL_EVENT.ADD_SELF_BUFFER then
+			self:onAddBuff(attacker,evInfo.bufferId)
+		elseif evType == eSKILL_EVENT.DEL_SELF_BUFFER then
+			self:onDelBuff(attacker,evInfo.bufferId)
+		elseif evType == eSKILL_EVENT.HIT_FLY then
+			for _,hitterObj in pairs(hitterObjs) do
+				self:onHitFly(attacker,hitterObj,evInfo)
+			end
+		elseif evType == eSKILL_EVENT.HIT_BACK then
+			for _,hitterObj in pairs(hitterObjs) do
+				self:onHitBack(attacker,hitterObj,evInfo)
+			end
 		end
 	end
+
 
 end
 
@@ -119,4 +150,12 @@ function onHitBack(self,attacker,hitter)
 	local flyInfo = {endTime = event.time() + interval,interval = interval,speed}
 
 	hitterStateMgr:addState("HIT_BACK",flyInfo)
+end
+
+function onAddBuff(self,targetObj,bufferId)
+
+end
+
+function onDelBuff(self,targetObj,bufferId)
+
 end
