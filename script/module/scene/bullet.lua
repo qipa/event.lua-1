@@ -45,6 +45,7 @@ end
 function cBullet:doCollision(from,to)
 
 	local objs = self:getObjInCapsule(from,to,self.range)
+	
 end
 
 function cBullet:onUpdate(now)
