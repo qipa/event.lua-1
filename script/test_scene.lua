@@ -59,8 +59,10 @@ event.fork(function ()
 	local sceneInst = scene.cScene:new()
 	sceneInst:onCreate(1001,1)
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
+	
+	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 
-	monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
+	-- monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
 
 	skillAPI:useSkill(monsterObj,1)
 end)

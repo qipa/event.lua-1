@@ -33,7 +33,6 @@ end
 
 function cFighter:onEnterScene(scene)
 	sceneobj.cSceneObj.onEnterScene(self,scene)
-	self.aoiTriggerId = scene:createAoiTrigger(self)
 
 	local msg = {sceneId = scene.sceneId,sceneUid = scene.sceneUid}
 	serverMgr:sendAgent(self.agentId,"handler.agent_handler","onEnterScene",msg)
@@ -42,13 +41,10 @@ end
 
 function cFighter:onLeaveScene()
 	sceneobj.cSceneObj.onLeaveScene(self)
-	self.scene:removeTrigger(self)
-	self.aoiTriggerId = nil
 end
 
 function cFighter:move(x,z)
 	sceneobj.cSceneObj.move(self,x,z)
-	self.scene:moveAoiTrigger(self,x,z)
 end
 
 function cFighter:onObjEnter(sceneObjList)

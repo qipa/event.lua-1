@@ -196,8 +196,8 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 	end
 end
 
-function cScene:createAoiTrigger(sceneObj)
-	local triggerId,aoiSet = self.aoi:create_trigger(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2],3)
+function cScene:createAoiTrigger(sceneObj,triggerRange)
+	local triggerId,aoiSet = self.aoi:create_trigger(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2],triggerRange or 3)
 
 	local empty = true 
 	local enterList = {}

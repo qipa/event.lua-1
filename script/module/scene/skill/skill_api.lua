@@ -95,7 +95,7 @@ function onHitFly(self,attacker,hitter,hitInfo)
 		return
 	end
 
-	local flyInfo = {endTime = event.time() + hitInfo.flyInterval}
+	local flyInfo = {endTime = event.now() + hitInfo.flyInterval}
 
 	hitterStateMgr:addState("HIT_FLY",flyInfo)
 end

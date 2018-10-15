@@ -35,17 +35,14 @@ end
 
 function cMonster:onEnterScene(scene)
 	sceneobj.cSceneObj.onEnterScene(self,scene)
-	self.aoiTriggerId = scene:createAoiTrigger(self)
 end
 
 function cMonster:onLeaveScene()
 	sceneobj.cSceneObj.onLeaveScene(self)
-	self.scene:removeTrigger(self)
 end
 
 function cMonster:move(x,z)
 	sceneobj.cSceneObj.move(self,x,z)
-	self.scene:moveAoiTrigger(self,x,z)
 end
 
 function cMonster:onObjEnter(objList)

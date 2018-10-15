@@ -13,9 +13,10 @@ function __init__(self)
 	self.cSceneObj:packField("pos")
 end
 
-function cSceneObj:onCreate(uid,x,z,face)
+function cSceneObj:onCreate(uid,x,z,face,aoiRange)
 	print("cSceneObj:create",uid)
 	self.uid = uid
+	self.aoiRange = aoiRange
 	self.pos = {x,z}
 	self.face = {0,0} or face
 	self.speed = 10
@@ -23,6 +24,8 @@ function cSceneObj:onCreate(uid,x,z,face)
 	self.maxHp = hp
 	self.witnessCtx = {}
 	self.viewerCtx = {}
+
+	self.isDead = false
 end
 
 function cSceneObj:onDestroy()
@@ -50,17 +53,30 @@ end
 
 function cSceneObj:onEnterScene(scene)
 	self.aoiEntityId = scene:createAoiEntity(self)
+	if self.aoiRange then
+		self.aoiTriggerId = scene:createAoiTrigger(self)
+	end
+
 	self.scene = scene
 end
 
 function cSceneObj:onLeaveScene(scene)
 	scene:removeEntity(self)
 	self.aoiEntityId = nil
+
+	if self.aoiTriggerId then
+		scene:removeTrigger(self)
+		self.aoiTriggerId = nil
+	end
+
 	self.scene = nil
 end
 
 function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
+	if self.aoiTriggerId then
+		self.scene:moveAoiTrigger(self,x,z)
+	end
 
 	local ox = self.pos[1]
 	local oz = self.pos[2]
