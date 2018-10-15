@@ -473,7 +473,8 @@ function cScene:kickUser(user)
 
 end
 
-function cScene:update(now)
+function cScene:update()
+	local now = event.now()
 	for _,sceneObj in pairs(self.objMgr) do
 		local ok,err = xpcall(sceneObj.onUpdate,debug.traceback,sceneObj,now)
 		if not ok then
@@ -482,7 +483,8 @@ function cScene:update(now)
 	end
 end
 
-function cScene:commonUpdate(now)
+function cScene:commonUpdate()
+	local now = event.now()
 	local phase = self.phase
 	if phase == sceneConst.eSCENE_PHASE.START then
 		if self.lifeTime ~= 0 then

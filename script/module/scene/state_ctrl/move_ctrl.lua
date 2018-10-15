@@ -74,10 +74,10 @@ function cMoveCtrl:prepareMove(path)
 end
 
 function cMoveCtrl:doMove(now)
-	print("doMove")
+	
 	local now = now or event.now()
 
-	local interval = now - self.lastTime
+	local interval = (now - self.lastTime) / 1000
 
 	local pathIndex = self.pathIndex
 	local pathIndexMax = self.pathIndexMax
@@ -86,6 +86,7 @@ function cMoveCtrl:doMove(now)
 	local dtMove = self.owner.speed * interval
 	
 	local pathNode = pathList[pathIndex]
+
 	local location = self.owner.pos
 	local dtNext = util.dot2dot(location[1],location[2],pathNode[1],pathNode[2])
 
@@ -113,6 +114,5 @@ function cMoveCtrl:doMove(now)
 
 	local nx,nz = util.move_forward(location[1],location[2],pathNode[1],pathNode[2],dtMove)
 	self.owner:move(nx,nz)
-
 	return false
 end

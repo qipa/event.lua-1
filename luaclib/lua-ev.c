@@ -1069,7 +1069,8 @@ _clean(lua_State* L) {
 static int
 _now(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	lua_pushinteger(L, loop_ctx_now(lev->loop_ctx));
+	double now = loop_ctx_now(lev->loop_ctx) * 1000;
+	lua_pushinteger(L, now);
 	return 1;
 }
 //-------------------------endof event api---------------------------

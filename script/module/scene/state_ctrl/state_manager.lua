@@ -34,7 +34,7 @@ function cStateMgr:onUpdate(now)
 		end
 	end
 
-	for stateType in pairs(removeList) do
+	for _,stateType in pairs(removeList) do
 		local stateObj = self.stateMgr[stateType]
 		stateObj:release()
 		self.stateMgr[stateType] = nil
