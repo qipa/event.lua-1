@@ -8,6 +8,8 @@ cStateSkill = stateBase.cStateBase:inherit("stateSkill")
 function cStateSkill:ctor(sceneObj,skillInfo)
 	self.skillId = skillInfo.skillId
 	self.skillInfo = skillInfo
+	self.startTime = event.now()
+	self.overTime = self.startTime + skillInfo.interval
 	self.attacker = sceneObj
 	skillApi:onSkillBegin(sceneObj,self.skillId,skillInfo)
 end
@@ -20,16 +22,17 @@ function cStateSkill:onDestroy()
 end
 
 function cStateSkill:onUpdate(now)
+	local now = now or event.now()
 
-	local now = event.now()
-	local timeLapse = now - self.skillInfo.beginTime
+	local interval = (now - self.startTime) / 1000
 
 	local skillOver = true
 
 	for i = self.skillInfo.hitIndex, #self.skillInfo.hitInfo do
+		
 		local info = self.skillInfo.hitInfo[i]
 		
-		if timeLapse >= info.time then
+		if interval >= info.time then
 			skillApi:onSkillExecute(self.attacker,self.skillId,self.skillInfo,info)
 		else
 			skillOver = false

@@ -1,8 +1,12 @@
-local aoi_core = require "simpleaoi.core"
+
+local util = require "util"
 local sceneConst = import "module.scene.scene_const"
 local dbObject = import "module.database_object"
 
 cSceneObj = dbObject.cCollection:inherit("sceneobj")
+
+local angle2dir = util.angle2dir
+local dir2angle = util.dir2angle
 
 function __init__(self)
 	self.cSceneObj:packField("uid")
@@ -13,7 +17,7 @@ function cSceneObj:onCreate(uid,x,z,face)
 	print("cSceneObj:create",uid)
 	self.uid = uid
 	self.pos = {x,z}
-	self.face = face
+	self.face = {0,0} or face
 	self.speed = 10
 	self.hp = hp
 	self.maxHp = hp
@@ -36,7 +40,6 @@ end
 function cSceneObj:enterScene(scene,x,z)
 	self.pos[1] = x
 	self.pos[2] = z
-	table.print(self)
 	scene:enter(self,{x,z})
 end
 
@@ -59,12 +62,14 @@ end
 function cSceneObj:move(x,z)
 	self.scene:moveAoiEntity(self,x,z)
 
-	local opos = self.pos
+	local ox = self.pos[1]
+	local oz = self.pos[2]
 
 	self.pos[1] = x
 	self.pos[2] = z
 	
-	self.face = (z - opos[2]) / (x - opos[1])
+	self.face[1] = x - ox
+	self.face[2] = z - oz
 end
 
 function cSceneObj:onObjEnter(sceneObjList)
@@ -137,7 +142,10 @@ function cSceneObj:getObjInLine(from,to)
 	return result
 end
 
-function cSceneObj:getObjInRectangle(pos,angle,length,width)
+function cSceneObj:getObjInRectangle(pos,dir,length,width)
+	local angle = dir2angle(dir[1],dir[2])
+
+	print("getObjInRectangle",pos[1],pos[2],angle,length,width)
 	local pos = pos or self.pos
 
 	local result = {}
@@ -153,6 +161,7 @@ function cSceneObj:getObjInRectangle(pos,angle,length,width)
 end
 
 function cSceneObj:getObjInCircle(pos,range)
+	print("getObjInCircle",pos[1],pos[2],range)
 	local pos = pos or self.pos
 
 	local result = {}
@@ -167,7 +176,9 @@ function cSceneObj:getObjInCircle(pos,range)
 	return result
 end
 
-function cSceneObj:getObjInSector(pos,angle,degree,range)
+function cSceneObj:getObjInSector(pos,dir,degree,range)
+	local angle = dir2angle(dir[1],dir[2])
+	print("getObjInSector",pos[1],pos[2],angle,degree,range)
 	local pos = pos or self.pos
 
 	local result = {}

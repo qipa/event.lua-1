@@ -17,16 +17,14 @@ function useSkill(self, attacker, skillId)
 
 	local skillInfo = {
 		skillId = skillId,
-		hitIndex = 0,
+		hitIndex = 1,
 		hitInfo = {
-			[1] = {time = 1,event = 1,atkBox = {boxType = eATTACK_BOX.SECTOR,range = 100,degree = 60}},
-			[2] = {time = 1.5,event = 2},
-			[3] = {time = 2.5,event = 3},
+			[1] = {time = 1,event = eSKILL_EVENT.DAMAGE,atkBox = {boxType = eATTACK_BOX.SECTOR,range = 100,degree = 60}},
+			[2] = {time = 1.5,event = eSKILL_EVENT.HIT_FLY,atkBox = {boxType = eATTACK_BOX.RECTANGLE,length = 100,width = 20}},
+			[3] = {time = 2.5,event = eSKILL_EVENT.HIT_BACK,atkBox = {boxType = eATTACK_BOX.CIRCLE,range = 100}},
 		},
 		interval = 2.5
 	}
-	skillInfo.beginTime = event.now()
-	skillInfo.endTime = skillInfo.beginTime + skillInfo.interval
 
 	local stateMgr = attacker.stateMgr
 	stateMgr:addState("SKILL",skillInfo)
@@ -40,7 +38,7 @@ function onSkillEnd(self, attacker, skillInfo)
 
 end
 
-function onSkillExecute(self, attacker, skillInfo, hitInfo)
+function onSkillExecute(self, attacker, skillId, skillInfo, hitInfo)
 
 
 	local hitterObjs = self:selectHitter(attacker,skillInfo,hitInfo.atkBox)
@@ -64,11 +62,11 @@ function selectHitter(self,attacker,skillInfo,atkBoxInfo)
 
 	local resultObjs
 	if atkBoxInfo.boxType == eATTACK_BOX.CIRCLE then
-		resultObjs = attacker:getSceneObjInCircle(atkBoxInfo.range)
+		resultObjs = attacker:getObjInCircle(attacker.pos,atkBoxInfo.range)
 	elseif atkBoxInfo.boxType == eATTACK_BOX.SECTOR then
-		resultObjs = attacker:getSceneObjInRectangle(attacker.face,atkBoxInfo.length,atkBoxInfo.width)
+		resultObjs = attacker:getObjInSector(attacker.pos,attacker.face,atkBoxInfo.degree,atkBoxInfo.range)
 	elseif atkBoxInfo.boxType == eATTACK_BOX.RECTANGLE then
-		resultObjs = attacker:getSceneObjInSector(attacker.face,atkBoxInfo.degree,atkBoxInfo.range)
+		resultObjs = attacker:getObjInRectangle(attacker.pos,attacker.face,atkBoxInfo.length,atkBoxInfo.width)
 	end
 
 	return resultObjs

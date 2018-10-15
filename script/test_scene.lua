@@ -11,6 +11,7 @@ local itemFactory = import "module.agent.item.item_factory"
 local itemContainer = import "module.agent.item.item_container"
 local worldServer = import "module.world.world_server"
 local scene = import "module.scene.scene"
+local skillAPI = import "module.scene.skill.skill_api"
 -- sceneServer:createScene(1001,1)
 
 -- local userData = table.tostring({uid = 1,pos = {1,1}})
@@ -57,8 +58,10 @@ event.fork(function ()
 
 	local sceneInst = scene.cScene:new()
 	sceneInst:onCreate(1001,1)
-	local monsterObj = sceneInst:spawnMonster(1,{100,100},30)
+	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 
 	monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
+
+	skillAPI:useSkill(monsterObj,1)
 end)
 
