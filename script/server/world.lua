@@ -10,7 +10,7 @@ local channel = require "channel"
 local startup = import "server.startup"
 local server_manager = import "module.server_manager"
 local world_server = import "module.world.world_server"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 local mongo_indexes = import "common.mongo_indexes"
 
 event.fork(function ()

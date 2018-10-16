@@ -43,7 +43,7 @@ function cLoginUser:auth()
 end
 
 function cLoginUser:createRole(career,name)
-	local role = {career = career,name = "mrq",uid = idBuilder:alloc_user_uid()}
+	local role = {career = career,name = "mrq",uid = idBuilder:allocUserUid()}
 	table.insert(self.accountInfo.list,role)
 	self:markDirty("accountInfo")
 

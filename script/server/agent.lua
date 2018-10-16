@@ -8,7 +8,7 @@ local channel = require "channel"
 local clientMgr = import "module.client_manager"
 local serverMgr = import "module.server_manager"
 local startup = import "server.startup"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 local agent_server = import "module.agent.agent_server"
 
 local mongo_indexes = import "common.mongo_indexes"

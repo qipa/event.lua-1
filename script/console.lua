@@ -60,9 +60,9 @@ event.fork(function ()
 			end
 		end
 
-		local id_builder_info = channel:findAll("common","id_builder",{query = {key = "user"}})
+		local idBuilder_info = channel:findAll("common","idBuilder",{query = {key = "user"}})
 		local builder_ctx = {}
-		for _,info in pairs(id_builder_info) do
+		for _,info in pairs(idBuilder_info) do
 			builder_ctx[info.id] = info
 		end
 
@@ -79,7 +79,7 @@ event.fork(function ()
 
 					local updator = {}
 					updator["$set"] = info
-					channel:findAndModify("id_builder",{query = {id = id,key = "user"},update = updator})
+					channel:findAndModify("idBuilder",{query = {id = id,key = "user"},update = updator})
 				end
 			end
 		end

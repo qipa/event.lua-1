@@ -110,7 +110,7 @@ end
 
 local function _addItem(self,item)
 	if not item.uid then
-		item.uid = idBuilder:alloc_item_uid()
+		item.uid = idBuilder:allocItemUid()
 	end
 	self.itemSlot[item.uid] = item
 	model.bind_item_with_uid(item.uid,item)

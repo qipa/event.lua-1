@@ -8,21 +8,20 @@ local kTYPE_MASK = 100
 local kSTEP = 50
 
 local eTYPE = {
-	user = 1,
-	item = 2,
-	scene = 3,
-	monster = 4,
+	User = 1,
+	Item = 2,
+	Scene = 3,
+	Monster = 4,
 }
 
 local eUNIQUE = {
-	"user",
-	"item",
-	"scene"
+	"User",
+	"Item",
+	"Scene"
 }
 
-
 local eTMP = {
-	"monster"
+	"Monster"
 }
 
 function init(self,serverId,distId)
@@ -56,7 +55,7 @@ function init(self,serverId,distId)
 
 		local idLow = distId + eTYPE[idType] * kPROCESS_MASK + serverId * kTYPE_MASK * kPROCESS_MASK
 
-		self[string.format("alloc_%s_uid",idType)] = function ()
+		self[string.format("alloc%sUid",idType)] = function ()
 			local uid = cursor * idHighMask + idLow
 			cursor = cursor + 1
 			if cursor >= max then
@@ -77,7 +76,8 @@ function init(self,serverId,distId)
 		local step = 1
 		local idLow = eTYPE[idType] * kPROCESS_MASK + distId
 		local idHighMask = kTYPE_MASK * kPROCESS_MASK
-		self[string.format("alloc_%s_tid",idType)] = function ()
+
+		self[string.format("alloc%sTid",idType)] = function ()
 			local tid = next(pool)
 			if tid then
 				pool[tid] = nil
@@ -88,7 +88,7 @@ function init(self,serverId,distId)
 			return tid
 		end
 
-		self[string.format("reclaim_%s_tid",idType)] = function (tid)
+		self[string.format("reclaim%sTid",idType)] = function (tid)
 			pool[tid] = true
 		end
 	end

@@ -11,7 +11,7 @@ function __init__(self)
 end
 
 function cBullet:onCreate(id,pos,range,owner)
-	sceneobj.cSceneObj.onCreate(self,idBuilder:pop_monster_tid(),x,z)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),x,z)
 
 	self.id = id
 	self.range = range

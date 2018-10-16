@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 
 local serverMgr = import "module.server_manager"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 
 
 _agentServerMgr = _agentServerMgr or {}

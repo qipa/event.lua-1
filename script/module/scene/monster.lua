@@ -11,7 +11,7 @@ end
 
 function cMonster:onCreate(id,face,x,z)
 	self.id = id
-	self.uid = idBuilder:pop_monster_tid()
+	self.uid = idBuilder:allocMonsterTid()
 	sceneobj.cSceneObj.onCreate(self,self.uid,x,z)
 	self.stateMgr = stateManager.cStateMgr:new(self)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)

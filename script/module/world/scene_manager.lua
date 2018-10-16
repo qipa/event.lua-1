@@ -25,7 +25,7 @@ function createScene(self,sceneId)
 		end
 	end
 
-	local sceneUid = idBuilder:alloc_scene_uid()
+	local sceneUid = idBuilder:allocSceneUid()
 	serverMgr:sendScene(minServer,"module.scene.scene_server","createScene",{sceneId = sceneId,sceneUid = sceneUid})
 	local info = _sceneMgr[sceneId]
 	if not info then

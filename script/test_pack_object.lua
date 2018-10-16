@@ -2,7 +2,7 @@ local bson = require "bson"
 local util = require "util"
 local scene_user = import "module.scene_user"
 local item_mgr = import "module.item_manager"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 
 
 _G.config = {}

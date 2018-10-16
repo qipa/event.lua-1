@@ -15,11 +15,11 @@ model.set_dbChannel(dbChannel)
 event.fork(function ()
 	local buidler = import "module.id_builder"
 	buidler:init(env.serverId,1)
-
+	table.print(buidler)
 	for i = 1,1024 do
-		print(buidler.alloc_user_uid())
-		print(buidler.alloc_item_uid())
-		print(buidler.alloc_scene_uid())
-		print(buidler.alloc_monster_tid())
+		print(buidler.allocUserUid())
+		print(buidler.allocItemUid())
+		print(buidler.allocSceneUid())
+		print(buidler.allocMonsterTid())
 	end
 end)

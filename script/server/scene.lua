@@ -9,7 +9,7 @@ local http = require "http"
 local helper = require "helper"
 local startup = import "server.startup"
 local server_manager = import "module.server_manager"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 local mongo_indexes = import "common.mongo_indexes"
 
 
@@ -22,7 +22,7 @@ event.fork(function ()
 
 	startup.run(env.monitor,env.mongodb,env.config,env.protocol)
 
-	id_builder:init(env.distId)
+	idBuilder:init(env.distId)
 
 	local listener,reason = server_manager:listenScene()
 	if not listener then

@@ -2,7 +2,7 @@ local event = require "event"
 local model = require "model"
 local timer = require "timer"
 local scene = import "module.scene.scene"
-local id_builder = import "module.id_builder"
+local idBuilder = import "module.id_builder"
 import "handler.cmd_handler"
 
 
