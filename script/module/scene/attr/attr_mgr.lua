@@ -21,6 +21,10 @@ function cAttrMgr:onDestroy()
 
 end
 
+function cAttrMgr:getAttr(attr)
+
+end
+
 function cAttrMgr:addAttr(attrList)
 	local attrId = self.counter
 	self.counter = self.counter + 1

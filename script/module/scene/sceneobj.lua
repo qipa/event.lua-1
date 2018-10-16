@@ -1,12 +1,17 @@
-
 local util = require "util"
 local sceneConst = import "module.scene.scene_const"
 local dbObject = import "module.database_object"
 
-cSceneObj = dbObject.cCollection:inherit("sceneobj")
-
 local angle2dir = util.angle2dir
 local dir2angle = util.dir2angle
+local mathAbs = math.abs
+
+local segmentIntersect = util.segment_intersect
+local rectangleIntersect = util.rectangle_intersect
+local sectorIntersect = util.sector_intersect
+local capsuleIntersect = util.capsule_intersect
+
+cSceneObj = dbObject.cCollection:inherit("sceneobj")
 
 function __init__(self)
 	self.cSceneObj:packField("uid")
@@ -19,13 +24,14 @@ function cSceneObj:onCreate(uid,x,z,face,aoiRange)
 	self.aoiRange = aoiRange
 	self.pos = {x,z}
 	self.face = {0,0} or face
+	self.angle = 0
 	self.speed = 10
+	self.isDead = false
 	self.hp = hp
 	self.maxHp = hp
+
 	self.witnessCtx = {}
 	self.viewerCtx = {}
-
-	self.isDead = false
 end
 
 function cSceneObj:onDestroy()
@@ -41,8 +47,10 @@ function cSceneObj:getSeeInfo()
 end
 
 function cSceneObj:enterScene(scene,x,z)
-	self.pos[1] = x
-	self.pos[2] = z
+	if self.scene == scene then
+		self:goto(x,z)
+		return
+	end
 	scene:enter(self,{x,z})
 end
 
@@ -73,19 +81,39 @@ function cSceneObj:onLeaveScene(scene)
 end
 
 function cSceneObj:move(x,z)
+	if not self.scene then
+		return false
+	end
+
+	local x,z = self.scene:posAroundMovable(x,z,2)
+
+	local ox = self.pos[1]
+	local oz = self.pos[2]
+
+	local dx = x - ox
+	local dz = z - oz
+
+	if mathAbs(dx) <= 0.1 and mathAbs(dz) <= 0.1 then
+		return false
+	end
+
 	self.scene:moveAoiEntity(self,x,z)
 	if self.aoiTriggerId then
 		self.scene:moveAoiTrigger(self,x,z)
 	end
 
-	local ox = self.pos[1]
-	local oz = self.pos[2]
-
 	self.pos[1] = x
 	self.pos[2] = z
 	
-	self.face[1] = x - ox
-	self.face[2] = z - oz
+	self.face[1] = dx
+	self.face[2] = dz
+
+	self.angle = dir2angle(self.face)
+end
+
+function cSceneObj:goto(x,z)
+	self:move(x,z)
+
 end
 
 function cSceneObj:onObjEnter(sceneObjList)
@@ -129,55 +157,67 @@ function cSceneObj:getWitness()
 	return result
 end
 
-function cSceneObj:getWitnessCid()
+function cSceneObj:getWitnessCid(filterFunc,...)
 	local result = {}
-	local sceneInst = self.scene
+	local objMgr = self.scene.objMgr
+
+	local fighterType = sceneConst.eSCENEOBJ_TYPE.FIGHTER
 
 	for sceneObjUid in pairs(self.witnessCtx) do
-		local sceneObj = sceneInst.objMgr[sceneObjUid]
-		if sceneObj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
-			table.insert(result,sceneObj.cid)
+		local sceneObj = objMgr[sceneObjUid]
+		if sceneObj:sceneObjType() == fighterType then
+			if filterFunc and filterFunc(...,sceneObj) then
+				table.insert(result,sceneObj.cid)
+			else
+				table.insert(result,sceneObj.cid)
+			end
 		end
 	end
 
 	return result
 end
 
-function cSceneObj:getObjInLine(from,to)
+function cSceneObj:getObjInLine(from,to,cmpFunc,...)
 	local from = from or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.segment_intersect(from[1],from[2],to[1],to[2],obj.pos[1],obj.pos[2],obj.range) then
-			table.insert(result,obj)
+		if segmentIntersect(from[1],from[2],to[1],to[2],obj.pos[1],obj.pos[2],obj.range) then
+			if cmpFunc and cmpFunc(...,obj) then
+				table.insert(result,obj)
+			else
+				table.insert(result,obj)
+			end
 		end
 	end
 
 	return result
 end
 
-function cSceneObj:getObjInRectangle(pos,dir,length,width)
+function cSceneObj:getObjInRectangle(pos,dir,length,width,cmpFunc,...)
 	local angle = dir2angle(dir[1],dir[2])
 
-	print("getObjInRectangle",pos[1],pos[2],angle,length,width)
 	local pos = pos or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.rectangle_intersect(pos[1],pos[2],length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
-			table.insert(result,obj)
+		if rectangleIntersect(pos[1],pos[2],length,width,angle,obj.pos[1],obj.pos[2],obj.range) then
+			if cmpFunc and cmpFunc(...,obj) then
+				table.insert(result,obj)
+			else
+				table.insert(result,obj)
+			end
 		end
 	end
 
 	return result
 end
 
-function cSceneObj:getObjInCircle(pos,range)
-	print("getObjInCircle",pos[1],pos[2],range)
+function cSceneObj:getObjInCircle(pos,range,cmpFunc,...)
 	local pos = pos or self.pos
 
 	local result = {}
@@ -185,38 +225,50 @@ function cSceneObj:getObjInCircle(pos,range)
 	for _,obj in pairs(allObjs) do
 		local totalRange = range + obj.range
 		if util.sqrt_distance(pos[1],pos[2],obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
-			table.insert(result,obj)
+			if cmpFunc and cmpFunc(...,obj) then
+				table.insert(result,obj)
+			else
+				table.insert(result,obj)
+			end
 		end
 	end
 
 	return result
 end
 
-function cSceneObj:getObjInSector(pos,dir,degree,range)
+function cSceneObj:getObjInSector(pos,dir,degree,range,cmpFunc,...)
 	local angle = dir2angle(dir[1],dir[2])
-	print("getObjInSector",pos[1],pos[2],angle,degree,range)
+
 	local pos = pos or self.pos
 
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.sector_intersect(pos[1],pos[2],angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
-			table.insert(result,obj)
+		if sectorIntersect(pos[1],pos[2],angle,degree,range,obj.pos[1],obj.pos[2],obj.range) then
+			if cmpFunc and cmpFunc(...,obj) then
+				table.insert(result,obj)
+			else
+				table.insert(result,obj)
+			end
 		end
 	end
 
 	return result
 end
 
-function cSceneObj:getObjInCapsule(from,to,r)
+function cSceneObj:getObjInCapsule(from,to,r,cmpFunc,...)
 	local from = from or self.pos
 	local result = {}
 
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
-		if util.capsule_intersect(from[1],from[2],to[1],to[2],r,obj.pos[1],obj.pos[2],obj.range) then
-			table.insert(result,obj)
+		if capsuleIntersect(from[1],from[2],to[1],to[2],r,obj.pos[1],obj.pos[2],obj.range) then
+			if cmpFunc and cmpFunc(...,obj) then
+				table.insert(result,obj)
+			else
+				table.insert(result,obj)
+			end
 		end
 	end
 
