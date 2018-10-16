@@ -64,7 +64,7 @@ function API.saveRecentLoginSrvs(channel,args)
 end 
 
 function API.getLoginBulletin(channel,args)
-	return {title = "标题",content = "内容"}
+	return {title = "游戏测试公告",content = "为给玩家提供更好的游戏体验，我们将开启外网测试服进行游戏测试，如果在测试途中遇到任何阻碍游戏流程的Bug或者体验问题，请及时告知相关人员处理。"}
 end
 
 function dispatcher(channel,header,url,body)
