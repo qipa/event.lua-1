@@ -2,17 +2,18 @@ local persistence = require "persistence"
 local model = require "model"
 require "lfs"
 
-local kPROCESS_OFFSET = 100
-local kSERVER_OFFSET = 10000
-local kMASK_OFFSET = 10
+local kPROCESS_MASK = 100
+local kSERVER_MASK = 10000
+local kTYPE_MASK = 100
 local kSTEP = 50
 
-local eFIELD_MASK = {
+local eTYPE = {
 	user = 1,
 	item = 2,
 	scene = 3,
 	monster = 4,
 }
+
 local eUNIQUE = {
 	"user",
 	"item",
@@ -25,14 +26,17 @@ local eTMP = {
 }
 
 function init(self,serverId,distId)
-	assert(serverId < kSERVER_OFFSET,string.format("error serverId:%d",serverId))
-	assert(distId < kPROCESS_OFFSET,string.format("error distId:%d",serverId))
-
 	local dbChannel = model.get_dbChannel()
 	assert(dbChannel ~= nil,string.format("no db channel"))
 
-	for _,field in pairs(eUNIQUE) do
-		local query = {id = distId,key = field}
+	assert(serverId < kSERVER_MASK,string.format("error serverId:%d",serverId))
+	assert(distId < kPROCESS_MASK,string.format("error distId:%d",serverId))
+
+	for _,idType in pairs(eUNIQUE) do
+		local typeId = eTYPE[idType]
+		assert(typeId < kTYPE_MASK,string.format("error type id:%d",typeId))
+
+		local query = {id = distId,key = idType}
 		local result = dbChannel:findOne("common","idBuilder",{query = query})
 		if not result then
 			result = {begin = 1,offset = kSTEP}
@@ -48,8 +52,12 @@ function init(self,serverId,distId)
 		local cursor = result.begin
 		local max = result.begin + result.offset
 
-		self[string.format("alloc_%s_uid",field)] = function ()
-			local uid = cursor * kMASK_OFFSET * kSERVER_OFFSET * kPROCESS_OFFSET + serverId * kMASK_OFFSET * kPROCESS_OFFSET + eFIELD_MASK[field] * kPROCESS_OFFSET + distId
+		local idHighMask = kTYPE_MASK * kSERVER_MASK * kPROCESS_MASK
+
+		local idLow = distId + eTYPE[idType] * kPROCESS_MASK + serverId * kTYPE_MASK * kPROCESS_MASK
+
+		self[string.format("alloc_%s_uid",idType)] = function ()
+			local uid = cursor * idHighMask + idLow
 			cursor = cursor + 1
 			if cursor >= max then
 				result.begin = cursor
@@ -64,21 +72,23 @@ function init(self,serverId,distId)
 		end
 	end
 
-	for _,field in pairs(eTMP) do
+	for _,idType in pairs(eTMP) do
 		local pool = {}
 		local step = 1
-		self[string.format("pop_%s_tid",field)] = function ()
+		local idLow = eTYPE[idType] * kPROCESS_MASK + distId
+		local idHighMask = kTYPE_MASK * kPROCESS_MASK
+		self[string.format("alloc_%s_tid",idType)] = function ()
 			local tid = next(pool)
 			if tid then
 				pool[tid] = nil
 				return tid
 			end
-			local tid = step * kMASK_OFFSET * kPROCESS_OFFSET + eFIELD_MASK[field] * kPROCESS_OFFSET + distId
+			local tid = step * idHighMask + idLow
 			step = step + 1
 			return tid
 		end
 
-		self[string.format("push_%s_tid",field)] = function (tid)
+		self[string.format("reclaim_%s_tid",idType)] = function (tid)
 			pool[tid] = true
 		end
 	end
