@@ -310,12 +310,41 @@ segment_intersect(vector2_t* a, vector2_t* b, vector2_t* center, float r) {
 }
 
 int
+in_front_of(vector2_t* src, float angle, vector2_t* dot) {
+    vector2_t delta;
+    vector2_sub(&delta, dot, src);
+
+    if (delta.x == 0 && delta.z == 0) {
+        return 1;
+    }
+
+    float z_angle = deg(atan2(delta.x, delta.z));
+    float diff_z_angle = z_angle - angle;
+
+    if (diff_z_angle >= 270) {
+        diff_z_angle -= 360;
+    } else if (diff_z_angle <= -270) {
+        diff_z_angle += 360;
+    }
+
+    if (diff_z_angle < -90 || diff_z_angle > 90) {
+        return 0;
+    }
+
+    return 1;
+}
+
+int
 inside_circle(vector2_t* center, float l, vector2_t* dot, float r) {
     return circle_intersect(center, l, dot, r);
 }
 
 int
 inside_sector(vector2_t* center, float angle, float degree, float l, vector2_t* dot, float r) {
+    if (in_front_of(center, angle, dot) == 0) {
+        return 0;
+    }
+
     vector2_t delta;
     vector2_sub(&delta, dot, center);
 
@@ -345,6 +374,10 @@ inside_sector(vector2_t* center, float angle, float degree, float l, vector2_t* 
 
 int
 inside_rectangle(vector2_t* src, float angle, float length, float width, vector2_t* dot, float r) {
+    if (in_front_of(src, angle, dot) == 0) {
+        return 0;
+    }
+    
     vector2_t delta;
     vector2_sub(&delta, dot, src);
 
@@ -375,31 +408,6 @@ inside_rectangle(vector2_t* src, float angle, float length, float width, vector2
     if ((change_x < 0 || change_x > length) || (change_z < 0 ||  change_z > (width / 2))) {
         return 0;
     }
-    return 1;
-}
-
-int
-in_front_of(vector2_t* src, float angle, vector2_t* dot) {
-    vector2_t delta;
-    vector2_sub(&delta, dot, src);
-
-    if (delta.x == 0 && delta.z == 0) {
-        return 1;
-    }
-
-    float z_angle = deg(atan2(delta.x, delta.z));
-    float diff_z_angle = z_angle - angle;
-
-    if (diff_z_angle >= 270) {
-        diff_z_angle -= 360;
-    } else if (diff_z_angle <= -270) {
-        diff_z_angle += 360;
-    }
-
-    if (diff_z_angle < -90 || diff_z_angle > 90) {
-        return 0;
-    }
-
     return 1;
 }
 
