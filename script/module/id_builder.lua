@@ -24,16 +24,14 @@ local eTMP = {
 	"Monster"
 }
 
-function init(self,serverId,distId)
-	local dbChannel = model.get_dbChannel()
-	assert(dbChannel ~= nil,string.format("no db channel"))
+-- local kUSE_MONGO = true
 
-	assert(serverId < kSERVER_MASK,string.format("error serverId:%d",serverId))
-	assert(distId < kPROCESS_MASK,string.format("error distId:%d",serverId))
+local persistenceObj = persistence:open("./data/","idBuilder")
 
-	for _,idType in pairs(eUNIQUE) do
-		local typeId = eTYPE[idType]
-		assert(typeId < kTYPE_MASK,string.format("error type id:%d",typeId))
+local function loadIdInfo(distId,idType)
+	if kUSE_MONGO then
+		local dbChannel = model.get_dbChannel()
+		assert(dbChannel ~= nil,string.format("no db channel"))
 
 		local query = {id = distId,key = idType}
 		local result = dbChannel:findOne("common","idBuilder",{query = query})
@@ -48,8 +46,51 @@ function init(self,serverId,distId)
 		updator["$set"] = result
 		dbChannel:update("common","idBuilder",query,updator,true)
 
-		local cursor = result.begin
-		local max = result.begin + result.offset
+		return result
+	else
+		local keyType = string.format("%d@%s",distId,idType)
+		local result = persistenceObj:load(keyType)
+		if not result then
+			result = {begin = 1,offset = kSTEP}
+		else
+			result.begin = result.begin + result.offset
+			result.offset = kSTEP
+		end
+		persistenceObj:save(keyType,result)
+
+		return result
+	end
+end
+
+local function saveIdInfo(distId,idType,idInfo)
+	if kUSE_MONGO then
+		local dbChannel = model.get_dbChannel()
+		assert(dbChannel ~= nil,string.format("no db channel"))
+		local query = {id = distId,key = idType}
+		local updator = {}
+		updator["$set"] = idInfo
+		dbChannel:update("common","idBuilder",query,updator,true)
+	else
+		local keyType = string.format("%d@%s",distId,idType)
+		persistenceObj:save(keyType,idInfo)
+	end
+end
+
+function init(self,serverId,distId)
+	local dbChannel = model.get_dbChannel()
+	assert(dbChannel ~= nil,string.format("no db channel"))
+
+	assert(serverId < kSERVER_MASK,string.format("error serverId:%d",serverId))
+	assert(distId < kPROCESS_MASK,string.format("error distId:%d",serverId))
+
+	for _,idType in pairs(eUNIQUE) do
+		local typeId = eTYPE[idType]
+		assert(typeId < kTYPE_MASK,string.format("error type id:%d",typeId))
+
+		local idInfo = loadIdInfo(distId,idType)
+
+		local cursor = idInfo.begin
+		local max = idInfo.begin + idInfo.offset
 
 		local idHighMask = kTYPE_MASK * kSERVER_MASK * kPROCESS_MASK
 
@@ -59,13 +100,9 @@ function init(self,serverId,distId)
 			local uid = cursor * idHighMask + idLow
 			cursor = cursor + 1
 			if cursor >= max then
-				result.begin = cursor
-				max = result.begin + result.offset
-
-				local dbChannel = model.get_dbChannel()
-				local updator = {}
-				updator["$set"] = result
-				dbChannel:update("common","idBuilder",query,updator,true)
+				idInfo.begin = cursor
+				max = idInfo.begin + idInfo.offset
+				saveIdInfo(distId,idType,idInfo)
 			end
 			return uid
 		end
@@ -88,7 +125,7 @@ function init(self,serverId,distId)
 			return tid
 		end
 
-		self[string.format("reclaim%sTid",idType)] = function (tid)
+		self[string.format("reclaim%sTid",idType)] = function (self,tid)
 			pool[tid] = true
 		end
 	end

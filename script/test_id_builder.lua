@@ -16,10 +16,18 @@ event.fork(function ()
 	local buidler = import "module.id_builder"
 	buidler:init(env.serverId,1)
 	table.print(buidler)
-	for i = 1,1024 do
-		print(buidler.allocUserUid())
-		print(buidler.allocItemUid())
-		print(buidler.allocSceneUid())
-		print(buidler.allocMonsterTid())
-	end
+
+	util.time_diff("alloc id",function ()
+		for i = 1,1024 * 1024 do
+			buidler:allocUserUid()
+		end
+	end)
+	-- for i = 1,1024 do
+	-- 	print(buidler:allocUserUid())
+	-- 	print(buidler:allocItemUid())
+	-- 	print(buidler:allocSceneUid())
+	-- 	local monsterTid = buidler:allocMonsterTid()
+	-- 	print(monsterTid)
+	-- 	buidler:reclaimMonsterTid(monsterTid)
+	-- end
 end)

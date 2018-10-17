@@ -45,7 +45,7 @@ end
 function _M:load(k)
 	local FILE = io.open(self.db..k,"r")
 	if not FILE then
-		return {}
+		return
 	end
 	local omd5 = FILE:read()
 	local content = FILE:read("*a")
