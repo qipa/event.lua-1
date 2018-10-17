@@ -63,8 +63,12 @@ function API.saveRecentLoginSrvs(channel,args)
 	return true
 end 
 
+local ad = [[我们已于2018年10月17日开启游戏测试活动，本次活动无限制，只要下载客户端即可登录游戏参与游戏测试。
+本次参与测试的服务器：外网测试服
+本次测试时长：未知，以官方通知为准
+]]
 function API.getLoginBulletin(channel,args)
-	return {title = "游戏测试公告",content = "为给玩家提供更好的游戏体验，我们将开启外网测试服进行游戏测试，如果在测试途中遇到任何阻碍游戏流程的Bug或者体验问题，请及时告知相关人员处理。"}
+	return {title = "测试活动开启",content = ad}
 end
 
 function dispatcher(channel,header,url,body)
