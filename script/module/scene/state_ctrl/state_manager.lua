@@ -7,7 +7,7 @@ local eState = {
 	["MOVE"] = import("module.scene.state_ctrl.move_state").cStateMove,
 	["SKILL"] = import("module.scene.state_ctrl.skill_state").cStateSkill,
 	["HIT_BACK"] = import("module.scene.state_ctrl.hitback_state").cStateHitBack,
-	-- ["HIT_FLY"] = import "module.scene.state_ctrl.hitfly_state",
+	["HIT_FLY"] = import("module.scene.state_ctrl.hitfly_state").cStateHitFly,
 }
 
 cStateMgr = object.cObject:inherit("stateMgr")

@@ -10,6 +10,7 @@ local segmentIntersect = util.segment_intersect
 local rectangleIntersect = util.rectangle_intersect
 local sectorIntersect = util.sector_intersect
 local capsuleIntersect = util.capsule_intersect
+local sqrtDistance = util.sqrt_dot2dot
 
 cSceneObj = dbObject.cCollection:inherit("sceneobj")
 
@@ -18,12 +19,12 @@ function __init__(self)
 	self.cSceneObj:packField("pos")
 end
 
-function cSceneObj:onCreate(uid,x,z,face,aoiRange)
-	print("cSceneObj:create",uid)
+function cSceneObj:onCreate(uid,pos,face,aoiRange)
+	print("cSceneObj:create",uid,pos[1],pos[2],face,aoiRange)
 	self.uid = uid
 	self.aoiRange = aoiRange
-	self.pos = {x,z}
-	self.face = {0,0} or face
+	self.pos = {pos[1],pos[2]}
+	self.face = pos or {0,0}
 	self.angle = 0
 	self.speed = 10
 	self.isDead = false
@@ -48,7 +49,7 @@ end
 
 function cSceneObj:enterScene(scene,x,z)
 	if self.scene == scene then
-		self:goto(x,z)
+		self:flashTo(x,z)
 		return
 	end
 	scene:enter(self,{x,z})
@@ -85,7 +86,7 @@ function cSceneObj:move(x,z)
 		return false
 	end
 
-	local x,z = self.scene:posAroundMovable(x,z,2)
+	-- local x,z = self.scene:posAroundMovable(x,z,2)
 
 	local ox = self.pos[1]
 	local oz = self.pos[2]
@@ -108,12 +109,11 @@ function cSceneObj:move(x,z)
 	self.face[1] = dx
 	self.face[2] = dz
 
-	self.angle = dir2angle(self.face)
+	self.angle = dir2angle(dx,dz)
 end
 
-function cSceneObj:goto(x,z)
+function cSceneObj:flashTo(x,z)
 	self:move(x,z)
-
 end
 
 function cSceneObj:onObjEnter(sceneObjList)
@@ -224,7 +224,7 @@ function cSceneObj:getObjInCircle(pos,range,cmpFunc,...)
 	local allObjs = self:getViewer()
 	for _,obj in pairs(allObjs) do
 		local totalRange = range + obj.range
-		if util.sqrt_distance(pos[1],pos[2],obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
+		if sqrtDistance(pos[1],pos[2],obj.pos[1],obj.pos[2]) <= totalRange * totalRange then
 			if cmpFunc and cmpFunc(...,obj) then
 				table.insert(result,obj)
 			else

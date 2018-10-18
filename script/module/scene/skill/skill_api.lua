@@ -27,7 +27,7 @@ local hitInfo = {
 		[2] = { 
 			time = 1.5,
 			event = { [eSKILL_EVENT.DAMAGE] = {},
-					  [eSKILL_EVENT.HIT_FLY] = {time = 1} },
+					  [eSKILL_EVENT.HIT_FLY] = {time = 1,interval = 1} },
 			atkBox = {boxType = eATTACK_BOX.RECTANGLE,length = 100,width = 20}
 		},
 		[3] = { 
@@ -115,7 +115,7 @@ end
 function onDamage(self,attacker,hitter)
 	local damage = self:calcDamage(attacker,hitter)
 
-	hitter:onDamage(damage)
+	-- hitter:onDamage(damage)
 end
 
 function onHitFly(self,attacker,hitter,hitInfo)
@@ -132,9 +132,7 @@ function onHitFly(self,attacker,hitter,hitInfo)
 		return
 	end
 
-	local flyInfo = {endTime = event.now() + hitInfo.flyInterval}
-
-	hitterStateMgr:addState("HIT_FLY",flyInfo)
+	hitterStateMgr:addState("HIT_FLY",{interval = hitInfo.interval})
 end
 
 function onHitBack(self,attacker,hitter)
@@ -153,7 +151,7 @@ function onHitBack(self,attacker,hitter)
 
 	local interval = hitInfo.flyBackInterval
 	local speed = hitInfo.flyBackSpeed
-	local flyInfo = {endTime = event.time() + interval,interval = interval,speed}
+	local flyInfo = {endTime = event.now() + interval,interval = interval,speed = speed}
 
 	hitterStateMgr:addState("HIT_BACK",flyInfo)
 end

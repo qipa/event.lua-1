@@ -12,6 +12,7 @@ local itemContainer = import "module.agent.item.item_container"
 local worldServer = import "module.world.world_server"
 local scene = import "module.scene.scene"
 local skillAPI = import "module.scene.skill.skill_api"
+local bullet = import "module.scene.bullet"
 -- sceneServer:createScene(1001,1)
 
 -- local userData = table.tostring({uid = 1,pos = {1,1}})
@@ -58,12 +59,18 @@ event.fork(function ()
 
 	local sceneInst = scene.cScene:new()
 	sceneInst:onCreate(1001,1)
-	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
+	local monsterObj0 = sceneInst:spawnMonster(1,{100,100},{1,0})
 	
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 
 	-- monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
 
 	skillAPI:useSkill(monsterObj,1)
+
+	local bulletObj = bullet.cBullet:new()
+	bulletObj:onCreate(1,{500,500},50,monsterObj0)
+	bulletObj:setLockTarget(monsterObj)
+
+	bulletObj:enterScene(sceneInst,600,500)
 end)
 

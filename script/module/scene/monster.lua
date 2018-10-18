@@ -9,12 +9,13 @@ function __init__(self)
 	
 end
 
-function cMonster:onCreate(id,face,x,z)
+function cMonster:onCreate(id,pos,face)
 	self.id = id
-	self.uid = idBuilder:allocMonsterTid()
-	sceneobj.cSceneObj.onCreate(self,self.uid,x,z)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,100)
 	self.stateMgr = stateManager.cStateMgr:new(self)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
+
+	self.range = 50
 end
 
 function cMonster:onDestroy()
