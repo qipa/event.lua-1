@@ -5,7 +5,7 @@ cAICtrl = sceneobj.cSceneObj:inherit("aiCtrl")
 
 
 function cAICtrl:ctor(sceneObj)
-	self.owner = sceneObj
+	self.aiCharactor = sceneObj
 end
 
 function cAICtrl:onCreate()

@@ -7,9 +7,7 @@ local skillApi = import "module.scene.skill.skill_api"
 cStateHitFly = stateBase.cStateBase:inherit("stateHitFly")
 
 function cStateHitFly:ctor(sceneObj,hitFlyInfo)
-	local now = event.now()
-	self.startTime = now
-	self.overTime = now + hitFlyInfo.interval
+	self.overTime = event.now() + hitFlyInfo.time
 	self.owner = sceneObj
 end
 

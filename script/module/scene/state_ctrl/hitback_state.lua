@@ -6,13 +6,16 @@ local skillApi = import "module.scene.skill.skill_api"
 
 cStateHitBack = stateBase.cStateBase:inherit("stateHitBack")
 
+local moveTorward = util.move_torward
+
 function cStateHitBack:ctor(sceneObj,hitBackInfo)
-	local now = event.now()
-	self.lastTime = now
-	self.beginTime = event.now()
-	self.endTime = hitBackInfo.endTime
+	self.lastTime = event.now()
+	
+	self.startTime = hitBackInfo.startTime
+	self.overTime = hitBackInfo.overTime
 	self.speed = hitBackInfo.speed
 	self.angle = hitBackInfo.angle
+
 	self.owner = sceneObj
 end
 
@@ -24,25 +27,22 @@ function cStateHitBack:onDestroy()
 end
 
 function cStateHitBack:onUpdate(now)
-
-	local now = event.now()
-
-	local interval
+	local now = now or event.now()
 
 	local flyOver = false
-
-	if now >= self.endTime then
-		interval = self.endTime - self.lastTime
+	local dtTime
+	if now >= self.overTime then
+		dtTime = self.overTime - self.lastTime
 		flyOver = true
 	else
-		interval = now - self.lastTime
+		dtTime = now - self.lastTime
 	end
 
 	local opos = self.owner.pos
 
-	local dtFly = self.speed * interval
-	local dir = util.angle2dir(self.angle)
-	local nx,nz = util.move_forward(opos[1],opos[2],dir,dtFly)
+	local dtFly = self.speed * dtTime
+
+	local nx,nz = moveTorward(opos[1],opos[2],self.angle,dtFly)
 
 	self.owner:move(nx,nz)
 	
