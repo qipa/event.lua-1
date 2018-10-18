@@ -130,7 +130,8 @@ get_region(aoi_t* aoi, location_t* local, region_t* out, uint32_t range) {
 
 static inline object_t*
 new_object(aoi_t* aoi, int uid, int type, float x, float z) {
-	object_t* obj = pool_malloc(aoi->pool);
+	// object_t* obj = pool_malloc(aoi->pool);
+	object_t* obj = malloc(sizeof(*obj));
 	memset(obj, 0, sizeof(*obj));
 
 	obj->id = container_add(aoi->container, obj);
@@ -148,7 +149,8 @@ new_object(aoi_t* aoi, int uid, int type, float x, float z) {
 static inline void
 free_object(aoi_t* aoi, object_t* obj) {
 	container_remove(aoi->container, obj->id);
-	pool_free(aoi->pool, obj);
+	// pool_free(aoi->pool, obj);
+	free(obj);
 }
 
 static inline void

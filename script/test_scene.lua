@@ -1,6 +1,7 @@
 local event = require "event"
 local mongo = require "mongo"
 local model = require "model"
+local helper = require "helper"
 local idBuilder = import "module.id_builder"
 local startup = import "server.startup"
 local clientMgr = import "module.client_manager"
@@ -67,10 +68,21 @@ event.fork(function ()
 
 	-- skillAPI:useSkill(monsterObj,1)
 
-	local bulletObj = bullet.cBullet:new()
-	bulletObj:onCreate(1,{500,500},50,monsterObj0)
-	bulletObj:setLockTarget(monsterObj)
+	for i = 1,1024 * 10 do
+		local bulletObj = bullet.cBullet:new()
+		bulletObj:onCreate(1,{math.random(1,1000),math.random(1,1000)},50,monsterObj0)
 
-	bulletObj:enterScene(sceneInst,600,500)
+		bulletObj:setLockTarget(monsterObj)
+		bulletObj:enterScene(sceneInst,math.random(1,1000),math.random(1,1000))
+	end
+
+	while true do
+		event.sleep(2)
+		print(collectgarbage("collect"))
+		helper.free()
+		print(collectgarbage("count"),helper.allocated() / 1024)
+		class.countObject("bullet")
+
+	end
 end)
 

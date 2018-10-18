@@ -23,19 +23,26 @@ end
 
 function cBulletCtrl:onUpdate(now)
 	local now = now or event.now()
-	local interval = (now - self.lastTime) / 1000
+	local ownerObj = self.owner
 
-	local pos = {self.owner.pos[1],self.owner.pos[2]}
+	local dtTime = (now - self.lastTime) / 1000
 
-	local endPos = self.owner:getEndPos()
+	local ox = ownerObj.pos[1]
+	local oz = ownerObj.pos[2]
 
-	local dir = {endPos[1] - pos[1],endPos[2] - pos[2]}
+	local endPos = ownerObj:getEndPos()
 
-	local angle = dir2angle(dir[1],dir[2])
+	local endX = endPos[1]
+	local endZ = endPos[2]
 
-	local dtMove = interval * self.owner.speed
+	local dx = endX - ox
+	local dz = endZ - oz
 
-	local dt = dtDot2Dot(pos[1],pos[2],endPos[1],endPos[2])
+	local angle = dir2angle(dx,dz)
+
+	local dtMove = dtTime * ownerObj.speed
+
+	local dt = dtDot2Dot(ox,oz,endX,endZ)
 
 	local isFlyOver = false
 	if dtMove >= dt then
@@ -43,13 +50,14 @@ function cBulletCtrl:onUpdate(now)
 		isFlyOver = true
 	end
 
-	local nx,nz = moveTorward(pos[1],pos[2],angle,dtMove)
+	local nx,nz = moveTorward(ox,oz,angle,dtMove)
 
-	self.owner:move(nx,nz)
+	ownerObj:move(nx,nz)
 
 	self.lastTime = now
 
-	local isOver = self.owner:doCollision(pos,self.owner.pos)
+	local isOver = ownerObj:doCollision({ox,oz},{nx,nz})
+	
 	return isFlyOver or isOver
 end
 

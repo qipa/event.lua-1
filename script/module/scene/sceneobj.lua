@@ -125,7 +125,7 @@ function cSceneObj:onObjLeave(sceneObjList)
 end
 
 function cSceneObj:onUpdate(now)
-	print("cSceneObj:onUpdate")
+
 end
 
 function cSceneObj:onCommonUpdate(now)

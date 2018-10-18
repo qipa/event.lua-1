@@ -1,4 +1,5 @@
 local util = require "util"
+local event = require "event"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local idBuilder = import "module.id_builder"
@@ -12,7 +13,7 @@ function __init__(self)
 end
 
 function cBullet:onCreate(id,pos,range,owner)
-	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,range)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,3)
 
 	self.id = id
 	self.range = range

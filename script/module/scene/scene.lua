@@ -62,7 +62,7 @@ end
 
 function cScene:enter(sceneObj,pos)
 	local pos = pos or sceneObj.pos
-	table.print(pos)
+
 	assert(self.objMgr[sceneObj.uid] == nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = sceneObj
 	
@@ -160,7 +160,7 @@ function cScene:posAroundMovable(x,z,depth)
 end
 
 function cScene:createAoiEntity(sceneObj)
-	print("sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2]",sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2],sceneObj)
+	
 	local entityId,aoiSet = self.aoi:create_entity(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2])
 
 	for _,otherUid in pairs(aoiSet) do
