@@ -29,8 +29,8 @@ function cAIStateFollow:onUpdate(now)
 		return false
 	end
 
-	if self.following then
-
+	if self.followPos then
+		
 	end
 	return true
 end
