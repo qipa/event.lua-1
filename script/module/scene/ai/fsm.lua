@@ -29,9 +29,10 @@ end
 function cFSM:switchState(state,info)
 	if self.aiState then
 		self.aiState:onLeave()
+		self.aiState:release()
 	end
 
-	local aiState = eAI_STATE[state]:new(info)
+	local aiState = eAI_STATE[state]:new(self,self.charactor,info)
 	aiState:onEnter(self.charactor,info)
 
 	self.aiState = aiState
