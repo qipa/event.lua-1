@@ -65,7 +65,7 @@ event.fork(function ()
 
 	-- monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
 
-	skillAPI:useSkill(monsterObj,1)
+	-- skillAPI:useSkill(monsterObj,1)
 
 	local bulletObj = bullet.cBullet:new()
 	bulletObj:onCreate(1,{500,500},50,monsterObj0)

@@ -1,3 +1,4 @@
+local util = require "util"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local idBuilder = import "module.id_builder"
@@ -16,6 +17,7 @@ function cBullet:onCreate(id,pos,range,owner)
 	self.id = id
 	self.range = range
 	self.master = owner
+	self.speed = 20
 	
 	self.lockTarget = nil
 	self.endPos = nil
@@ -57,10 +59,9 @@ function cBullet:getEndPos()
 end
 
 function cBullet:doCollision(from,to)
-
-	if self.LockTarget then
-		if util.capsule_intersect(from[1],from[2],to[1],to[2],self.range,self.LockTarget.pos[1],self.LockTarget.pos[2],self.LockTarget.range) then
-			skillApi:onDamage(self.master,self.LockTarget)
+	if self.lockTarget then
+		if util.capsule_intersect(from[1],from[2],to[1],to[2],self.range,self.lockTarget.pos[1],self.lockTarget.pos[2],self.lockTarget.range) then
+			skillApi:onDamage(self.master,self.lockTarget)
 			return true
 		end
 	else
@@ -78,6 +79,7 @@ function cBullet:onUpdate(now)
 	sceneobj.cSceneObj.onUpdate(self,now)
 
 	if self.bulletCtrl:onUpdate(now) then
+		self:leaveScene()
 		self:release()
 	end
 end

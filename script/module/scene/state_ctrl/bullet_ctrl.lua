@@ -25,7 +25,7 @@ function cBulletCtrl:onUpdate(now)
 	local now = now or event.now()
 	local interval = (now - self.lastTime) / 1000
 
-	local pos = self.owner.pos
+	local pos = {self.owner.pos[1],self.owner.pos[2]}
 
 	local endPos = self.owner:getEndPos()
 
@@ -46,8 +46,6 @@ function cBulletCtrl:onUpdate(now)
 	local nx,nz = moveTorward(pos[1],pos[2],angle,dtMove)
 
 	self.owner:move(nx,nz)
-
-	print(nx,nz)
 
 	self.lastTime = now
 

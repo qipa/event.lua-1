@@ -70,11 +70,11 @@ function cSceneObj:onEnterScene(scene)
 end
 
 function cSceneObj:onLeaveScene(scene)
-	scene:removeEntity(self)
+	scene:removeAoiEntity(self)
 	self.aoiEntityId = nil
 
 	if self.aoiTriggerId then
-		scene:removeTrigger(self)
+		scene:removeAoiTrigger(self)
 		self.aoiTriggerId = nil
 	end
 

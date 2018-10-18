@@ -321,7 +321,7 @@ function _M.angle2dir(angle)
 end
 
 function _M.dir2angle(x,z)
-    return math.deg(math.atan2(x, z))
+    return math.deg(math.atan2(z, x))
 end
 
 return _M
