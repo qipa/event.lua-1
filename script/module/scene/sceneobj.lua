@@ -132,13 +132,17 @@ function cSceneObj:onCommonUpdate(now)
 
 end
 
-function cSceneObj:getViewer()
+function cSceneObj:getViewer(findType)
 	local result = {}
 	local objMgr = self.scene.objMgr
 
 	for sceneObjUid in pairs(self.viewerCtx) do
 		local sceneObj = objMgr[sceneObjUid]
-		table.insert(result,sceneObj)
+		if findType and sceneObj:sceneObjType() == findType then
+			table.insert(result,sceneObj)
+		else
+			table.insert(result,sceneObj)
+		end
 	end
 
 	return result
