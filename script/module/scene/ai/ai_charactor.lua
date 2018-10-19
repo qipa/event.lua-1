@@ -27,7 +27,7 @@ function cAICharactor:searchEnemy()
 	local minDt
 	local enemyUid
 	for _,enemy in pairs(enemyList) do
-		local dt = util.dot2dot2(pos[1],pos[2],enemy.pos)
+		local dt = util.dot2dot(pos[1],pos[2],enemy.pos)
 		if not minDt or minDt > dt then
 			minDt = dt
 			enemyUid = enemy.uid
