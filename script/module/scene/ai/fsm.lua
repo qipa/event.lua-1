@@ -16,7 +16,6 @@ function cFSM:ctor(charactor)
 	self.charactor = charactor
 
 	self.aiState = nil
-
 end
 
 function cFSM:onCreate()

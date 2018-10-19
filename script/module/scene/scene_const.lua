@@ -34,10 +34,16 @@ eSCENE_FAIL_EVENT = {
 }
 
 eSCENE_AREA_EVENT = {
-	AREA = 1,
-	MONSTER = 2,
-	PORTAL = 3,
+	ActiveArea = 1,
+	SpawnMonster = 2,
+	CreatePortal = 3,
 }
+
+eSCENE_AREA_EVENT_NAME = {}
+
+for eventName,eventType in pairs(eSCENE_AREA_EVENT) do
+	eSCENE_AREA_EVENT_NAME[eventType] = eventName
+end
 
 kUPDATE_INTERVAL = 0.1
 kCOMMON_UPDATE_INTERVAL = 1

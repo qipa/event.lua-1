@@ -3,6 +3,8 @@ local aoiCore = require "toweraoi.core"
 local navCore= require "nav.core"
 local cjson = require "cjson"
 local timer = require "timer"
+local util = require "util"
+
 local object = import "module.object"
 local monster = import "module.scene.monster"
 local sceneConst = import "module.scene.scene_const"
@@ -143,6 +145,7 @@ function cScene:getSize()
 
 end
 
+--寻路坐标相关
 function cScene:findPath(fromX,fromZ,toX,toZ)
 	return self.nav:find(fromX,fromZ,toX,toZ)
 end
@@ -159,6 +162,27 @@ function cScene:posAroundMovable(x,z,depth)
 	return self.nav:around_movable(x,z,depth)
 end
 
+function cScene:randomInRectangle(center,length,width,angle)
+	for i = 1,1000 do
+		local x,z = util.random_in_rectangle(center[1],center[2],length,width,angle)
+		if self:posMovable(x,z) then
+			return x,z
+		end
+	end
+	return false
+end
+
+function cScene:randomInCircle(center,radius)
+	for i = 1,1000 do
+		local x,z = util.random_in_circle(center[1],center[2],radius)
+		if self:posMovable(x,z) then
+			return x,z
+		end
+	end
+	return false
+end
+
+--aoi
 function cScene:createAoiEntity(sceneObj)
 	
 	local entityId,aoiSet = self.aoi:create_entity(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2])
@@ -255,6 +279,7 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 	end
 end
 
+--场景通关事件
 function cScene:addPassEvent(ev,...)
 	local eSCEHE_PASS_EVENT = sceneConst.eSCEHE_PASS_EVENT
 
@@ -281,6 +306,7 @@ function cScene:addPassEvent(ev,...)
 	end
 end
 
+--场景失败事件
 function cScene:addFailEvent(ev,...)
 	local eSCEHE_FAIL_EVENT = sceneConst.eSCEHE_FAIL_EVENT
 
@@ -330,8 +356,8 @@ function cScene:spawnMonsterArea(areaId)
 	end
 end
 
-function cScene:initArea(areaId)
-	local areaInfo = {areaId = areaId,fired = false}
+function cScene:initArea(areaId,areaData)
+	local areaInfo = {areaId = areaId,areaData = areaData,fired = false}
 	self.areaMgr[areaId] = areaInfo
 end
 
@@ -346,6 +372,8 @@ function cScene:enterArea(areaId)
 		return
 	end
 	areaInfo.fired = true
+
+	return self:fireAreaEvent(areaId)
 end
 
 function cScene:leaveArea(areaId)
@@ -357,8 +385,33 @@ function cScene:leaveArea(areaId)
 end
 
 function cScene:fireAreaEvent(areaId,...)
+	local areaInfo = self.areaMgr[areaId]
+	local eSCENE_AREA_EVENT_NAME = sceneConst.eSCENE_AREA_EVENT_NAME
+	for eventType,eventArgs in pairs(areaInfo.areaData) do
+		local eventName = eSCENE_AREA_EVENT_NAME[eventType] 
+		if eventName then
+			local methodName = "onAreaEvent"..eventName
+			if self[methodName] then
+				self[methodName](self,table.unpack(eventArgs))
+			end
+		end
+		
+	end
+end
+
+function cScene:onAreaEventSpawnMonster(...)
 
 end
+
+function cScene:onAreaEventActiveArea(...)
+
+end
+
+function cScene:onAreaEventCreatePortal(...)
+
+end
+
+
 
 function cScene:onMonsterAreaDone(areaId)
 	if self.phase ~= sceneConst.eSCENE_PHASE.START then
@@ -487,7 +540,16 @@ end
 
 function cScene:commonUpdate()
 	local now = event.now()
+
+	for _,sceneObj in pairs(self.objMgr) do
+		local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
+		if not ok then
+			event.error(err)
+		end
+	end
+
 	local phase = self.phase
+	
 	if phase == sceneConst.eSCENE_PHASE.START then
 		if self.lifeTime ~= 0 then
 			if now - self.startTime >= self.lifeTime then
@@ -499,31 +561,21 @@ function cScene:commonUpdate()
 				end
 			end
 		end
+
+		for areaId,areaInfo in pairs(self.areaMonster) do
+			if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
+				if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
+					self:spawnMonsterArea(areaId)
+				end
+			end
+		end
+
 	elseif phase == sceneConst.eSCENE_PHASE.OVER then
 		if now - self.overTime >= sceneConst.kDESTROY_TIME then
 			local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
 			if next(allUser) then
 				for _,user in pairs(allUser) do
 					self:kickUser(user)
-				end
-			else
-				self:release()
-			end
-		end
-	end
-
-	if self.phase == sceneConst.eSCENE_PHASE.START then
-		for _,sceneObj in pairs(self.objMgr) do
-			local ok,err = xpcall(sceneObj.onCommonUpdate,debug.traceback,sceneObj,now)
-			if not ok then
-				event.error(err)
-			end
-		end
-
-		for areaId,areaInfo in pairs(self.areaMonster) do
-			if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
-				if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
-					self:spawnMonsterArea(areaId)
 				end
 			end
 		end
