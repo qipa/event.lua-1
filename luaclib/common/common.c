@@ -469,8 +469,8 @@ random_in_circle(vector2_t* result, vector2_t* center, float radius) {
 
 void
 random_in_rectangle(vector2_t* result, vector2_t* center, float length, float width, float angle) {
-    float dx = rand() % (2 * (int)length) - length;
-    float dz = rand() % (2 * (int)width) - width;
+    float dx = rand() % (int)length - length / 2;
+    float dz = rand() % (int)width - width / 2;
 
     result->x = center->x + dx;
     result->z = center->z + dz;
