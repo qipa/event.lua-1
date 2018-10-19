@@ -77,9 +77,6 @@ local function saveIdInfo(distId,idType,idInfo)
 end
 
 function init(self,serverId,distId)
-	local dbChannel = model.get_dbChannel()
-	assert(dbChannel ~= nil,string.format("no db channel"))
-
 	assert(serverId < kSERVER_MASK,string.format("error serverId:%d",serverId))
 	assert(distId < kPROCESS_MASK,string.format("error distId:%d",serverId))
 
