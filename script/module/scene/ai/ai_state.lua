@@ -1,5 +1,5 @@
 local util = require "util"
-local vector2 = require "common.vector2"
+
 local object = import "module.object"
 
 cAIState = object.cObject:inherit("aiState")

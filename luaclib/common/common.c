@@ -454,3 +454,30 @@ segment_intersect_segment(vector2_t* cross, vector2_t* p1, vector2_t* p2, vector
 
     return 1;
 }
+
+void
+random_in_circle(vector2_t* result, vector2_t* center, float radius) {
+    float angle = rand() % 360;
+    float rand_radius = rand() % (int)radius;
+
+    float dx = sin(rad(angle)) * rand_radius;
+    float dz = cos(rad(angle)) * rand_radius;
+
+    result->x = center->x + dx;
+    result->z = center->z + dz;
+}
+
+void
+random_in_rectangle(vector2_t* result, vector2_t* center, float length, float width, float angle) {
+    float dx = rand() % (2 * (int)length) - length;
+    float dz = rand() % (2 * (int)width) - width;
+
+    result->x = center->x + dx;
+    result->z = center->z + dz;
+
+    if (angle <= 0.1) {
+        return;
+    }
+
+    rotation(result, center, 360 - angle);
+}

@@ -1,5 +1,5 @@
 local util = require "util"
-local vector2 = require "common.vector2"
+local model = require "model"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
@@ -30,7 +30,7 @@ function cAICharactor:searchEnemy()
 		local dt = util.dot2dot2(pos[1],pos[2],enemy.pos)
 		if not minDt or minDt > dt then
 			minDt = dt
-			enemyUid.uid
+			enemyUid = enemy.uid
 		end
 	end
 
@@ -45,3 +45,49 @@ function cAICharactor:haveEnemy()
 	return true
 end
 
+function cAICharactor:randomPatrolPos()
+	local bornPos = self.owner.bornPos
+	return util.random_in_circle(bornPos[1],bornPos[2], self.owner.patrolRange)
+end
+
+function cAICharactor:moveToTarget(targetUid)
+
+	local targetObj = model.fetch_fighter_with_uid(targetUid)
+
+	local angle = targetObj:getAngleFrom(self.owner)
+
+	local fx, fz = util.move_torward(targetObj.pos[1], targetObj.pos[2], angle, 10)
+
+	local path = {}
+	table.insert(path,{self.owner.pos[1],self.owner.pos[2]})
+	table.insert(path,{fx,fz})
+
+	local moveCtrl = self.owner.moveCtrl
+	if not moveCtrl:onServerMoveStart(path) then
+		return false
+	end
+	return true
+end
+
+function cAICharactor:moveToPos(pos)
+	local path = {}
+	table.insert(path,{self.owner.pos[1],self.owner.pos[2]})
+	table.insert(path,{pos[1],pos[2]})
+
+	local moveCtrl = self.owner.moveCtrl
+	if not moveCtrl:onServerMoveStart(path) then
+		return false
+	end
+	return true
+end
+
+function cAICharactor:canAttack(targetObj)
+
+end
+
+function cAICharactor:isOutOfRange()
+	if util.dot2dot(self.owner.pos[1],self.owner.pos[2],self.owner.bornPos[1],self.owner.bornPos[2]) >= 100 then
+		return true
+	end
+	return false
+end

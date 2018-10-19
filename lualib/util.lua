@@ -82,6 +82,10 @@ _M.inside_sector = util_core.inside_sector
 --args:x0(矩形.起点x),z0(矩形.起点z),angle(矩形.朝向),length(矩形.长度),width(矩形.宽度),x1(圆.x),z1(圆.z),r1(圆.r)
 _M.inside_rectangle = util_core.inside_rectangle
 
+_M.random_in_rectangle = util_core.random_in_rectangle
+
+_M.random_in_circle = util_core.random_in_circle
+
 local function get_tag( t )
     local str = type(t)
     return string.sub(str, 1, 1)..":"

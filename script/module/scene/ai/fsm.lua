@@ -1,15 +1,15 @@
 local util = require "util"
-local vector2 = require "common.vector2"
+
 local object = import "module.object"
 
 cFSM = object.cObject:inherit("aiFSM")
 
 local eAI_STATE = {
-	["IDLE"] 	= import("module.scene.ai.ai_idle").cAIStateIdle,
-	["PATROL"] 	= import("module.scene.ai.ai_patrol").cAIStatePatrol,
-	["GOHOME"] 	= import("module.scene.ai.ai_gohome").cAIStateGohome,
-	["FOLLOW"] 	= import("module.scene.ai.ai_follow").cAIStateFollow,
-	["ATTACK"] 	= import("module.scene.ai.ai_attack").cAIStateAttack,
+	["IDLE"] 	= import("module.scene.ai.ai_idle").cAIIdle,
+	["PATROL"] 	= import("module.scene.ai.ai_patrol").cAIPatrol,
+	["GOHOME"] 	= import("module.scene.ai.ai_gohome").cAIGohome,
+	["FOLLOW"] 	= import("module.scene.ai.ai_follow").cAIFollow,
+	["ATTACK"] 	= import("module.scene.ai.ai_attack").cAIAttack,
 }
 
 function cFSM:ctor(charactor)
@@ -32,10 +32,8 @@ function cFSM:switchState(state,info)
 		self.aiState:release()
 	end
 
-	local aiState = eAI_STATE[state]:new(self,self.charactor,info)
-	aiState:onEnter(self.charactor,info)
-
-	self.aiState = aiState
+	self.aiState = eAI_STATE[state]:new(self,self.charactor,info)
+	self.aiState:onEnter(self.charactor,info)
 end
 
 function cFSM:onUpdate(now)

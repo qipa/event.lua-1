@@ -1,22 +1,27 @@
 local util = require "util"
-local vector2 = require "common.vector2"
+local event = require "event"
+
 local aiState = import "module.scene.ai.ai_state"
 
-cAIStateIdle = aiState.cAIState:inherit("aiStateIdle")
+cAIIdle = aiState.cAIState:inherit("aiIdle")
 
 
-function cAIState:ctor(fsm,charactor,...)
+function cAIIdle:ctor(fsm,charactor,...)
 	self.fsm = fsm
 	self.charactor = charactor
+end
+
+function cAIIdle:onEnter()
 	self.time = event.now()
 end
 
-function cAIState:onUpdate(now)
+function cAIIdle:onUpdate(now)
+	print("IDLE")
 	if self.charactor:haveEnemy() then
 		self.fsm:switchState("FOLLOW")
 		return false
 	else
-		if now - self.time > 2 then
+		if now - self.time > 2000 then
 			self.fsm:switchState("PATROL")
 			return false
 		end

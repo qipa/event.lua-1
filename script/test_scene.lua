@@ -60,29 +60,8 @@ event.fork(function ()
 
 	local sceneInst = scene.cScene:new()
 	sceneInst:onCreate(1001,1)
-	local monsterObj0 = sceneInst:spawnMonster(1,{100,100},{1,0})
-	
+
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
-
-	-- monsterObj.moveCtrl:onServerMoveStart({{monsterObj.pos[1],monsterObj.pos[2]},{200,200},{220,200}})
-
-	-- skillAPI:useSkill(monsterObj,1)
-
-	for i = 1,1024 * 10 do
-		local bulletObj = bullet.cBullet:new()
-		bulletObj:onCreate(1,{math.random(1,1000),math.random(1,1000)},50,monsterObj0)
-
-		bulletObj:setLockTarget(monsterObj)
-		bulletObj:enterScene(sceneInst,math.random(1,1000),math.random(1,1000))
-	end
-
-	while true do
-		event.sleep(2)
-		print(collectgarbage("collect"))
-		helper.free()
-		print(collectgarbage("count"),helper.allocated() / 1024)
-		class.countObject("bullet")
-
-	end
+	
 end)
 

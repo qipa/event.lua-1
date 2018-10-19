@@ -1,6 +1,8 @@
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local idBuilder = import "module.id_builder"
+local aiCharactor = import "module.scene.ai.ai_charactor"
+local fsm = import "module.scene.ai.fsm"
 local moveCtrl = import "module.scene.state_ctrl.move_ctrl"
 local stateManager = import "module.scene.state_ctrl.state_manager"
 cMonster = sceneobj.cSceneObj:inherit("monster")
@@ -15,7 +17,14 @@ function cMonster:onCreate(id,pos,face)
 	self.stateMgr = stateManager.cStateMgr:new(self)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
 
+	self.aiCharactor = aiCharactor.cAICharactor:new(self)
+	self.aiFsm = fsm.cFSM:new(self.aiCharactor)
+	self.aiFsm:switchState("IDLE")
+
 	self.range = 50
+
+	self.bornPos = {pos[1],pos[2]}
+	self.patrolRange = 50
 end
 
 function cMonster:onDestroy()
@@ -55,6 +64,7 @@ function cMonster:onObjLeave(objList)
 end
 
 function cMonster:onUpdate(now)
+	self.aiFsm:onUpdate(now)
 	self.stateMgr:onUpdate(now)
 	sceneobj.cSceneObj.onUpdate(self,now)
 end

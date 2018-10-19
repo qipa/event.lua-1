@@ -1143,6 +1143,42 @@ lsegment_intersect_segment(lua_State* L) {
 }
 
 static int
+lrandom_in_circle(lua_State* L) {
+    float x = lua_tonumber(L, 1);
+    float z = lua_tonumber(L, 2);
+    float r = lua_tonumber(L, 3);
+
+    vector2_t center = {x, z};
+    vector2_t result;
+
+    random_in_circle(&result, &center, r);
+
+    lua_pushnumber(L, result.x);
+    lua_pushnumber(L, result.z);
+
+    return 2;
+}
+
+static int
+lrandom_in_rectangle(lua_State* L) {
+    float x = lua_tonumber(L, 1);
+    float z = lua_tonumber(L, 2);
+    float length = lua_tonumber(L, 3);
+    float width = lua_tonumber(L, 4);
+    float angle = lua_tonumber(L, 5);
+
+    vector2_t center = {x, z};
+    vector2_t result;
+
+    random_in_rectangle(&result, &center, length, width, angle);
+
+    lua_pushnumber(L, result.x);
+    lua_pushnumber(L, result.z);
+
+    return 2;
+}
+
+static int
 ldecimal_bit(lua_State* L) {
     int value = lua_tointeger(L, 1);
     int bit = lua_tointeger(L, 2);
@@ -1214,6 +1250,8 @@ luaopen_util_core(lua_State* L){
         { "inside_rectangle", linside_rectangle },
         { "in_front_of", lin_front_of },
         { "segment_intersect_segment", lsegment_intersect_segment },
+        { "random_in_circle", lrandom_in_circle },
+        { "random_in_rectangle", lrandom_in_rectangle },
         { "decimal_bit", ldecimal_bit },
         { "decimal_sub", ldecimal_sub },
         { "size_of", lsize_of },

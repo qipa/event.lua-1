@@ -278,3 +278,16 @@ function cSceneObj:getObjInCapsule(from,to,r,cmpFunc,...)
 
 	return result
 end
+
+function cSceneObj:getAngleFrom(sceneObj)
+	local x0 = self.pos[1]
+	local x0 = self.pos[1]
+
+	local x1 = sceneObj.pos[1]
+	local x1 = sceneObj.pos[1]
+
+	local dx = x1 - x0
+	local dz = z1 - z0
+
+	return util.dir2angle(dx, dz)
+end

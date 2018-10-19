@@ -35,4 +35,8 @@ int inside_rectangle(vector2_t* src, float angle, float length, float width, vec
 
 int in_front_of(vector2_t* src, float angle, vector2_t* dot);
 int segment_intersect_segment(vector2_t* cross, vector2_t* p1, vector2_t* p2, vector2_t* p3, vector2_t* p4);
+
+void random_in_circle(vector2_t* result, vector2_t* center, float radius);
+
+void random_in_rectangle(vector2_t* result, vector2_t* center, float length, float width, float angle);
 #endif
