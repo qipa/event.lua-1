@@ -56,11 +56,19 @@ function cMonster:move(x,z)
 end
 
 function cMonster:onObjEnter(objList)
-
+	for _,sceneObj in pairs(objList) do
+		if sceneobj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+			self.aiCharactor:onUserEnter(sceneObj)
+		end
+	end
 end
 
 function cMonster:onObjLeave(objList)
-
+	for _,sceneObj in pairs(objList) do
+		if sceneobj:sceneObjType() == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+			self.aiCharactor:onUserLeave(sceneObj)
+		end
+	end
 end
 
 function cMonster:onUpdate(now)

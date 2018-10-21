@@ -8,6 +8,7 @@ cAICharactor = object.cObject:inherit("aiCharactor")
 
 function cAICharactor:ctor(sceneObj)
 	self.owner = sceneObj
+	self.userAmount = 0
 end
 
 function cAICharactor:onCreate()
@@ -38,11 +39,7 @@ function cAICharactor:searchEnemy()
 end
 
 function cAICharactor:haveEnemy()
-	local enemyList = self.owner:getViewer(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
-	if not next(enemyList) then
-		return
-	end
-	return true
+	return self.userAmount ~= 0
 end
 
 function cAICharactor:randomPatrolPos()
@@ -90,4 +87,12 @@ function cAICharactor:isOutOfRange()
 		return true
 	end
 	return false
+end
+
+function cAICharactor:onUserEnter(sceneObj)
+	self.userAmount = self.userAmount + 1
+end
+
+function cAICharactor:onUserLeave(sceneObj)
+	self.userAmount = self.userAmount - 1
 end
