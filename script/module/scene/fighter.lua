@@ -1,4 +1,5 @@
-local aoi_core = require "simpleaoi.core"
+
+local idBuilder = import "module.id_builder"
 local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local serverMgr = import "module.server_manager"
@@ -10,13 +11,14 @@ function __init__(self)
 	
 end
 
-function cFighter:onCreate(uid,x,z)
-	print("cFighter:create")
-	sceneobj.cSceneObj.create(self,uid,x,z)
+function cFighter:onCreate(uid,pos)
+	
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocUserUid(),pos,nil,3)
+	print("cFighter:create",self.uid)
 end
 
 function cFighter:onDestroy()
-	sceneobj.cSceneObj.destroy(self)
+	sceneobj.cSceneObj.onDestroy(self)
 end
 
 function cFighter:sceneObjType()
@@ -35,8 +37,8 @@ function cFighter:onEnterScene(scene)
 	sceneobj.cSceneObj.onEnterScene(self,scene)
 
 	local msg = {sceneId = scene.sceneId,sceneUid = scene.sceneUid}
-	serverMgr:sendAgent(self.agentId,"handler.agent_handler","onEnterScene",msg)
-	clientMgr:sendClient(self.cid,"sEnterScene",msg)
+	-- serverMgr:sendAgent(self.agentId,"handler.agent_handler","onEnterScene",msg)
+	-- clientMgr:sendClient(self.cid,"sEnterScene",msg)
 end
 
 function cFighter:onLeaveScene()
@@ -53,7 +55,7 @@ function cFighter:onObjEnter(sceneObjList)
 	for _,sceneObj in pairs(sceneObjList) do
 		table.insert(list,sceneObj:getSeeInfo())
 	end
-	sendClient(self.cid,"s_sceneObj_create",msg)
+	-- sendClient(self.cid,"s_sceneObj_create",msg)
 end
 
 function cFighter:onObjLeave(sceneObjList)
@@ -62,10 +64,9 @@ function cFighter:onObjLeave(sceneObjList)
 	for _,sceneObj in pairs(sceneObjList) do
 		table.insert(list,sceneObj.uid)
 	end 
-	sendClient(self.cid,"s_sceneObj_delete",list)
+	-- sendClient(self.cid,"s_sceneObj_delete",list)
 end
 
 function cFighter:onUpdate(now)
-	print("cFighter:onUpdate")
 	sceneobj.cSceneObj.onUpdate(self,now)
 end

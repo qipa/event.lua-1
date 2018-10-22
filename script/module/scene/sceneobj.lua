@@ -136,8 +136,11 @@ function cSceneObj:getViewer(findType)
 
 	for sceneObjUid in pairs(self.viewerCtx) do
 		local sceneObj = objMgr[sceneObjUid]
-		if findType and sceneObj:sceneObjType() == findType then
-			table.insert(result,sceneObj)
+
+		if findType then
+			if sceneObj.objType == findType then
+				table.insert(result,sceneObj)
+			end
 		else
 			table.insert(result,sceneObj)
 		end

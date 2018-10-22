@@ -69,7 +69,7 @@ function cMoveCtrl:prepareMove(path)
 
 	local dt = dtDot2Dot(pos[1],pos[2],pathNode[1],pathNode[2])
 	if dt > self.ownerObj.speed / 10 then
-		protocol.writer.sObjFixPos(self.ownerObj.cid,pos)
+		-- protocol.writer.sObjFixPos(self.ownerObj.cid,pos)
 		return false
 	else
 		self.ownerObj:move(pathNode[1],pathNode[2])

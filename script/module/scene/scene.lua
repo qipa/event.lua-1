@@ -109,6 +109,9 @@ function cScene:leave(sceneObj)
 end
 
 function cScene:onUserEnter(user)
+	if not user.locationInfo then
+		user.locationInfo = {}
+	end
 	local locationInfo = user.locationInfo
 	locationInfo.enter = {
 		sceneId = self.id,
@@ -191,6 +194,7 @@ function cScene:createAoiEntity(sceneObj)
 		local other = self.objMgr[otherUid]
 		other:onObjEnter({sceneObj})
 		sceneObj.witnessCtx[otherUid] = true
+		other.viewerCtx[sceneObj.uid] = true
 	end
 
 	return entityId
@@ -203,6 +207,7 @@ function cScene:removeAoiEntity(sceneObj)
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
 		sceneObj.witnessCtx[otherUid] = nil
+		other.viewerCtx[sceneObj.uid] = nil
 	end
 end
 
@@ -213,12 +218,14 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 		local other = self.objMgr[otherUid]
 		other:onObjEnter({sceneObj})
 		sceneObj.witnessCtx[otherUid] = true
+		other.viewerCtx[sceneObj.uid] = true
 	end
 
 	for _,otherUid in pairs(LeaveSet) do
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
 		sceneObj.witnessCtx[otherUid] = nil
+		other.viewerCtx[sceneObj.uid] = nil
 	end
 end
 
@@ -233,6 +240,7 @@ function cScene:createAoiTrigger(sceneObj,triggerRange)
 			local other = self.objMgr[otherUid]
 			table.insert(enterList,other)
 			sceneObj.viewerCtx[otherUid] = true
+			other.witnessCtx[sceneObj.uid] = true
 		end
 	end
 	
@@ -245,6 +253,11 @@ end
 
 function cScene:removeAoiTrigger(sceneObj)
 	self.aoi:remove_trigger(sceneObj.aoiTriggerId)
+
+	for uid in pairs(sceneObj.viewerCtx) do
+		local other = self.objMgr[otherUid]
+		other.witnessCtx[sceneObj.uid] = nil
+	end
 end
 
 function cScene:moveAoiTrigger(sceneObj,x,z)
@@ -258,6 +271,7 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 			local other = self.objMgr[otherUid]
 			table.insert(list,other)
 			sceneObj.viewerCtx[otherUid] = true
+			other.witnessCtx[sceneObj.uid] = true
 		end
 	end
 	
@@ -272,6 +286,7 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 		local other = self.objMgr[otherUid]
 		table.insert(list,other)
 		sceneObj.viewerCtx[otherUid] = nil
+		other.witnessCtx[sceneObj.uid] = nil
 	end
 	
 	if not empty then

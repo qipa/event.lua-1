@@ -5,11 +5,11 @@ local object = import "module.object"
 cFSM = object.cObject:inherit("aiFSM")
 
 local eAI_STATE = {
-	["IDLE"] 	= import("module.scene.ai.ai_idle").cAIIdle,
-	["PATROL"] 	= import("module.scene.ai.ai_patrol").cAIPatrol,
-	["GOHOME"] 	= import("module.scene.ai.ai_gohome").cAIGohome,
-	["FOLLOW"] 	= import("module.scene.ai.ai_follow").cAIFollow,
-	["ATTACK"] 	= import("module.scene.ai.ai_attack").cAIAttack,
+	["IDLE"] 	= import("module.scene.ai.state.ai_idle").cAIIdle,
+	["PATROL"] 	= import("module.scene.ai.state.ai_patrol").cAIPatrol,
+	["GOHOME"] 	= import("module.scene.ai.state.ai_gohome").cAIGohome,
+	["FOLLOW"] 	= import("module.scene.ai.state.ai_follow").cAIFollow,
+	["ATTACK"] 	= import("module.scene.ai.state.ai_attack").cAIAttack,
 }
 
 function cFSM:ctor(charactor,debug)
