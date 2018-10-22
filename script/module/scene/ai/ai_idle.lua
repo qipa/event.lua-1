@@ -9,6 +9,7 @@ cAIIdle = aiState.cAIState:inherit("aiIdle")
 function cAIIdle:ctor(fsm,charactor,...)
 	self.fsm = fsm
 	self.charactor = charactor
+	self.switchPatrolTime = 1000
 end
 
 function cAIIdle:onEnter()
@@ -21,7 +22,7 @@ function cAIIdle:onUpdate(now)
 		self.fsm:switchState("FOLLOW")
 		return false
 	else
-		if now - self.time > 2000 then
+		if now - self.time > self.switchPatrolTime then
 			self.fsm:switchState("PATROL")
 			return false
 		end

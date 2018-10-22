@@ -22,6 +22,7 @@ end
 function cSceneObj:onCreate(uid,pos,face,aoiRange)
 	print("cSceneObj:create",uid,pos[1],pos[2],face,aoiRange)
 	self.uid = uid
+	self.objType = self:sceneObjType()
 	self.aoiRange = aoiRange
 	self.pos = {pos[1],pos[2]}
 	self.face = pos or {0,0}
@@ -88,11 +89,8 @@ function cSceneObj:move(x,z)
 
 	-- local x,z = self.scene:posAroundMovable(x,z,2)
 
-	local ox = self.pos[1]
-	local oz = self.pos[2]
-
-	local dx = x - ox
-	local dz = z - oz
+	local dx = x - self.pos[1]
+	local dz = z - self.pos[2]
 
 	if mathAbs(dx) <= 0.1 and mathAbs(dz) <= 0.1 then
 		return false
@@ -279,15 +277,10 @@ function cSceneObj:getObjInCapsule(from,to,r,cmpFunc,...)
 	return result
 end
 
+function cSceneObj:getDirFrom(sceneObj)
+	return sceneObj.pos[1] - self.pos[1],sceneObj.pos[2] - self.pos[2]
+end
+
 function cSceneObj:getAngleFrom(sceneObj)
-	local x0 = self.pos[1]
-	local x0 = self.pos[1]
-
-	local x1 = sceneObj.pos[1]
-	local x1 = sceneObj.pos[1]
-
-	local dx = x1 - x0
-	local dz = z1 - z0
-
-	return util.dir2angle(dx, dz)
+	return dir2angle(self:getDirFrom(sceneObj))
 end

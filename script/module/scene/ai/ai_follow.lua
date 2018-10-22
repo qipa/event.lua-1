@@ -9,6 +9,8 @@ cAIFollow = aiState.cAIState:inherit("aiFollow")
 function cAIFollow:ctor(fsm,charactor,...)
 	self.fsm = fsm
 	self.charactor = charactor
+	self.following = false
+	self.followCheckTime = 1000
 end
 
 function cAIFollow:onEnter()
@@ -18,13 +20,16 @@ function cAIFollow:onEnter()
 		return false
 	end
 
+	self.lockEnemyUid = enemyUid
+
 	if not self.charactor:moveToTarget(enemyUid) then
-		self.fsm:switchState("IDLE")
+		self.following = false
 		return false
 	end
 
+	self.following = true
+
 	self.followTime = event.now()
-	self.lockEnemyUid = enemyUid
 
 	return true
 end
@@ -36,9 +41,15 @@ function cAIFollow:onUpdate(now)
 		return false
 	end
 
-	if self.charactor:canAttack(enemyObj) then
-		self.fsm:switchState("ATTACK",{targetObjUid = self.lockEnemyUid})
-		return false
+	if not self.following then
+		if not self.charactor:moveToTarget(self.lockEnemyUid) then
+			return false
+		end
+
+		self.following = true
+		self.followTime = now
+
+		return true
 	end
 
 	if self.charactor:isOutOfRange() then
@@ -46,12 +57,17 @@ function cAIFollow:onUpdate(now)
 		return false
 	end
 
+	if self.charactor:canAttack(enemyObj) then
+		self.fsm:switchState("ATTACK",{targetObjUid = self.lockEnemyUid})
+		return false
+	end
+
 	local dtTime = now - self.followTime
-	if dtTime >= 1000 then
+	if dtTime >= self.followCheckTime then
 		self.followTime = now
 
 		if not self.charactor:moveToTarget(self.lockEnemyUid) then
-			self.fsm:switchState("IDLE")
+			self.following = false
 			return false
 		end 
 	end
