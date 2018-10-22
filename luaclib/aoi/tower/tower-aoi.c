@@ -527,7 +527,7 @@ get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
 	object_t* other;
 
 	hash_foreach(tower->hash, k, other, {
-		if ( other->uid != entity->uid ) {
+		if ( other->uid != entity->uid && (other->mask & entity->mask) ) {
 			func(other->uid, ud);
 		}
 	});
@@ -550,7 +550,7 @@ get_visible(struct aoi* aoi, int id, callback_func func, void* ud) {
 			tower_t* tower = &aoi->towers[x_index][z_index];
 			struct object* cursor = tower->head;
 			while ( cursor ) {
-				if ( trigger->uid != cursor->uid ) {
+				if ( trigger->uid != cursor->uid && (trigger->mask & cursor->mask)) {
 					func(cursor->uid, ud);
 				}
 				cursor = cursor->param.trigger.next;
