@@ -13,7 +13,7 @@ end
 
 function cFighter:onCreate(uid,pos)
 	
-	sceneobj.cSceneObj.onCreate(self,idBuilder:allocUserUid(),pos,nil,3)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocUserUid(),pos,nil,5)
 	print("cFighter:create",self.uid)
 end
 
@@ -23,6 +23,14 @@ end
 
 function cFighter:sceneObjType()
 	return sceneConst.eSCENEOBJ_TYPE.FIGHTER
+end
+
+function cFighter:AOI_ENTITY_MASK()
+	return sceneConst.eSCENE_AOI_MASK.USER
+end
+
+function cFighter:AOI_TRIGGER_MASK()
+	return sceneConst.eSCENE_AOI_MASK.USER | sceneConst.eSCENE_AOI_MASK.MONSTER | sceneConst.eSCENE_AOI_MASK.PET
 end
 
 function cFighter:enterScene(scene,x,z)
@@ -53,6 +61,7 @@ function cFighter:onObjEnter(sceneObjList)
 	sceneobj.cSceneObj.onObjEnter(self,sceneObjList)
 	local list = {}
 	for _,sceneObj in pairs(sceneObjList) do
+		print("onObjEnter",self.uid,sceneObj.uid)
 		table.insert(list,sceneObj:getSeeInfo())
 	end
 	-- sendClient(self.cid,"s_sceneObj_create",msg)
@@ -62,6 +71,7 @@ function cFighter:onObjLeave(sceneObjList)
 	sceneobj.cSceneObj.onObjLeave(self,sceneObjList)
 	local list = {}
 	for _,sceneObj in pairs(sceneObjList) do
+		print("onObjLeave",self.uid,sceneObj.uid)
 		table.insert(list,sceneObj.uid)
 	end 
 	-- sendClient(self.cid,"s_sceneObj_delete",list)

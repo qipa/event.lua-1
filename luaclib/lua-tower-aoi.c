@@ -55,8 +55,9 @@ lcreate_entity(lua_State* L) {
 	laoi_context_t* laoi = (laoi_context_t*)lua_touserdata(L, 1);
 
 	int uid = luaL_checkinteger(L, 2);
-	float x = luaL_checknumber(L, 3);
-	float z = luaL_checknumber(L, 4);
+	uint8_t mask = luaL_checkinteger(L, 3);
+	float x = luaL_checknumber(L, 4);
+	float z = luaL_checknumber(L, 5);
 
 	lua_newtable(L);
 	struct callback_param param;
@@ -64,7 +65,7 @@ lcreate_entity(lua_State* L) {
 	param.index = 1;
 	param.stack = lua_gettop(L);
 	
-	int id = create_entity(laoi->aoi, uid, x, z, entity_enter_cb, &param);
+	int id = create_entity(laoi->aoi, uid, mask, x, z, entity_enter_cb, &param);
 
 	lua_pushinteger(L, id);
 	lua_insert(L, param.stack);
@@ -114,9 +115,10 @@ static int
 lcreate_trigger(lua_State* L) {
 	laoi_context_t* laoi = (laoi_context_t*)lua_touserdata(L, 1);
 	int uid = luaL_checkinteger(L, 2);
-	float x = luaL_checknumber(L, 3);
-	float z = luaL_checknumber(L, 4);
-	int range = luaL_checkinteger(L, 5);
+	uint8_t mask = luaL_checkinteger(L, 3);
+	float x = luaL_checknumber(L, 4);
+	float z = luaL_checknumber(L, 5);
+	int range = luaL_checkinteger(L, 6);
 
 	lua_newtable(L);
 	struct callback_param enter_param;
@@ -124,7 +126,7 @@ lcreate_trigger(lua_State* L) {
 	enter_param.index = 1;
 	enter_param.stack = lua_gettop(L);
 
-	int id = create_trigger(laoi->aoi, uid, x, z, range, trigger_enter_cb, &enter_param);
+	int id = create_trigger(laoi->aoi, uid, mask, x, z, range, trigger_enter_cb, &enter_param);
 
 	lua_pushinteger(L, id);
 

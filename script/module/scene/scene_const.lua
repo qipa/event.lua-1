@@ -1,5 +1,12 @@
 
 
+eSCENE_AOI_MASK = {
+	OBJECT 		= 0x01,
+	USER 		= 0x02,
+	PET 		= 0x04,
+	MONSTER 	= 0x08,
+}
+
 eSCENE_TYPE = {
 	CITY = 1,
 	STAGE = 2	

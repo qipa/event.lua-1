@@ -44,6 +44,14 @@ function cSceneObj:sceneObjType()
 	assert(false)
 end
 
+function cSceneObj:AOI_ENTITY_MASK()
+	return sceneConst.eSCENE_AOI_MASK.OBJECT
+end
+
+function cSceneObj:AOI_TRIGGER_MASK()
+	assert(false)
+end
+
 function cSceneObj:getSeeInfo()
 	return {}
 end
@@ -62,9 +70,9 @@ function cSceneObj:leaveScene()
 end
 
 function cSceneObj:onEnterScene(scene)
-	self.aoiEntityId = scene:createAoiEntity(self)
+	self.aoiEntityId = scene:createAoiEntity(self,self:AOI_ENTITY_MASK())
 	if self.aoiRange then
-		self.aoiTriggerId = scene:createAoiTrigger(self)
+		self.aoiTriggerId = scene:createAoiTrigger(self,self.aoiRange,self:AOI_TRIGGER_MASK())
 	end
 
 	self.scene = scene

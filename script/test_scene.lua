@@ -62,12 +62,12 @@ event.fork(function ()
 	sceneInst:onCreate(1001,1)
 
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
-	-- local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
+	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 
 	local fighter = fighter.cFighter:new()
 	fighter:onCreate(nil,{100,100})
 	print("fighter.uid",fighter.uid)
 	model.bind_fighter_with_uid(fighter.uid,fighter)
-	sceneInst:enter(fighter,{110,110})
+	sceneInst:enter(fighter,{120,120})
 end)
 

@@ -27,6 +27,7 @@ typedef struct object {
 	int uid;
 	int id;
 	uint8_t type;
+	uint8_t mask;
 
 	location_t local;
 
@@ -198,10 +199,12 @@ assert_position(aoi_t* aoi, float x, float z) {
 }
 
 int
-create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) {
+create_entity(aoi_t* aoi, int uid, uint8_t mask, float x, float z, enter_func func, void* ud) {
 	assert_position(aoi, x, z);
 
 	object_t* entity = new_object(aoi, uid, TYPE_ENTITY, x, z);
+	entity->mask = mask;
+
 	location_t out;
 	translate(aoi, &entity->local, &out);
 
@@ -212,7 +215,7 @@ create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) 
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
-		if ( other->uid != entity->uid ) {
+		if ( other->uid != entity->uid && (other->mask & entity->mask)) {
 			func(entity->uid, other->uid, ud);
 		}
 	});
@@ -234,7 +237,7 @@ remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
-		if ( other->uid != entity->uid ) {
+		if ( other->uid != entity->uid && (other->mask & entity->mask)) {
 			func(entity->uid, other->uid, ud);
 		}
 	});
@@ -318,7 +321,9 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 	while ( cursor != NULL ) {
 		object_t* obj = cursor;
 		cursor = cursor->param.trigger.next;
-		leave_func(entity->uid, obj->uid, leave_ud);
+		if (obj->mask & entity->mask) {
+			leave_func(entity->uid, obj->uid, leave_ud);
+		}
 		obj->param.trigger.next = obj->param.trigger.prev = NULL;
 	}
 
@@ -326,16 +331,20 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 	while ( cursor != NULL ) {
 		object_t* obj = cursor;
 		cursor = cursor->param.trigger.next;
-		enter_func(entity->uid, obj->uid, enter_ud);
+		if (obj->mask & entity->mask) {
+			enter_func(entity->uid, obj->uid, enter_ud);
+		}
 		obj->param.trigger.next = obj->param.trigger.prev = NULL;
 	}
 }
 
 int
-create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func, void* ud) {
+create_trigger(aoi_t* aoi, int uid, uint8_t mask, float x, float z, int range, enter_func func, void* ud) {
 	assert_position(aoi, x, z);
 
 	object_t* trigger = new_object(aoi, uid, TYPE_TRIGGER, x, z);
+	trigger->mask = mask;
+	
 	trigger->param.trigger.range = range;
 
 	location_t out;
@@ -354,7 +363,7 @@ create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func
 
 			struct object* cursor = tower->head;
 			while ( cursor ) {
-				if ( cursor->uid != trigger->uid ) {
+				if ( cursor->uid != trigger->uid && (trigger->mask & cursor->mask)) {
 					func(trigger->uid, cursor->uid, ud);
 				}
 				cursor = cursor->param.entity.next;
@@ -422,7 +431,7 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 
 			struct object* cursor = tower->head;
 			while ( cursor ) {
-				if ( cursor->uid != trigger->uid ) {
+				if ( cursor->uid != trigger->uid && (trigger->mask & cursor->mask)) {
 					leave(trigger->uid, cursor->uid, leave_ud);
 				}
 				cursor = cursor->param.entity.next;
@@ -443,7 +452,7 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 
 			struct object* cursor = tower->head;
 			while ( cursor ) {
-				if ( cursor->uid != trigger->uid ) {
+				if ( cursor->uid != trigger->uid && (trigger->mask & cursor->mask)) {
 					enter(trigger->uid, cursor->uid, enter_ud);
 				}
 				cursor = cursor->param.entity.next;

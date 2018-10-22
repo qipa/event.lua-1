@@ -67,7 +67,7 @@ function cScene:enter(sceneObj,pos)
 
 	assert(self.objMgr[sceneObj.uid] == nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = sceneObj
-	
+	print("enter",sceneObj.uid)
 	local objType = sceneObj:sceneObjType()
 	
 	local typeMgr = self.objTypeMgr[objType]
@@ -186,9 +186,8 @@ function cScene:randomInCircle(center,radius)
 end
 
 --aoi
-function cScene:createAoiEntity(sceneObj)
-	
-	local entityId,aoiSet = self.aoi:create_entity(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2])
+function cScene:createAoiEntity(sceneObj,entityMask)
+	local entityId,aoiSet = self.aoi:create_entity(sceneObj.uid,entityMask,sceneObj.pos[1],sceneObj.pos[2])
 
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
@@ -222,6 +221,7 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 	end
 
 	for _,otherUid in pairs(LeaveSet) do
+		print("otherUid",otherUid)
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
 		sceneObj.witnessCtx[otherUid] = nil
@@ -229,19 +229,17 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 	end
 end
 
-function cScene:createAoiTrigger(sceneObj,triggerRange)
-	local triggerId,aoiSet = self.aoi:create_trigger(sceneObj.uid,sceneObj.pos[1],sceneObj.pos[2],triggerRange or 3)
+function cScene:createAoiTrigger(sceneObj,triggerRange,triggerMask)
+	local triggerId,aoiSet = self.aoi:create_trigger(sceneObj.uid,triggerMask,sceneObj.pos[1],sceneObj.pos[2],triggerRange or 3)
 
 	local empty = true 
 	local enterList = {}
 	for _,otherUid in pairs(aoiSet) do
-		if otherUid ~= sceneObj.uid then
-			empty = false
-			local other = self.objMgr[otherUid]
-			table.insert(enterList,other)
-			sceneObj.viewerCtx[otherUid] = true
-			other.witnessCtx[sceneObj.uid] = true
-		end
+		empty = false
+		local other = self.objMgr[otherUid]
+		table.insert(enterList,other)
+		sceneObj.viewerCtx[otherUid] = true
+		other.witnessCtx[sceneObj.uid] = true
 	end
 	
 	if not empty then
@@ -266,13 +264,11 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 	local list = {}
 	local empty = true
 	for _,otherUid in pairs(enterSet) do
-		if otherUid ~= sceneObj.uid then
-			empty = false
-			local other = self.objMgr[otherUid]
-			table.insert(list,other)
-			sceneObj.viewerCtx[otherUid] = true
-			other.witnessCtx[sceneObj.uid] = true
-		end
+		empty = false
+		local other = self.objMgr[otherUid]
+		table.insert(list,other)
+		sceneObj.viewerCtx[otherUid] = true
+		other.witnessCtx[sceneObj.uid] = true
 	end
 	
 	if not empty then

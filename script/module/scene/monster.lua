@@ -13,12 +13,12 @@ end
 
 function cMonster:onCreate(id,pos,face)
 	self.id = id
-	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,3)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,1)
 	self.stateMgr = stateManager.cStateMgr:new(self)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
 
 	self.aiCharactor = aiCharactor.cAICharactor:new(self)
-	self.aiFsm = fsm.cFSM:new(self.aiCharactor,true)
+	self.aiFsm = fsm.cFSM:new(self.aiCharactor)
 	self.aiFsm:switchState("IDLE")
 
 	self.range = 50
@@ -33,6 +33,14 @@ end
 
 function cMonster:sceneObjType()
 	return sceneConst.eSCENEOBJ_TYPE.MONSTER
+end
+
+function cMonster:AOI_ENTITY_MASK()
+	return sceneConst.eSCENE_AOI_MASK.MONSTER
+end
+
+function cMonster:AOI_TRIGGER_MASK()
+	return sceneConst.eSCENE_AOI_MASK.USER | sceneConst.eSCENE_AOI_MASK.PET
 end
 
 function cMonster:enterScene(scene,x,z)
@@ -57,6 +65,7 @@ end
 
 function cMonster:onObjEnter(objList)
 	for _,sceneObj in pairs(objList) do
+		print("onObjEnter",self.uid,sceneObj.uid)
 		if sceneObj.objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 			self.aiCharactor:onUserEnter(sceneObj)
 		end
@@ -65,6 +74,7 @@ end
 
 function cMonster:onObjLeave(objList)
 	for _,sceneObj in pairs(objList) do
+		print("onObjLeave",self.uid,sceneObj.uid)
 		if sceneObj.objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
 			self.aiCharactor:onUserLeave(sceneObj)
 		end
@@ -75,5 +85,4 @@ function cMonster:onUpdate(now)
 	self.aiFsm:onUpdate(now)
 	self.stateMgr:onUpdate(now)
 	sceneobj.cSceneObj.onUpdate(self,now)
-	table.print(self.pos)
 end

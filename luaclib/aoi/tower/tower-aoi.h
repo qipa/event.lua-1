@@ -15,11 +15,11 @@ struct aoi;
 struct aoi* create_aoi(int width, int height, int cell);
 void release_aoi(struct aoi* aoi);
 
-int create_entity(struct aoi* aoi, int uid, float x, float z, enter_func func, void* ud);
+int create_entity(struct aoi* aoi, int uid, uint8_t mask, float x, float z, enter_func func, void* ud);
 void remove_entity(struct aoi* aoi, int id, leave_func func, void* ud);
 void move_entity(struct aoi* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud);
 
-int create_trigger(struct aoi* aoi, int uid, float x, float z, int range, enter_func func, void* ud);
+int create_trigger(struct aoi* aoi, int uid, uint8_t mask, float x, float z, int range, enter_func func, void* ud);
 void remove_trigger(struct aoi* aoi, int id);
 void move_trigger(struct aoi* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud);
 
