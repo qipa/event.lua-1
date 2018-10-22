@@ -15,7 +15,6 @@ function cAICharactor:onCreate()
 end
 
 function cAICharactor:onDestroy()
-
 end
 
 function cAICharactor:searchEnemy()

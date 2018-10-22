@@ -12,10 +12,10 @@ local eAI_STATE = {
 	["ATTACK"] 	= import("module.scene.ai.ai_attack").cAIAttack,
 }
 
-function cFSM:ctor(charactor)
+function cFSM:ctor(charactor,debug)
 	self.charactor = charactor
-
 	self.aiState = nil
+	self.debug = debug or false
 end
 
 function cFSM:onCreate()
@@ -25,18 +25,30 @@ function cFSM:onDestroy()
 
 end
 
-function cFSM:switchState(state,info)
+function cFSM:switchState(state,...)
 	if self.aiState then
+		if self.debug then
+			print(string.format("ai[%d] leave:%s",self.charactor.owner.uid,self.aiState.__name))
+		end
+
 		self.aiState:onLeave()
 		self.aiState:release()
 	end
 
-	self.aiState = eAI_STATE[state]:new(self,self.charactor,info)
-	self.aiState:onEnter(self.charactor,info)
+	self.aiState = eAI_STATE[state]:new(self)
+	self.aiState:onCreate(...)
+
+	if self.debug then
+		print(string.format("ai[%d] enter:%s",self.charactor.owner.uid,self.aiState.__name))
+	end
+	self.aiState:onEnter()
 end
 
 function cFSM:onUpdate(now)
 	if self.aiState then
+		if self.debug then
+			print(string.format("ai[%d] update:%s",self.charactor.owner.uid,self.aiState.__name))
+		end
 		self.aiState:onUpdate(now)
 	end
 end

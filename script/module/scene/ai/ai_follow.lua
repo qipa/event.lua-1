@@ -5,10 +5,7 @@ local aiState = import "module.scene.ai.ai_state"
 
 cAIFollow = aiState.cAIState:inherit("aiFollow")
 
-
-function cAIFollow:ctor(fsm,charactor,...)
-	self.fsm = fsm
-	self.charactor = charactor
+function cAIFollow:onCreate(...)
 	self.following = false
 	self.followCheckTime = 1000
 end
@@ -34,7 +31,7 @@ function cAIFollow:onEnter()
 	return true
 end
 
-function cAIFollow:onUpdate(now)
+function cAIFollow:onExecute(now)
 	local enemyObj = model.fetch_fighter_with_uid(self.lockEnemyUid)
 	if not enemyObj or enemyObj.isDead then
 		self.fsm:switchState("IDLE")
@@ -58,7 +55,7 @@ function cAIFollow:onUpdate(now)
 	end
 
 	if self.charactor:canAttack(enemyObj) then
-		self.fsm:switchState("ATTACK",{targetObjUid = self.lockEnemyUid})
+		self.fsm:switchState("ATTACK",self.lockEnemyUid)
 		return false
 	end
 

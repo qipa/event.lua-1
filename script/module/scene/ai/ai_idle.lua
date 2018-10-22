@@ -5,10 +5,7 @@ local aiState = import "module.scene.ai.ai_state"
 
 cAIIdle = aiState.cAIState:inherit("aiIdle")
 
-
-function cAIIdle:ctor(fsm,charactor,...)
-	self.fsm = fsm
-	self.charactor = charactor
+function cAIIdle:onCreate(...)
 	self.switchPatrolTime = 1000
 end
 
@@ -16,8 +13,7 @@ function cAIIdle:onEnter()
 	self.time = event.now()
 end
 
-function cAIIdle:onUpdate(now)
-	print("IDLE")
+function cAIIdle:onExecute(now)
 	if self.charactor:haveEnemy() then
 		self.fsm:switchState("FOLLOW")
 		return false

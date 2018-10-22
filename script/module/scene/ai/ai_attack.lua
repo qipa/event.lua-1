@@ -5,18 +5,15 @@ local aiState = import "module.scene.ai.ai_state"
 
 cAIAttack = aiState.cAIState:inherit("aiAttack")
 
-
-function cAIAttack:ctor(fsm,charactor,info)
-	self.fsm = fsm
-	self.charactor = charactor
-	self.targetObjUid = info.targetObjUid
+function cAIAttack:onCreate(targetObjUid)
+	self.targetObjUid = targetObjUid
 end
 
 function cAIAttack:onEnter()
 	self.time = event.now()
 end
 
-function cAIAttack:onUpdate(now)
+function cAIAttack:onExecute(now)
 	
 	return true
 end

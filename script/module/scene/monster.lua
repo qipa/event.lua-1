@@ -18,7 +18,7 @@ function cMonster:onCreate(id,pos,face)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
 
 	self.aiCharactor = aiCharactor.cAICharactor:new(self)
-	self.aiFsm = fsm.cFSM:new(self.aiCharactor)
+	self.aiFsm = fsm.cFSM:new(self.aiCharactor,true)
 	self.aiFsm:switchState("IDLE")
 
 	self.range = 50

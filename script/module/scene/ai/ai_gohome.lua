@@ -5,10 +5,8 @@ local aiState = import "module.scene.ai.ai_state"
 
 cAIGohome = aiState.cAIState:inherit("aiGohome")
 
+function cAIGohome:onCreate(...)
 
-function cAIGohome:ctor(fsm,charactor,...)
-	self.fsm = fsm
-	self.charactor = charactor
 end
 
 function cAIGohome:onEnter()
@@ -18,7 +16,7 @@ function cAIGohome:onEnter()
 	return true
 end
 
-function cAIGohome:onUpdate(now)
+function cAIGohome:onExecute(now)
 	local owner = self.charactor.owner
 	local stateMgr = owner.stateMgr
 	if not stateMgr:hasState("MOVE") then
