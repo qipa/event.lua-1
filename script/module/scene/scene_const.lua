@@ -12,7 +12,7 @@ eSCENE_TYPE = {
 	STAGE = 2	
 }
 
-eSCENEOBJ_TYPE = {
+eSCENE_OBJ_TYPE = {
 	FIGHTER = 1,
 	MONSTER = 2,
 	PET = 3,

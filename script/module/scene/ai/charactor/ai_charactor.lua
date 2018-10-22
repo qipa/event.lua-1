@@ -18,7 +18,7 @@ function cAICharactor:onDestroy()
 end
 
 function cAICharactor:searchEnemy()
-	local enemyList = self.owner:getViewer(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
+	local enemyList = self.owner:getViewer(sceneConst.eSCENE_OBJ_TYPE.FIGHTER)
 	if not next(enemyList) then
 		return
 	end
@@ -91,9 +91,11 @@ function cAICharactor:isOutOfRange()
 end
 
 function cAICharactor:onUserEnter(sceneObj)
+	print("onUserEnter")
 	self.userAmount = self.userAmount + 1
 end
 
 function cAICharactor:onUserLeave(sceneObj)
+	print("onUserLeave")
 	self.userAmount = self.userAmount - 1
 end

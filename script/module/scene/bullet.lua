@@ -33,7 +33,7 @@ function cBullet:onDestroy()
 end
 
 function cBullet:sceneObjType()
-	return sceneConst.eSCENEOBJ_TYPE.BULLET
+	return sceneConst.eSCENE_OBJ_TYPE.BULLET
 end
 
 function cBullet:onObjEnter(objList)

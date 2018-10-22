@@ -84,7 +84,7 @@ function cScene:enter(sceneObj,pos)
 
 	sceneObj:onEnterScene(self)
 
-	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+	if objType == sceneConst.eSCENE_OBJ_TYPE.FIGHTER then
 		self:onUserEnter(sceneObj)
 	else
 		self:onObjEnter(sceneobj)
@@ -101,7 +101,7 @@ function cScene:leave(sceneObj)
 
 	sceneObj:onLeaveScene(self)
 
-	if objType == sceneConst.eSCENEOBJ_TYPE.FIGHTER then
+	if objType == sceneConst.eSCENE_OBJ_TYPE.FIGHTER then
 		self:onUserLeave(sceneObj)
 	else
 		self:onObjLeave(sceneobj)
@@ -221,7 +221,6 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 	end
 
 	for _,otherUid in pairs(LeaveSet) do
-		print("otherUid",otherUid)
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
 		sceneObj.witnessCtx[otherUid] = nil
@@ -495,7 +494,7 @@ function cScene:onUserDead(user,killer)
 	end
 
 	if self.failEvent[eSCEHE_FAIL_EVENT.USER_ACE] then
-		local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
+		local allUser = self:getAllObjByType(sceneConst.eSCENE_OBJ_TYPE.FIGHTER)
 		for _,user in pairs(allUser) do
 			if not user:isDead() then
 				return
@@ -583,7 +582,7 @@ function cScene:commonUpdate()
 
 	elseif phase == sceneConst.eSCENE_PHASE.OVER then
 		if now - self.overTime >= sceneConst.kDESTROY_TIME then
-			local allUser = self:getAllObjByType(sceneConst.eSCENEOBJ_TYPE.FIGHTER)
+			local allUser = self:getAllObjByType(sceneConst.eSCENE_OBJ_TYPE.FIGHTER)
 			if next(allUser) then
 				for _,user in pairs(allUser) do
 					self:kickUser(user)

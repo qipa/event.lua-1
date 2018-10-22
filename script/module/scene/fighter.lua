@@ -13,7 +13,7 @@ end
 
 function cFighter:onCreate(uid,pos)
 	
-	sceneobj.cSceneObj.onCreate(self,idBuilder:allocUserUid(),pos,nil,5)
+	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,5)
 	print("cFighter:create",self.uid)
 end
 
@@ -22,7 +22,7 @@ function cFighter:onDestroy()
 end
 
 function cFighter:sceneObjType()
-	return sceneConst.eSCENEOBJ_TYPE.FIGHTER
+	return sceneConst.eSCENE_OBJ_TYPE.FIGHTER
 end
 
 function cFighter:AOI_ENTITY_MASK()

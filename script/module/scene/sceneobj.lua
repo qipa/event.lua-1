@@ -49,7 +49,7 @@ function cSceneObj:AOI_ENTITY_MASK()
 end
 
 function cSceneObj:AOI_TRIGGER_MASK()
-	assert(false)
+	return 0xff
 end
 
 function cSceneObj:getSeeInfo()
@@ -174,7 +174,7 @@ function cSceneObj:getWitnessCid(filterFunc,...)
 	local result = {}
 	local objMgr = self.scene.objMgr
 
-	local fighterType = sceneConst.eSCENEOBJ_TYPE.FIGHTER
+	local fighterType = sceneConst.eSCENE_OBJ_TYPE.FIGHTER
 
 	for sceneObjUid in pairs(self.witnessCtx) do
 		local sceneObj = objMgr[sceneObjUid]
