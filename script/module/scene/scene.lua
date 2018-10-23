@@ -9,6 +9,9 @@ local object = import "module.object"
 local monster = import "module.scene.monster"
 local sceneConst = import "module.scene.scene_const"
 
+local randomInRectangle = util.random_in_rectangle
+local randomInCircle = util.random_in_circle
+
 cScene = object.cObject:inherit("scene")
 
 function cScene:onCreate(sceneId,sceneUid)
@@ -167,7 +170,7 @@ end
 
 function cScene:randomInRectangle(center,length,width,angle)
 	for i = 1,1000 do
-		local x,z = util.random_in_rectangle(center[1],center[2],length,width,angle)
+		local x,z = randomInRectangle(center[1],center[2],length,width,angle)
 		if self:posMovable(x,z) then
 			return x,z
 		end
@@ -177,7 +180,7 @@ end
 
 function cScene:randomInCircle(center,radius)
 	for i = 1,1000 do
-		local x,z = util.random_in_circle(center[1],center[2],radius)
+		local x,z = randomInCircle(center[1],center[2],radius)
 		if self:posMovable(x,z) then
 			return x,z
 		end
@@ -191,9 +194,10 @@ function cScene:createAoiEntity(sceneObj,entityMask)
 
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
-		other:onObjEnter({sceneObj})
 		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = true
+
+		other:onObjEnter({sceneObj})
 	end
 
 	return entityId
@@ -204,9 +208,10 @@ function cScene:removeAoiEntity(sceneObj)
 
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
-		other:onObjLeave({sceneObj})
 		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = nil
+
+		other:onObjLeave({sceneObj})
 	end
 end
 
@@ -215,16 +220,18 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 
 	for _,otherUid in pairs(enterSet) do
 		local other = self.objMgr[otherUid]
-		other:onObjEnter({sceneObj})
 		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = true
+
+		other:onObjEnter({sceneObj})
 	end
 
 	for _,otherUid in pairs(LeaveSet) do
 		local other = self.objMgr[otherUid]
-		other:onObjLeave({sceneObj})
 		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = nil
+
+		other:onObjLeave({sceneObj})
 	end
 end
 
