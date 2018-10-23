@@ -82,7 +82,7 @@ function channel:dispatch(message,size)
 		local ok = message.args[1]
 		if call_ctx.callback then
 			if ok then
-				call_ctx.callback(tunpack(message.args,2))
+				event.fork(call_ctx.callback,tunpack(message.args,2))
 			end
 		else
 			event.wakeup(message.session,tunpack(message.args))

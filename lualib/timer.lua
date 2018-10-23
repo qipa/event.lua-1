@@ -3,8 +3,7 @@ local event = require "event"
 
 local _M = {}
 
-
-function _M.callout(interval,inst,method,...)
+local function createTimer(interval,freq,inst,method,...)
 	local args = {...}
 
 	local __timer = rawget(inst,"__timer")
@@ -14,27 +13,22 @@ function _M.callout(interval,inst,method,...)
 	end
 
 	local timer = event.timer(interval,function ()
-		inst[method](inst,table.unpack(args))
+		if not freq then
+			timer:cancel()
+			__timer[timer] = nil
+		end
+		event.fork(inst[method],inst,table.unpack(args))
 	end)
 	__timer[timer] = true 
 	return timer
 end
 
-function _M.calloutAfter(interval,inst,method,...)
-	local args = {...}
-	
-	local __timer = rawget(inst,"__timer")
-	if not __timer then
-		__timer = {}
-		rawset(inst,"__timer",__timer)
-	end
+function _M.callout(interval,inst,method,...)
+	return createTimer(interval,true,inst,method,...)
+end
 
-	local timer = event.timer(interval,function ()
-		inst[method](inst,table.unpack(args))
-		__timer[timer] = nil
-	end)
-	__timer[timer] = false 
-	return timer
+function _M.calloutAfter(interval,inst,method,...)
+	return createTimer(interval,false,inst,method,...)
 end
 
 function _M.removeTimer(inst,timer)

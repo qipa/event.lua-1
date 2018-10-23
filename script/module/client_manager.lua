@@ -30,10 +30,7 @@ local function _onClientData(cid,messageId,data,size)
 		return
 	end
 	local cid = cid * 100 + env.distId
-	local ok,err = xpcall(reader,debug.traceback,cid,data,size)
-	if not ok then
-		event.error(err)
-	end
+	event.fork(reader,cid,data,size)
 end
 
 local function _onClientAccept(cid,addr)
