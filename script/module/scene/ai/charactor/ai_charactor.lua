@@ -91,11 +91,9 @@ function cAICharactor:isOutOfRange()
 end
 
 function cAICharactor:onUserEnter(sceneObj)
-	print("onUserEnter")
 	self.userAmount = self.userAmount + 1
 end
 
 function cAICharactor:onUserLeave(sceneObj)
-	print("onUserLeave")
 	self.userAmount = self.userAmount - 1
 end

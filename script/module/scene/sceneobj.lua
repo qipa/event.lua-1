@@ -160,7 +160,6 @@ function cSceneObj:getViewer(findType)
 end
 
 function cSceneObj:getWitness()
-
 	local sceneInst = self.scene
 
 	if self.witnessDirty then
@@ -168,29 +167,24 @@ function cSceneObj:getWitness()
 		self.witnessCtx = sceneInst:getWitness()
 	end
 
-	local result = {}
-	for _,sceneObjUid in pairs(self.witnessCtx) do
-		local sceneObj = sceneInst.objMgr[sceneObjUid]
-		table.insert(result,sceneObj)
-	end
+	return self.witnessCtx
+end
 
-	return result
+function cSceneObj:hasWitness()
+	local witnessList = self:getWitness()
+	return next(witnessList) ~= nil
 end
 
 function cSceneObj:getWitnessCid(filterFunc,...)
-	local sceneInst = self.scene
+	local witnessList = self:getWitness()
 
-	if self.witnessDirty then
-		self.witnessDirty = false
-		self.witnessCtx = sceneInst:getWitness()
-	end
-
-	local result = {}
 	local objMgr = self.scene.objMgr
 
 	local fighterType = sceneConst.eSCENE_OBJ_TYPE.FIGHTER
 
-	for _,sceneObjUid in pairs(self.witnessCtx) do
+	local result = {}
+
+	for _,sceneObjUid in pairs(witnessList) do
 		local sceneObj = objMgr[sceneObjUid]
 		if sceneObj.objType == fighterType then
 			if filterFunc and filterFunc(...,sceneObj) then
