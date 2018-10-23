@@ -33,6 +33,8 @@ function cSceneObj:onCreate(uid,pos,face,aoiRange)
 	self.maxHp = hp
 
 	self.witnessCtx = {}
+	self.witnessDirty = true
+
 	self.viewerCtx = {}
 end
 
@@ -159,10 +161,15 @@ end
 
 function cSceneObj:getWitness()
 
-	local result = {}
 	local sceneInst = self.scene
 
-	for sceneObjUid in pairs(self.witnessCtx) do
+	if self.witnessDirty then
+		self.witnessDirty = false
+		self.witnessCtx = sceneInst:getWitness()
+	end
+
+	local result = {}
+	for _,sceneObjUid in pairs(self.witnessCtx) do
 		local sceneObj = sceneInst.objMgr[sceneObjUid]
 		table.insert(result,sceneObj)
 	end
@@ -171,14 +178,21 @@ function cSceneObj:getWitness()
 end
 
 function cSceneObj:getWitnessCid(filterFunc,...)
+	local sceneInst = self.scene
+
+	if self.witnessDirty then
+		self.witnessDirty = false
+		self.witnessCtx = sceneInst:getWitness()
+	end
+
 	local result = {}
 	local objMgr = self.scene.objMgr
 
 	local fighterType = sceneConst.eSCENE_OBJ_TYPE.FIGHTER
 
-	for sceneObjUid in pairs(self.witnessCtx) do
+	for _,sceneObjUid in pairs(self.witnessCtx) do
 		local sceneObj = objMgr[sceneObjUid]
-		if sceneObj:sceneObjType() == fighterType then
+		if sceneObj.objType == fighterType then
 			if filterFunc and filterFunc(...,sceneObj) then
 				table.insert(result,sceneObj.cid)
 			else

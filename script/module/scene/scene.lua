@@ -192,7 +192,7 @@ function cScene:createAoiEntity(sceneObj,entityMask)
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
 		other:onObjEnter({sceneObj})
-		sceneObj.witnessCtx[otherUid] = true
+		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = true
 	end
 
@@ -205,7 +205,7 @@ function cScene:removeAoiEntity(sceneObj)
 	for _,otherUid in pairs(aoiSet) do
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
-		sceneObj.witnessCtx[otherUid] = nil
+		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = nil
 	end
 end
@@ -216,14 +216,14 @@ function cScene:moveAoiEntity(sceneObj,x,z)
 	for _,otherUid in pairs(enterSet) do
 		local other = self.objMgr[otherUid]
 		other:onObjEnter({sceneObj})
-		sceneObj.witnessCtx[otherUid] = true
+		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = true
 	end
 
 	for _,otherUid in pairs(LeaveSet) do
 		local other = self.objMgr[otherUid]
 		other:onObjLeave({sceneObj})
-		sceneObj.witnessCtx[otherUid] = nil
+		sceneObj.witnessDirty = true
 		other.viewerCtx[sceneObj.uid] = nil
 	end
 end
@@ -238,7 +238,7 @@ function cScene:createAoiTrigger(sceneObj,triggerRange,triggerMask)
 		local other = self.objMgr[otherUid]
 		table.insert(enterList,other)
 		sceneObj.viewerCtx[otherUid] = true
-		other.witnessCtx[sceneObj.uid] = true
+		other.witnessDirty = true
 	end
 	
 	if not empty then
@@ -253,7 +253,7 @@ function cScene:removeAoiTrigger(sceneObj)
 
 	for uid in pairs(sceneObj.viewerCtx) do
 		local other = self.objMgr[otherUid]
-		other.witnessCtx[sceneObj.uid] = nil
+		other.witnessDirty = true
 	end
 end
 
@@ -267,7 +267,7 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 		local other = self.objMgr[otherUid]
 		table.insert(list,other)
 		sceneObj.viewerCtx[otherUid] = true
-		other.witnessCtx[sceneObj.uid] = true
+		other.witnessDirty = true
 	end
 	
 	if not empty then
@@ -281,12 +281,16 @@ function cScene:moveAoiTrigger(sceneObj,x,z)
 		local other = self.objMgr[otherUid]
 		table.insert(list,other)
 		sceneObj.viewerCtx[otherUid] = nil
-		other.witnessCtx[sceneObj.uid] = nil
+		other.witnessDirty = true
 	end
 	
 	if not empty then
 		sceneObj:onObjLeave(list)
 	end
+end
+
+function cScene:getWitness(sceneObj)
+	return self.aoi:get_witness(sceneObj.aoiEntityId)
 end
 
 --场景通关事件
