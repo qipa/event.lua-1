@@ -67,7 +67,7 @@ function cScene:enter(sceneObj,pos)
 
 	assert(self.objMgr[sceneObj.uid] == nil,sceneObj.uid)
 	self.objMgr[sceneObj.uid] = sceneObj
-	print("enter",sceneObj.uid)
+
 	local objType = sceneObj:sceneObjType()
 	
 	local typeMgr = self.objTypeMgr[objType]
@@ -87,7 +87,7 @@ function cScene:enter(sceneObj,pos)
 	if objType == sceneConst.eSCENE_OBJ_TYPE.FIGHTER then
 		self:onUserEnter(sceneObj)
 	else
-		self:onObjEnter(sceneobj)
+		self:onObjEnter(sceneObj)
 	end
 end
 
@@ -295,13 +295,13 @@ end
 
 --场景通关事件
 function cScene:addPassEvent(ev,...)
-	local eSCEHE_PASS_EVENT = sceneConst.eSCEHE_PASS_EVENT
+	local eSCENE_PASS_EVENT = sceneConst.eSCENE_PASS_EVENT
 
-	if ev == eSCEHE_PASS_EVENT.TIMEOUT then
+	if ev == eSCENE_PASS_EVENT.TIMEOUT then
 		local time = ...
 		self.timeoutResult = true
 		self.lifeTime = time
-	elseif ev == eSCEHE_PASS_EVENT.MONSTER_DIE then
+	elseif ev == eSCENE_PASS_EVENT.MONSTER_DIE then
 		local monsterId = ...
 		local evInfo = self.passEvent[ev]
 		if not evInfo then
@@ -309,7 +309,7 @@ function cScene:addPassEvent(ev,...)
 			self.passEvent[ev] = evInfo
 		end
 		evInfo[monsterId] = true
-	elseif ev == eSCEHE_PASS_EVENT.MONSTER_AREA_DONE then
+	elseif ev == eSCENE_PASS_EVENT.MONSTER_AREA_DONE then
 		local areaId = ...
 		local evInfo = self.passEvent[ev]
 		if not evInfo then
@@ -322,17 +322,17 @@ end
 
 --场景失败事件
 function cScene:addFailEvent(ev,...)
-	local eSCEHE_FAIL_EVENT = sceneConst.eSCEHE_FAIL_EVENT
+	local eSCENE_FAIL_EVENT = sceneConst.eSCENE_FAIL_EVENT
 
-	if ev == eSCEHE_FAIL_EVENT.TIMEOUT then
+	if ev == eSCENE_FAIL_EVENT.TIMEOUT then
 		local time = ...
 		self.timeoutResult = false
 		self.lifeTime = time
-	elseif ev == eSCEHE_FAIL_EVENT.USER_DIE then
+	elseif ev == eSCENE_FAIL_EVENT.USER_DIE then
 		self.failEvent[ev] = true
-	elseif ev == eSCEHE_FAIL_EVENT.USER_ACE then
+	elseif ev == eSCENE_FAIL_EVENT.USER_ACE then
 		self.failEvent[ev] = true
-	elseif ev == eSCEHE_FAIL_EVENT.MONSTER_DIE then
+	elseif ev == eSCENE_FAIL_EVENT.MONSTER_DIE then
 		local monsterId = ...
 		local evInfo = self.failEvent[ev]
 		if not evInfo then
@@ -349,25 +349,9 @@ function cScene:spawnMonster(id,pos,face,...)
 
 	monsterObj:enterScene(self,pos[1],pos[2])
 
-	return monsterObj
-end
+	self:onMonsterCreate(monsterObj)
 
-function cScene:spawnMonsterArea(areaId)
-	local areaInfo = self.areaMonster[areaId]
-	if not areaInfo then
-		areaInfo = {waveIndex = 1,waveMax = 3,monsterAmount = 0,miniSurvive = 5}
-		self.areaMonster[areaId] = areaInfo
-	end
-	if areaInfo.waveMax ~= 0 and areaInfo.waveIndex >= areaInfo.waveMax then
-		return
-	end
-	areaInfo.waveIndex = areaInfo.waveIndex + 1
-	areaInfo.time = os.time()
-	
-	for i = 1,10 do
-		self:spawnMonster(101,{1,1},180)
-		areaInfo.monsterAmount = areaInfo.monsterAmount + 1
-	end
+	return monsterObj
 end
 
 function cScene:initArea(areaId,areaData)
@@ -406,35 +390,53 @@ function cScene:fireAreaEvent(areaId,...)
 		if eventName then
 			local methodName = "onAreaEvent"..eventName
 			if self[methodName] then
-				self[methodName](self,table.unpack(eventArgs))
+				self[methodName](self,areaId,eventArgs)
 			end
 		end
 		
 	end
 end
 
-function cScene:onAreaEventSpawnMonster(...)
+function cScene:onAreaEventSpawnMonster(areaId,spawnData)
+	local areaInfo = self.areaMonster[areaId]
+	if not areaInfo then
+		areaInfo = {waveIndex = 1,waveMax = 3,monsterAmount = 0,miniSurvive = 5}
+		self.areaMonster[areaId] = areaInfo
+	end
+	if areaInfo.waveMax ~= 0 and areaInfo.waveIndex >= areaInfo.waveMax then
+		return
+	end
+	areaInfo.waveIndex = areaInfo.waveIndex + 1
+	areaInfo.time = os.time()
+	
+	for _,info in pairs(spawnData) do
+		for i = 1,info.amount do
+			local pos = info.pos
+			if info.posRandom then
+				pos = self:randomInCircle(info.pos,info.range)
+			end
+			self:spawnMonster(info.monsterId,info.pos)
+			areaInfo.monsterAmount = areaInfo.monsterAmount + 1
+		end
+	end
+end
+
+function cScene:onAreaEventActiveArea(areaId,activeData)
 
 end
 
-function cScene:onAreaEventActiveArea(...)
+function cScene:onAreaEventCreatePortal(areaId,portalData)
 
 end
-
-function cScene:onAreaEventCreatePortal(...)
-
-end
-
-
 
 function cScene:onMonsterAreaDone(areaId)
 	if self.phase ~= sceneConst.eSCENE_PHASE.START then
 		return
 	end
 
-	local eSCEHE_PASS_EVENT = sceneConst.eSCEHE_PASS_EVENT
+	local eSCENE_PASS_EVENT = sceneConst.eSCENE_PASS_EVENT
 
-	local evInfo = self.passEvent[eSCEHE_PASS_EVENT.MONSTER_AREA_DONE]
+	local evInfo = self.passEvent[eSCENE_PASS_EVENT.MONSTER_AREA_DONE]
 	if not evInfo then
 		return
 	end
@@ -465,7 +467,7 @@ function cScene:onMonsterDead(monster,killer)
 		end
 	end
 
-	local evInfo = self.passEvent[sceneConst.eSCEHE_PASS_EVENT.MONSTER_DIE]
+	local evInfo = self.passEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
 	if evInfo then
 		if evInfo[monster.id] then
 			self:over()
@@ -474,7 +476,7 @@ function cScene:onMonsterDead(monster,killer)
 		end
 	end
 	
-	local evInfo = self.failEvent[sceneConst.eSCEHE_PASS_EVENT.MONSTER_DIE]
+	local evInfo = self.failEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
 	if evInfo then
 		if evInfo[monster.id] then
 			self:over()
@@ -489,15 +491,15 @@ function cScene:onUserDead(user,killer)
 		return
 	end
 
-	local eSCEHE_FAIL_EVENT = sceneConst.eSCEHE_FAIL_EVENT
+	local eSCENE_FAIL_EVENT = sceneConst.eSCENE_FAIL_EVENT
 
-	if self.failEvent[eSCEHE_FAIL_EVENT.USER_DIE] then
+	if self.failEvent[eSCENE_FAIL_EVENT.USER_DIE] then
 		self:over()
 		self:onFail()
 		return
 	end
 
-	if self.failEvent[eSCEHE_FAIL_EVENT.USER_ACE] then
+	if self.failEvent[eSCENE_FAIL_EVENT.USER_ACE] then
 		local allUser = self:getAllObjByType(sceneConst.eSCENE_OBJ_TYPE.FIGHTER)
 		for _,user in pairs(allUser) do
 			if not user:isDead() then
@@ -578,7 +580,7 @@ function cScene:commonUpdate()
 
 		for areaId,areaInfo in pairs(self.areaMonster) do
 			if areaInfo.waveMax == 0 or areaInfo.waveIndex < areaInfo.waveMax then
-				if areaInfo.interval ~= 0 and now - areaInfo.time >= areaInfo.interval then
+				if areaInfo.interval and now - areaInfo.time >= areaInfo.interval then
 					self:spawnMonsterArea(areaId)
 				end
 			end

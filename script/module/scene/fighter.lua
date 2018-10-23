@@ -4,6 +4,8 @@ local sceneConst = import "module.scene.scene_const"
 local sceneobj = import "module.scene.sceneobj"
 local serverMgr = import "module.server_manager"
 local clientMgr = import "module.client_manager"
+local moveCtrl = import "module.scene.state_ctrl.move_ctrl"
+local stateManager = import "module.scene.state_ctrl.state_manager"
 
 cFighter = sceneobj.cSceneObj:inherit("fighter","uid")
 
@@ -14,7 +16,9 @@ end
 function cFighter:onCreate(uid,pos)
 	
 	sceneobj.cSceneObj.onCreate(self,idBuilder:allocMonsterTid(),pos,nil,5)
-	print("cFighter:create",self.uid)
+
+	self.stateMgr = stateManager.cStateMgr:new(self)
+	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
 end
 
 function cFighter:onDestroy()
@@ -61,7 +65,6 @@ function cFighter:onObjEnter(sceneObjList)
 	sceneobj.cSceneObj.onObjEnter(self,sceneObjList)
 	local list = {}
 	for _,sceneObj in pairs(sceneObjList) do
-		print("onObjEnter",self.uid,sceneObj.uid)
 		table.insert(list,sceneObj:getSeeInfo())
 	end
 	-- sendClient(self.cid,"s_sceneObj_create",msg)
@@ -71,7 +74,6 @@ function cFighter:onObjLeave(sceneObjList)
 	sceneobj.cSceneObj.onObjLeave(self,sceneObjList)
 	local list = {}
 	for _,sceneObj in pairs(sceneObjList) do
-		print("onObjLeave",self.uid,sceneObj.uid)
 		table.insert(list,sceneObj.uid)
 	end 
 	-- sendClient(self.cid,"s_sceneObj_delete",list)

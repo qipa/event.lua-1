@@ -12,6 +12,7 @@ local itemFactory = import "module.agent.item.item_factory"
 local itemContainer = import "module.agent.item.item_container"
 local worldServer = import "module.world.world_server"
 local scene = import "module.scene.scene"
+local sceneStage = import "module.scene.scene_stage"
 local skillAPI = import "module.scene.skill.skill_api"
 local bullet = import "module.scene.bullet"
 -- sceneServer:createScene(1001,1)
@@ -58,8 +59,9 @@ event.fork(function ()
 	worldServer:enter(1,1)
 	worldServer:leave(1)
 
-	local sceneInst = scene.cScene:new()
-	sceneInst:onCreate(1001,1)
+	local sceneInst = sceneStage.cSceneStage:new()
+	sceneInst:onCreate(1,1001,1)
+	sceneInst:enterArea(1)
 
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})

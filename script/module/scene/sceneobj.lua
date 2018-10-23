@@ -20,7 +20,6 @@ function __init__(self)
 end
 
 function cSceneObj:onCreate(uid,pos,face,aoiRange)
-	print("cSceneObj:create",uid,pos[1],pos[2],face,aoiRange)
 	self.uid = uid
 	self.objType = self:sceneObjType()
 	self.aoiRange = aoiRange
@@ -164,7 +163,7 @@ function cSceneObj:getWitness()
 
 	if self.witnessDirty then
 		self.witnessDirty = false
-		self.witnessCtx = sceneInst:getWitness()
+		self.witnessCtx = sceneInst:getWitness(self)
 	end
 
 	return self.witnessCtx
