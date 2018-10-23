@@ -96,6 +96,14 @@ function cItemMgr:onOverride(user)
 
 end
 
+function cItemMgr:onInsertItem(item)
+
+end
+
+function cItemMgr:onDeleteItem(item)
+
+end
+
 function cItemMgr:onSyncInfo()
 	local mb = {baseInfo = {},extraInfo = {}}
 	for itemUid,item in pairs(self.itemSlot) do
@@ -122,6 +130,12 @@ local function _addItem(self,item)
 	end
 	info[item.uid] = true
 	self.gridCount = self.gridCount + 1
+
+	local ok,err = xpcall(self.onInsertItem,debug.traceback,self,item)
+	if not ok then
+		event.error(err)
+	end
+
 	self:dirtyItem(item.uid)
 end
 
@@ -132,6 +146,12 @@ local function _delItem(self,item)
 	local helperInfo = self.helper[item.cid]
 	helperInfo[item.uid] = nil
 	self.gridCount = self.gridCount - 1
+
+	local ok,err = xpcall(self.onDeleteItem,debug.traceback,self,item)
+	if not ok then
+		event.error(err)
+	end
+	
 	item:release()
 	self:dirtyItem(item.uid)
 end
@@ -204,7 +224,6 @@ function cItemMgr:insertItemByCid(cid,amount,insertLog)
 		return
 	end
 	local items = itemFactory:createItem(cid,amount)
-	table.print(items)
 	for _,item in pairs(items) do
 		self:insertItem(item,insertLog)
 	end

@@ -11,12 +11,9 @@ function __init__(self)
 	self.cItem:saveField("__name")
 end
 
-function cItem:ctor(cid,amount)
+function cItem:onCreate(cid,amount)
 	self.cid = cid
 	self.amount = amount
-end
-
-function cItem:onCreate()
 end
 
 function cItem:onDestroy()

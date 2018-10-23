@@ -5,19 +5,15 @@ local item = import "module.agent.item.obj.item"
 cEquipment = item.cItem:inherit("equipment")
 
 
-function cEquipment:create(cid,amount)
-	self.cid = cid
-	self.amount = amount
-	self.uid = idBuilder:allocItemUid()
+function cEquipment:onCreate(cid,amount)
+	super(cEquipment).onCreate(self,cid,amount)
 end
 
-function cEquipment:init()
+function cEquipment:onDestroy()
 
 end
 
-function cEquipment:destroy()
 
-end
 --[[
 itemAttr = {
 	int key

@@ -5,16 +5,10 @@ local item = import "module.agent.item.obj.item"
 cPet = item.cItem:inherit("pet")
 
 
-function cPet:create(cid,amount)
-	self.cid = cid
-	self.amount = amount
-	self.uid = idBuilder:allocItemUid()
+function cPet:onCreate(cid,amount)
+	super(cPet).onCreate(self,cid,amount)
 end
 
-function cPet:init()
-
-end
-
-function cPet:destroy()
+function cPet:onDestroy()
 
 end
