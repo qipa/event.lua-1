@@ -334,15 +334,16 @@ meta_around_movable(struct lua_State* L) {
 
 	double x = lua_tonumber(L, 2);
 	double z = lua_tonumber(L, 3);
+	double fix = luaL_optnumber(L, 4, 50);
 
-	int val = point_movable(ctx, x, z, 0, NULL);
+	int val = point_movable(ctx, x, z, fix, NULL);
 	if ( val ) {
 		lua_pushnumber(L, x);
 		lua_pushnumber(L, z);
 		return 2;
 	}
 
-	int r = luaL_optinteger(L, 4, 3);
+	int r = luaL_optinteger(L, 5, 2);
 
 	struct vector3* pos = around_movable(ctx, x, z, r, NULL, NULL, NULL);
 	if ( pos == NULL )

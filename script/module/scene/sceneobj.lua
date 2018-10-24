@@ -91,12 +91,13 @@ function cSceneObj:onLeaveScene(scene)
 	self.scene = nil
 end
 
-function cSceneObj:move(x,z)
-	if not self.scene then
+function cSceneObj:move(x,z,notSyncAoi)
+	local sceneInst = self.scene
+	if not sceneInst then
 		return false
 	end
 
-	-- local x,z = self.scene:posAroundMovable(x,z,2)
+	-- local x,z = sceneInst:posAroundMovable(x,z,2)
 
 	local dx = x - self.pos[1]
 	local dz = z - self.pos[2]
@@ -105,9 +106,11 @@ function cSceneObj:move(x,z)
 		return false
 	end
 
-	self.scene:moveAoiEntity(self,x,z)
-	if self.aoiTriggerId then
-		self.scene:moveAoiTrigger(self,x,z)
+	if not notSyncAoi then
+		sceneInst:moveAoiEntity(self,x,z)
+		if self.aoiTriggerId then
+			sceneInst:moveAoiTrigger(self,x,z)
+		end
 	end
 
 	self.pos[1] = x
