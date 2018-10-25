@@ -16,10 +16,15 @@ local eUSER_PHASE = {
 	LEAVE = 3
 }
 
+local sceneServerAddr = {}
+
+isServerStart = isServerStart or false
+
 function __init__(self)
 	local dbCommon = dbObject.cDatabaseCommon:new(30)
 	model.set_dbCommon(dbCommon)
 	serverMgr:registerEvent("SERVER_DOWN",self,"onServerDown")
+	serverMgr:registerEvent("SERVER_CONNECT",self,"onServerConnect")
 end
 
 function start(self)
@@ -30,6 +35,7 @@ function start(self)
 		dbCommon:init(info,"simpleUser",{userUid = info.userUid})
 		model.bind_simpleUser_with_uid(info.userUid,info)
 	end
+	isServerStart = true
 end
 
 
@@ -51,8 +57,29 @@ function onServerDown(self,name,serverId)
 			end
 		end
 	elseif name == "scene" then
-
+		sceneServerAddr[serverId] = nil
 	end
+end
+
+function onServerConnect(self,name,serverId)
+	
+end
+
+function isServerStart()
+	return isServerStart
+end
+
+function onSceneAddr(_,args)
+	sceneServerAddr[args.id] = args.addr
+
+	local serverList = serverMgr:findServer("agent")
+	for serverId in pairs(serverList) do
+		serverMgr:sendAgent(serverId,"module.agent.agent_server","onSceneAddr",sceneServerAddr)
+	end
+end
+
+function getSceneAddr(self)
+	return sceneServerAddr
 end
 
 function enter(self,userUid,agentId)

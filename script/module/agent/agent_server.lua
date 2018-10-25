@@ -30,8 +30,6 @@ function start(self)
 	import "handler.cmd_handler"
 end
 
-
-
 function authTimer(self)
 	local now = util.time()
 	for token,info in pairs(_tokenMgr) do
@@ -193,21 +191,25 @@ function get_all_enter_user(self)
 	return result
 end
 
-function connectSceneServer(self,scene_server,scene_addr)
-	local all_scene_server = serverMgr:findServer("scene")
-	if all_scene_server[scene_server] then
+function connectSceneServer(self,serverId,serverAddr)
+	local allConnectSceneServer = serverMgr:findServer("scene")
+	if allConnectSceneServer[serverId] then
 		return true
 	end
 
 	local addr
-	if scene_addr.file then
-		addr = string.format("ipc://%s",scene_addr.file)
+	if serverAddr.file then
+		addr = string.format("ipc://%s",serverAddr.file)
 	else
-		addr = string.format("tcp://%s:%d",scene_addr.ip,scene_addr.port)
+		addr = string.format("tcp://%s:%d",serverAddr.ip,serverAddr.port)
 	end
 
 	local channel = serverMgr:connectServerWithAddr("scene",addr,false,1)
 	return channel ~= nil
+end
+
+function onSceneAddr(_,args)
+	connectSceneServer(nil,args.id,args.addr)
 end
 
 function server_down(self,name,id)

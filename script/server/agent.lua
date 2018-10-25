@@ -23,28 +23,14 @@ event.fork(function ()
 	
 	serverMgr:connectServer("world")
 
-	-- local currentNum,expectNum
-	-- while true do
-	-- 	currentNum,expectNum = serverMgr:callWorld("server_manager","scene_num")
-	-- 	if currentNum == expectNum then
-	-- 		break
-	-- 	end
-	-- 	event.sleep(1)
-	-- end
-
-	-- local sceneServerInfo
-	-- while true do
-	-- 	sceneServerInfo = serverMgr:callWorld("scene_manager","sceneServerInfo")
-	-- 	if #sceneServerInfo == currentNum then
-	-- 		break
-	-- 	end
-	-- 	event.sleep(1)
-	-- end
-
-	-- for _,info in pairs(sceneServerInfo) do
-	-- 	serverMgr:connectServerWithAddr()
-	-- end
-
+	while true do
+		local isStart = serverMgr:sendWorld("module.world.world_server","isServerStart")
+		if not isStart then
+			event.sleep(1)
+		else
+			break
+		end
+	end
 
 	serverMgr:connectServer("login")
 

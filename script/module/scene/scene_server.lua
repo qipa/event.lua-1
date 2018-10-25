@@ -13,6 +13,10 @@ function __init__(self)
 	
 end
 
+function start()
+
+end
+
 function flush()
 	local all = model.fetch_fighter()
 	for _,fighter in pairs(all) do

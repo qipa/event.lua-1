@@ -8,10 +8,9 @@ local route = require "route"
 local http = require "http"
 local channel = require "channel"
 local startup = import "server.startup"
-local server_manager = import "module.server_manager"
-local world_server = import "module.world.world_server"
+local serverMgr = import "module.server_manager"
+local worldServe = import "module.world.world_server"
 local idBuilder = import "module.id_builder"
-local mongo_indexes = import "common.mongo_indexes"
 
 event.fork(function ()
     local httpd,reason = http.listen(env.world_http,function (channel,method,url,header,body)
@@ -41,15 +40,38 @@ end)
 
 
 event.fork(function ()
-	env.distId = server_manager:reserveId()
+	env.distId = serverMgr:reserveId()
 	startup.run(env.serverId,env.distId,env.monitor,env.mongodb,env.config,env.protocol)
 
-
-	local listener,reason = server_manager:listenServer("world")
+	local listener,reason = serverMgr:listenServer("world")
 	if not listener then
 		event.breakout(reason)
 		return
 	end
 
-	world_server:start()
+    local currentNum,expectNum
+    while true do
+        currentNum,expectNum = serverMgr:sceneAmount()
+        if currentNum ~= expectNum then
+            event.error(string.format("wait for scene server connect,current:%d,expect:%d",currentNum,expectNum))
+            event.sleep(1)
+        else
+            break
+        end
+    end
+
+    while true do
+        local sceneAddrs = worldServe:getSceneAddr()
+        local num = 0
+        for _,_ in pairs(sceneAddrs) do
+            num = num + 1
+        end
+        if num ~= currentNum then
+            event.error("wait for scene server addr report")
+            event.sleep(1)
+        else
+            break
+        end
+    end
+	worldServe:start()
 end)
