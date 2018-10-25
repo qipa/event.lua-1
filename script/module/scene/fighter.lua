@@ -63,10 +63,21 @@ end
 
 function cFighter:onObjEnter(sceneObjList)
 	sceneobj.cSceneObj.onObjEnter(self,sceneObjList)
-	local list = {}
+
+	local createObjInfo = {}
+	local pathInfo = {}
 	for _,sceneObj in pairs(sceneObjList) do
-		table.insert(list,sceneObj:getSeeInfo())
+		table.insert(createObjInfo,sceneObj:getSeeInfo())
+		local moveCtrl = sceneObj.moveCtrl
+		if moveCtrl then
+			local path = moveCtrl:getPath()
+			if path then
+				table.insert(pathInfo,{uid = sceneObj.uid,path = path})
+			end
+		end
 	end
+
+
 	-- sendClient(self.cid,"s_sceneObj_create",msg)
 end
 

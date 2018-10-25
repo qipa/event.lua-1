@@ -28,8 +28,6 @@ function cMoveCtrl:onClientMoveStart(path)
 		return false
 	end
 
-
-
 	return self:prepareMove(path)
 end
 
@@ -144,4 +142,18 @@ function cMoveCtrl:doMove(now)
 	local nx,nz = moveForward(locationX,locationZ,nodeX,nodeZ,dtMove)
 	self.ownerObj:move(nx,nz)
 	return false
+end
+
+function cMoveCtrl:getPath()
+	if self.pathIndex > self.pathIndexMax then
+		return
+	end
+
+	local path = {}
+	path[1] = {self.ownerObj.pos[1],self.ownerObj.pos[2]}
+
+	for i = self.pathIndex,self.pathIndexMax do
+		table.insert(path,self.pathList[i])
+	end
+	return path
 end
