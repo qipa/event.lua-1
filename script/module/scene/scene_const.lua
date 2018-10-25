@@ -18,6 +18,7 @@ eSCENE_OBJ_TYPE = {
 	PET = 3,
 	BULLET = 4,
 	ITEM = 5,
+	DOOR = 6
 }
 
 eSCENE_PHASE = {

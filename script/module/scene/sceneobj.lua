@@ -22,6 +22,7 @@ end
 function cSceneObj:onCreate(uid,pos,face,aoiRange)
 	self.uid = uid
 	self.objType = self:sceneObjType()
+	self.createTime = event.now()
 	self.aoiRange = aoiRange
 	self.pos = {pos[1],pos[2]}
 	self.face = pos or {0,0}
