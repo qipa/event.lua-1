@@ -78,17 +78,6 @@ function cLoginUser:leave()
 end
 
 function cLoginUser:enterAgent(uid)
-	util.time_diff("event.now",function ()
-		for i = 1,1024 * 1024 * 100 do
-			event.now()
-		end
-	end)
-	util.time_diff("os.time",function ()
-		for i = 1,1024 * 1024 * 100 do
-			os.time()
-		end
-	end)
-	print(event.now(),os.time())
 	local agentId,agentAddr = agentMgr:selectAgent()
 	local time = util.time()
 	local json = cjson.encode({account = self.account,uid = uid})

@@ -38,6 +38,10 @@ function userEnterAgent(self,account,userUid,agentId)
 	_agentAccountMgr[account] = info
 end
 
+function userLeaveAgent(_,args)
+	_agentAccountMgr[args.account] = nil
+end
+
 function agentDown(self,listener,agentId)
 	for account,info in pairs(_agentAccountMgr) do
 		if info.agent_server == agentId then
@@ -100,17 +104,19 @@ local function _userDoAuth(self,cid,account)
 			return
 		elseif user.phase == eUSER_PHASE.LOADING then
 			user.cid = cid
+			return
 		end
 
 	end
 	user = loginUser.cLoginUser:new()
-	
+	user:onCreate(cid,account)
+
 	model.bind_loginUser_with_account(account,user)
 	model.bind_loginUser_with_cid(cid,user)
 
-	user:onCreate(cid,account)
 	user.phase = eUSER_PHASE.LOADING
 	user:load()
+	
 	if user.phase == eUSER_PHASE.LEAVE then
 		return
 	end
@@ -133,7 +139,8 @@ function userAuth(self,cid,account)
 		table.insert(queue,cid)
 
 		serverMgr:sendAgent(accountInfo.agentId,"handler.agent_handler","userKick",{uid = accountInfo.uid},function (ok)
-			_agentAccountMgr[account] = nil
+			userLeaveAgent(nil,{account = account})
+
 			local count = #queue
 			for i = 1,count-1 do
 				local cid = queue[i]
@@ -146,18 +153,18 @@ function userAuth(self,cid,account)
 			if not _loginCtx[lastCid] then 
 				return
 			end
-			event.fork(_userDoAuth,self,lastCid,account)
+
+			_userDoAuth(self,lastCid,account)
 		end)
 		return
 	end
 
-	event.fork(_userDoAuth,self,cid,account)
+	_userDoAuth(self,cid,account)
 end
 
 
-function server_stop(self)
-	local client_manager = model.get_client_manager()
-	client_manager:stop()
+function serverStop(self)
+	clientMgr:stop()
 
 	local all = model.fetch_loginUser()
 	for _,user in pairs(all) do
