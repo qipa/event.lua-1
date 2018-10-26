@@ -24,13 +24,14 @@ function flush()
 	end
 end
 
-function dispatch_client(_,args)
-	local user = model.fetch_scene_user_with_cid(args.cid)
-	if not user then
-		route.dispatch_client(args.cid,args.message_id,args.data)
-	else
-		route.dispatch_client(user,args.message_id,args.data)
+function dispatchClient(_,args)
+	local user = model.fetch_fighter_with_cid(args.cid)
+	local reader = protocol.reader[args.messageId] 
+	if not reader then
+		event.error(string.format("no such pto id:%d",args.messageId))
+		return
 	end
+	reader(user or args.cid,args.data)
 end
 
 function createScene(self,args)

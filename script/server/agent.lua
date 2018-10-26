@@ -9,7 +9,7 @@ local clientMgr = import "module.client_manager"
 local serverMgr = import "module.server_manager"
 local startup = import "server.startup"
 local idBuilder = import "module.id_builder"
-local agent_server = import "module.agent.agent_server"
+local agentServer = import "module.agent.agent_server"
 
 local mongo_indexes = import "common.mongo_indexes"
 
@@ -37,9 +37,9 @@ event.fork(function ()
 	local gate_conf = {
 		max = 1000,
 		port = 0,
-		data = agent_server.dispatch_client,
-		accept = agent_server.enter,
-		close = agent_server.leave
+		data = agentServer.dispatchClient,
+		accept = agentServer.enter,
+		close = agentServer.leave
 	}
 	local port = clientMgr.start(gate_conf)
 

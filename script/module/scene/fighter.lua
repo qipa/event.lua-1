@@ -7,7 +7,7 @@ local clientMgr = import "module.client_manager"
 local moveCtrl = import "module.scene.state_ctrl.move_ctrl"
 local stateManager = import "module.scene.state_ctrl.state_manager"
 
-cFighter = sceneobj.cSceneObj:inherit("fighter","uid")
+cFighter = sceneobj.cSceneObj:inherit("fighter","uid","cid")
 
 function __init__(self)
 	

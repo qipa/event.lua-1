@@ -1,6 +1,6 @@
 local event = require "event"
 local model = require "model"
-
+local protocol = require "protocol"
 local serverMgr = import "module.server_manager"
 local scene_manager = import "module.world.scene_manager"
 local dbObject = import "module.database_object"
@@ -39,13 +39,14 @@ function start(self)
 end
 
 
-function dispatch_client(self,args)
-	local user = model.fetch_world_user_with_cid(args.cid)
-	if not user then
-		route.dispatch_client(args.cid,args.message_id,args.data)
-	else
-		route.dispatch_client(user,args.message_id,args.data)
+function dispatchClient(self,args)
+	local user = model.fetch_worldUser_with_cid(args.cid)
+	local reader = protocol.reader[args.messageId] 
+	if not reader then
+		event.error(string.format("no such pto id:%d",args.messageId))
+		return
 	end
+	reader(user or args.cid,args.data)
 end
 
 function onServerDown(self,name,serverId)

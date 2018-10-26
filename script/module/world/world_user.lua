@@ -8,7 +8,7 @@ local dbObject = import "module.database_object"
 local chatUser = import "module.world.chat_user"
 local teamUser = import "module.world.team_user"
 
-cWorldUser = dbObject.cDatabase:inherit("world_user","uid")
+cWorldUser = dbObject.cDatabase:inherit("worldUser","uid","cid")
 
 function __init__(self)
 	self.cWorldUser:saveField("chatUser")

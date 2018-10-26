@@ -41,28 +41,31 @@ function authTimer(self)
 	end
 end
 
-function dispatch_client(self,cid,message_id,data,size)
-	local pto_name = protocol.name[message_id]
-	local forward = common.PROTOCOL_FORWARD[pto_name]
+function dispatchClient(self,cid,messageId,data,size)
+	local ptoName = protocol.name[messageId]
+	local forward = common.PROTOCOL_FORWARD[ptoName]
 	if forward then
+		local message = {cid = cid,messageId = messageId,data = string.copy(data,size)}
 		if forward == common.SERVER_TYPE.WORLD then
-			serverMgr:sendWorld("module.world_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			serverMgr:sendWorld("module.world_server","dispatchClient",message)
 		elseif forward == common.SERVER_TYPE.SCENE then
-			local user = model.fetch_agent_user_with_cid(cid)
+			local user = model.fetch_agentUser_with_cid(cid)
 			if not user then
 				event.error(string.format("forward scene error:no such user:%d",cid))
 				return
 			end
 
-			serverMgr:sendScene(user.scene_server_id,"module.scene_server","dispatch_client",{cid = cid,message_id = message_id,data = string.copy(data,size)})
+			serverMgr:sendScene(user.sceneServerId,"module.scene_server","dispatchClient",message)
 		end
 		return
-	end
-	local user = model.fetch_agent_user_with_cid(cid)
-	if not user then
-		route.dispatch_client(cid,message_id,data,size)
 	else
-		route.dispatch_client(user,message_id,data,size)
+		local user = model.fetch_agentUser_with_cid(cid)
+		local reader = protocol.reader[messageId]
+		if not reader then
+			event.error(string.format("no such pto id:%d",args.messageId))
+			return
+		end
+		reader(user or cid,data,size)
 	end
 end
 
