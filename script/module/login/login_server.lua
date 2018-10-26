@@ -19,7 +19,6 @@ local eUSER_PHASE = {
 }
 
 function start(self)
-	timer.callout(1,self,"timeout")
 	local dbChannel = model.get_dbChannel()
 	local result = dbChannel:findAll("event","accountInfo")
 	for _,info in pairs(result) do
@@ -32,10 +31,6 @@ function start(self)
 	serverMgr:registerEvent("AGENT_DOWN",self,"agentDown")
 	import "handler.login_handler"
 	import "handler.cmd_handler"
-end
-
-function timeout(self)
-
 end
 
 function userEnterAgent(self,account,userUid,agentId)
@@ -51,13 +46,13 @@ function agentDown(self,listener,agentId)
 	end
 end
 
-function enter(self,cid,addr)
+function onClientEnter(self,cid,addr)
 	event.error(string.format("cid:%d addr:%s enter",cid,addr))
 	local info = {cid = cid,addr = addr}
 	_loginCtx[cid] = info
 end
 
-function leave(self,cid)
+function onClientLeave(self,cid)
 	event.error(string.format("cid:%d leave",cid))
 	local info = _loginCtx[cid]
 	if not info then
@@ -65,26 +60,29 @@ function leave(self,cid)
 	end
 	_loginCtx[cid] = nil
 
-	if info.account then
-		local user = model.fetch_loginUser_with_account(info.account)
-		if user and user.cid == cid then
-			if user.phase == eUSER_PHASE.DONE then
-				user:save()
-			end
-			user.phase = eUSER_PHASE.LEAVE
-			user:leave()
-			model.unbind_loginUser_with_account(info.account)
+	if not info.account then
+		return
+	end
+
+	local user = model.fetch_loginUser_with_account(info.account)
+	if user and user.cid == cid then
+		if user.phase == eUSER_PHASE.DONE then
+			user:save()
 		end
+		user.phase = eUSER_PHASE.LEAVE
+		user:leave()
+		model.unbind_loginUser_with_account(info.account)
 	end
 end
 
-function dispatch_client(self,cid,message_id,data,size)
+function onClientData(self,cid,messageId,data,size)
 	local user = model.fetch_loginUser_with_cid(cid)
-	if not user then
-		route.dispatch_client(cid,message_id,data,size)
-	else
-		route.dispatch_client(user,message_id,data,size)
+	local reader = protocol.reader[messageId]
+	if not reader then
+		event.error(string.format("no such pto id:%d",args.messageId))
+		return
 	end
+	reader(user or cid,data,size)
 end
 
 local function _userDoAuth(self,cid,account)

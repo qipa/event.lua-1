@@ -12,30 +12,20 @@ _gate = _gate
 
 _sendGate = _sendGate
 
-_onAccept = _onAccept
-_onClose = _onClose
-
-
+_serverInst = _serverInst
 
 function __init__(self)
 
 end
 
 local function _onClientData(cid,messageId,data,size)
-	
-
-	local reader = protocol.reader[messageId]
-	if not reader then
-		event.error(string.format("no such pto id:%d",messageId))
-		return
-	end
 	local cid = cid * 100 + env.distId
-	event.fork(reader,cid,data,size)
+	event.fork(_serverInst.onClientData,_serverInst,cid,messageId,data,size)
 end
 
 local function _onClientAccept(cid,addr)
 	local cid = cid * 100 + env.distId
-	local ok,err = xpcall(_onAccept,debug.traceback,cid,addr)
+	local ok,err = xpcall(_serverInst.onClientEnter,debug.traceback,_serverInst,cid,addr)
 	if not ok then
 		event.error(err)
 	end
@@ -43,23 +33,21 @@ end
 
 local function _onClientClose(cid)
 	local cid = cid * 100 + env.distId
-	local ok,err = xpcall(_onClose,debug.traceback,cid)
+	local ok,err = xpcall(_serverInst.onClientLeave,debug.traceback,_serverInst,cid)
 	if not ok then
 		event.error(err)
 	end
 end
 
-
-function start(conf)
-	local gate = event.gate(conf.max or 1000)
+function start(self,ip,port,max,serverInst)
+	local gate = event.gate(max or 1000)
 	gate:set_callback(_onClientAccept,_onClientClose,_onClientData)
-	local port,reason = gate:start("0.0.0.0",conf.port or 0)
+	local port,reason = gate:start(ip or "0.0.0.0",port or 0)
 	if not port then
 		return false,reason
 	end
 
-	_onAccept = conf.onAccept
-	_onClose = conf.onClose
+	_serverInst = serverInst
 
 	_gate = gate
 

@@ -24,7 +24,7 @@ function flush()
 	end
 end
 
-function dispatchClient(_,args)
+function onClientData(_,args)
 	local user = model.fetch_fighter_with_cid(args.cid)
 	local reader = protocol.reader[args.messageId] 
 	if not reader then

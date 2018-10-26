@@ -39,7 +39,7 @@ function start(self)
 end
 
 
-function dispatchClient(self,args)
+function onClientData(self,args)
 	local user = model.fetch_worldUser_with_cid(args.cid)
 	local reader = protocol.reader[args.messageId] 
 	if not reader then

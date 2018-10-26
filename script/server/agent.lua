@@ -34,14 +34,7 @@ event.fork(function ()
 
 	serverMgr:connectServer("login")
 
-	local gate_conf = {
-		max = 1000,
-		port = 0,
-		data = agentServer.dispatchClient,
-		accept = agentServer.enter,
-		close = agentServer.leave
-	}
-	local port = clientMgr.start(gate_conf)
+	local port = clientMgr:start(nil,0,1000,agentServer)
 
 	serverMgr:sendLogin("module.login.agent_manager","reportAgentAddr",{id = env.distId,addr = {ip = "0.0.0.0",port = port}})
 

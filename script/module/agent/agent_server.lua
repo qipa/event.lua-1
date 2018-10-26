@@ -41,13 +41,13 @@ function authTimer(self)
 	end
 end
 
-function dispatchClient(self,cid,messageId,data,size)
+function onClientData(self,cid,messageId,data,size)
 	local ptoName = protocol.name[messageId]
 	local forward = common.PROTOCOL_FORWARD[ptoName]
 	if forward then
 		local message = {cid = cid,messageId = messageId,data = string.copy(data,size)}
 		if forward == common.SERVER_TYPE.WORLD then
-			serverMgr:sendWorld("module.world_server","dispatchClient",message)
+			serverMgr:sendWorld("module.world_server","onClientData",message)
 		elseif forward == common.SERVER_TYPE.SCENE then
 			local user = model.fetch_agentUser_with_cid(cid)
 			if not user then
@@ -55,7 +55,7 @@ function dispatchClient(self,cid,messageId,data,size)
 				return
 			end
 
-			serverMgr:sendScene(user.sceneServerId,"module.scene_server","dispatchClient",message)
+			serverMgr:sendScene(user.sceneServerId,"module.scene_server","onClientData",message)
 		end
 		return
 	else
@@ -70,11 +70,11 @@ function dispatchClient(self,cid,messageId,data,size)
 end
 
 
-function enter(self,cid,addr)
+function onClientEnter(self,cid,addr)
 	print(string.format("client enter:%d,%s",cid,addr))
 end
 
-function leave(self,cid)
+function onClientLeave(self,cid)
 	print(string.format("client leave:%d,%s",cid,addr))
 	local user = model.fetch_agent_user_with_uid(cid)
 	if not user then

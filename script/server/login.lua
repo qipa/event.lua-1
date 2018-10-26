@@ -11,27 +11,13 @@ local clientMgr = import "module.client_manager"
 local serverMgr = import "module.server_manager"
 local loginServer = import "module.login.login_server"
 
-local function onClientEnter(cid,addr)
-	return loginServer:enter(cid,addr)
-end
-
-local function onClientLeave(cid)
-	return loginServer:leave(cid,addr)
-end
-
 event.fork(function ()
 	env.distId = startup.reserveId()
 	startup.run(env.serverId,env.distId,env.monitor,env.mongodb,env.config,env.protocol)
 
 	serverMgr:listenServer("login")
 
-	local gateConf = {
-		max = 1000,
-		port = 8085,
-		onAccept = onClientEnter,
-		onClose = onClientLeave
-	}
-	local port = clientMgr.start(gateConf)
+	clientMgr:start(nil,8085,1000,loginServer)
 
 	loginServer:start()
 	
