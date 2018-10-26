@@ -10,10 +10,8 @@ function cBtSequence:ctor()
 end
 
 function cBtSequence:tick(tick)
-	for i = 1,table.getn(self.children) do
-		local v = self.children[i]
+	for _,v in pairs(self.children) do
 		local status = v:_execute(tick)
-		print(i,v)
 		if status ~= b3.SUCCESS then
 			return status
 		end

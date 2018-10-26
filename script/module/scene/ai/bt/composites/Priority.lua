@@ -12,7 +12,6 @@ end
 function cBtPriority:tick(tick)
 	for i,v in pairs(self.children) do
 		local status = v:_execute(tick)
-
 		if status ~= b3.FAILURE then
 			return status
 		end

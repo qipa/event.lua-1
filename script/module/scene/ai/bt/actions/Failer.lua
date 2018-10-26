@@ -10,5 +10,5 @@ function cBtFail:ctor()
 end
 
 function cBtFail:tick()
-	return b3.SUCCESS
+	return b3.FAILURE
 end
