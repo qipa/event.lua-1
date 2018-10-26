@@ -1,5 +1,6 @@
 local util = require "util"
 local model = require "model"
+local b3 = import "module.scene.ai.bt.bt_const"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
@@ -47,6 +48,9 @@ function cAICharactor:randomPatrolPos()
 end
 
 function cAICharactor:moveToTarget(targetUid)
+	if not targetUid then
+		targetUid = self:searchEnemy()
+	end
 	local targetObj = model.fetch_fighter_with_uid(targetUid)
 
 	local angle = targetObj:getAngleFrom(self.owner)
@@ -96,4 +100,70 @@ end
 
 function cAICharactor:onUserLeave(sceneObj)
 	self.userAmount = self.userAmount - 1
+end
+
+function cAICharactor:isNeedGoHome()
+	if self:isOutOfRange() then
+		return b3.SUCCESS
+	end
+	return b3.FAILURE
+end
+
+function cAICharactor:noTarget()
+	if not self:haveEnemy() then
+		return b3.SUCCESS 
+	end
+	return b3.FAILURE
+end
+
+function cAICharactor:findTarget()
+	if self:haveEnemy() then
+		return b3.SUCCESS
+	end
+	return b3.FAILURE
+end
+
+function cAICharactor:goHome()
+	local stateMgr = self.owner.stateMgr
+
+	if not stateMgr:hasState("MOVE") then
+		self:moveToPos(self.owner.bornPos)
+	end
+
+	if self:haveEnemy() then
+		return b3.FAILURE
+	end
+
+	return b3.RUNNING
+end
+
+function cAICharactor:randomSpeak()
+	print("randomSpeak")
+	return b3.SUCCESS
+end
+
+function cAICharactor:randomMove()
+	print("randomMove 1")
+	local stateMgr = self.owner.stateMgr
+	if stateMgr:hasState("MOVE") then
+		print("randomMove 2")
+		return b3.RUNNING
+	end
+
+	if self:haveEnemy() then
+		print("randomMove 3")
+		return b3.FAILURE
+	end
+
+	self.patrolPos = {self:randomPatrolPos()}
+
+	local moveCtrl = self.owner.moveCtrl
+
+	moveCtrl:onServerMoveStart({{self.owner.pos[1],self.owner.pos[2]}, self.patrolPos})
+	print("randomMove 4")
+	return b3.RUNNING
+end
+
+function cAICharactor:attack()
+	return b3.RUNNING
 end

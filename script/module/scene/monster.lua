@@ -4,6 +4,9 @@ local idBuilder = import "module.id_builder"
 local aiCharactor = import "module.scene.ai.charactor.ai_charactor"
 local fsm = import "module.scene.ai.fsm"
 local moveCtrl = import "module.scene.state_ctrl.move_ctrl"
+local btTree = import "module.scene.ai.bt.core.BehaviorTree"
+local btTick = import "module.scene.ai.bt.core.Tick"
+local btBlackboard = import "module.scene.ai.bt.core.Blackboard"
 local stateManager = import "module.scene.state_ctrl.state_manager"
 cMonster = sceneobj.cSceneObj:inherit("monster")
 
@@ -23,8 +26,17 @@ function cMonster:onCreate(id,pos,face)
 	self.moveCtrl = moveCtrl.cMoveCtrl:new(self)
 
 	self.aiCharactor = aiCharactor.cAICharactor:new(self)
-	self.aiFsm = fsm.cFSM:new(self.aiCharactor)
-	self.aiFsm:switchState("IDLE")
+	-- self.aiFsm = fsm.cFSM:new(self.aiCharactor)
+	-- self.aiFsm:switchState("IDLE")
+	self.aiTree = btTree.cBtTree:new()
+	self.aiTick = btTick.cBtTick:new()
+	self.aiBlackBoard = btBlackboard.cBtBlackboard:new()
+
+	local FILE = io.open("./config/测试.lua","r")
+	local treeData = FILE:read("*a")
+	FILE:close()
+
+	self.aiTree:load(load(treeData)())
 end
 
 function cMonster:onDestroy()
@@ -80,7 +92,8 @@ function cMonster:onObjLeave(objList)
 end
 
 function cMonster:onUpdate(now)
-	self.aiFsm:onUpdate(now)
+	-- self.aiFsm:onUpdate(now)
+	self.aiTree:tick(self.aiTick,self.aiCharactor,self.aiBlackBoard)
 	self.stateMgr:onUpdate(now)
 	sceneobj.cSceneObj.onUpdate(self,now)
 end

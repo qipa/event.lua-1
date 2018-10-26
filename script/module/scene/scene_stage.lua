@@ -17,13 +17,13 @@ local areaCfg = {
 			pos = {100,100},
 			range = 20,
 			posRandom = 1,
-			amount = 100,
+			amount = 1,
 		}, {
 			monsterId = 2,
 			pos = {150,150},
 			range = 20,
 			posRandom = 1,
-			amount = 100,
+			amount = 1,
 		}
 	}
 }

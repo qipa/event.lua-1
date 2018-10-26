@@ -56,8 +56,8 @@ event.fork(function ()
 	container:save(db_channel,"user",{userUid = 5})
 	-- table.print(container)
 
-	worldServer:enter(1,1)
-	worldServer:leave(1)
+	-- worldServer:enter(1,1)
+	-- worldServer:leave(1)
 
 	local sceneInst = sceneStage.cSceneStage:new()
 	sceneInst:onCreate(1,1001,1)

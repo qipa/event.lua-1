@@ -1,3 +1,4 @@
+local event = require "event"
 local util = require "util"
 local sceneConst = import "module.scene.scene_const"
 local dbObject = import "module.database_object"

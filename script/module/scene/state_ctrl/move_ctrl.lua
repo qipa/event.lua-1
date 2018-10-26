@@ -145,15 +145,15 @@ function cMoveCtrl:doMove(now)
 end
 
 function cMoveCtrl:getPath()
-	if self.pathIndex > self.pathIndexMax then
-		return
-	end
+	-- if self.pathIndex > self.pathIndexMax then
+	-- 	return
+	-- end
 
-	local path = {}
-	path[1] = {self.ownerObj.pos[1],self.ownerObj.pos[2]}
+	-- local path = {}
+	-- path[1] = {self.ownerObj.pos[1],self.ownerObj.pos[2]}
 
-	for i = self.pathIndex,self.pathIndexMax do
-		table.insert(path,self.pathList[i])
-	end
-	return path
+	-- for i = self.pathIndex,self.pathIndexMax do
+	-- 	table.insert(path,self.pathList[i])
+	-- end
+	-- return path
 end
