@@ -1,15 +1,13 @@
-require 'core.Decorator'
+local b3 = import "module.scene.ai.bt.bt_const"
+local decorator = import "module.scene.ai.bt.core.Decorator"
 
-local inverter = b3.Class("Inverter", b3.Decorator)
-b3.Inverter = inverter
+cBtInverter = decorator.cBtDecorator:inherit("btInverter")
 
-function inverter:ctor(params)
-	b3.Inverter.ctor(self,params)
-
-	self.name = "Inverter"
+function cBtInverter:ctor(params)
+	super(cBtInverter).ctor(self,params)
 end
 
-function inverter:tick(tick)
+function cBtInverter:tick(tick)
 	if not self.child then
 		return b3.ERROR
 	end

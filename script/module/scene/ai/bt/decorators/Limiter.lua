@@ -1,21 +1,19 @@
-require 'core.Composite'
+local b3 = import "module.scene.ai.bt.bt_const"
+local decorator = import "module.scene.ai.bt.core.Decorator"
 
-local limiter = b3.Class("Limiter", b3.Decorator)
-b3.Limiter = limiter
+cBtLimiter = decorator.cBtDecorator:inherit("btLimiter")
 
-function limiter:ctor(params)
-	b3.Decorator.ctor(self,params)
-
-	self.name = "Limiter"
-	self.title = "Limit <maxLoop> Activations"
-	self.parameters = {maxLoop = 1,}
+function cBtLimiter:ctor(params)
+	super(cBtLimiter).ctor(self,params)
+	self.maxLoop = params.properties.maxLoop or 1
 end
 
-function limiter:open(tick)
+function cBtLimiter:open(tick)
 	tick.blackboard.set("i", 0, tick.tree.id, self.id)
+	return super(cBtLimiter).open(self,tick)
 end
 
-function limiter:tick(tick)
+function cBtLimiter:tick(tick)
 	if not self.child then
 		return b3.ERROR
 	end

@@ -48,6 +48,7 @@ function cAICharactor:randomPatrolPos()
 end
 
 function cAICharactor:moveToTarget(targetUid)
+	print("moveToTarget")
 	if not targetUid then
 		targetUid = self:searchEnemy()
 	end

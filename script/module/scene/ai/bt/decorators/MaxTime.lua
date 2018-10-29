@@ -1,33 +1,30 @@
-require 'core.Decorator'
+local event = require "event"
+local b3 = import "module.scene.ai.bt.bt_const"
+local decorator = import "module.scene.ai.bt.core.Decorator"
 
-local maxTime = b3.Class("MaxTime", b3.Decorator)
-b3.MaxTime = maxTime
+cBtMaxTime = decorator.cBtDecorator:inherit("btMaxTime")
 
-function maxTime:ctor(params)
-	b3.MaxTime.ctor(self,params)
+function cBtMaxTime:ctor(params)
+	super(cBtMaxTime).ctor(self,params)
 
-	self.name = "MaxTime"
-	self.title = "Max <maxTime>ms"
-	self.parameters = {maxTime = 0}
-
-	if not params or not params.maxTime then
+	if not params or not params.properties.maxTime then
 		print("maxTime parameter in MaxTime decorator is an obligatory parameter")
 		return
 	end
-
-	self.maxTime = params.maxTime
+	self.maxTime = params.properties.maxTime
 end
 
-function maxTime:initialize(params)
-
+function cBtMaxTime:open(tick)
+	tick.blackboard.set("startTime", event.now(), tick.tree.id, self.id)
+	return super(cBtMaxTime).open(self,tick)
 end
 
-function maxTime:open(tick)
+function cBtMaxTime:tick(tick)
 	if not self.child then
 		return b3.ERROR
 	end
 
-	local currTime = os.time()
+	local currTime = event.now()
 	local startTime = tick.blackboard.get("startTime", tick.tree.id, self.id)
 
 	local status = self.child:_execute(tick)

@@ -1,31 +1,20 @@
-require "core.Decorator"
+local event = require "event"
+local b3 = import "module.scene.ai.bt.bt_const"
+local decorator = import "module.scene.ai.bt.core.Decorator"
 
-local repeater = b3.Class("Repeater", b3.Decorator)
-b3.Repeater = repeater
+cBtRepeater = decorator.cBtDecorator:inherit("btRepeater")
 
-function repeater:ctor(params)
-	b3.Decorator.ctor(self)
-
-	if not params then
-		params = {}
-	end
-
-	self.name = "Repeater"
-	self.title = "Repeater <maxLoop>x"
-	self.parameters = {maxLoop = -1}
-
-	self.maxLoop = params.maxLoop or -1
+function cBtRepeater:ctor(params)
+	super(cBtRepeater).ctor(self,params)
+	self.maxLoop = params.properties.maxLoop or -1
 end
 
-function repeater:initialize(params)
-
-end
-
-function repeater:open(tick)
+function cBtRepeater:open(tick)
 	tick.blackboard:set("i", 0, tick.tree.id, self.id)
+	return super(cBtRepeater).open(self,tick)
 end
 
-function repeater:tick(tick)
+function cBtRepeater:tick(tick)
 	if not self.child then
 		return b3.ERROR
 	end

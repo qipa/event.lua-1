@@ -1,27 +1,20 @@
-require "core.Decorator"
+local event = require "event"
+local b3 = import "module.scene.ai.bt.bt_const"
+local decorator = import "module.scene.ai.bt.core.Decorator"
 
-local repeatUntilFailure = b3.Class("RepeatUntilFailure", b3.Decorator)
-b3.RepeatUntilFailure = repeatUntilFailure
+cBtRepeatUntilFailure = decorator.cBtDecorator:inherit("btRepeatUntilFailure")
 
-function repeatUntilFailure:ctor(params)
-	b3.Decorator.ctor(self)
-
-	if not params then
-		params = {}
-	end
-
-	self.name = "RepeatUntilFailure"
-	self.title = "Repeat Until Failure"
-	self.parameters = {maxLoop = -1}
-
-	self.maxLoop = params.maxLoop or -1
+function cBtRepeatUntilFailure:ctor(params)
+	super(cBtRepeatUntilFailure).ctor(self,params)
+	self.maxLoop = params.properties.maxLoop or -1
 end
 
-function repeatUntilFailure:open(tick)
+function cBtRepeatUntilFailure:open(tick)
 	tick.blackboard.set("i", 0, tick.tree.id, self.id)
+	return super(cBtRepeatUntilFailure).open(self,tick)
 end
 
-function repeatUntilFailure:tick(tick)
+function cBtRepeatUntilFailure:tick(tick)
 	if not self.child then
 		return b3.ERROR
 	end
