@@ -1,4 +1,4 @@
-local b3 = import "module.scene.ai.bt.b3_const"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 local baseNode = import "module.scene.ai.bt.core.BaseNode"
 
 cBtDecorator = baseNode.cBtBaseNode:inherit("btDecorator")
@@ -6,10 +6,7 @@ cBtDecorator = baseNode.cBtBaseNode:inherit("btDecorator")
 function cBtDecorator:ctor(params)
 	super(cBtDecorator).ctor(self, params)
 
-	self.category = b3.DECORATOR
-	if not params then
-		params = {}
-	end
+	self.category = BT_CONST.DECORATOR
 
-	self.child = params.child or nil
+	self.child = nil
 end

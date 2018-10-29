@@ -1,8 +1,8 @@
 local object = import "module.object"
 
-cBtTick = object.cObject:inherit("btTick")
+btTick = {}
 
-function cBtTick:ctor()
+function btTick.create()
 	self.tree = nil
 	self.debug = nil
 	self.target = nil
@@ -12,23 +12,23 @@ function cBtTick:ctor()
 	self._nodeCount = 0
 end
 
-function cBtTick:_enterNode(node)
+function btTick.enterNode(node)
 	self._nodeCount = self._nodeCount + 1
 	table.insert(self._openNodes, node)
 end
 
-function cBtTick:_openNode(node)
+function btTick.openNode(node)
 	-- print("open",node.title)
 end
 
-function cBtTick:_tickNode(node)
+function btTick.tickNode(node)
 	-- print("tick",node.title)
 end
 
-function cBtTick:_closeNode(node)
+function btTick.closeNode(node)
 	-- print("close",node.title)
 	table.remove(self._openNodes)
 end
 
-function cBtTick:_exitNode(node)
+function btTick.exitNode(node)
 end

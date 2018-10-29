@@ -1,8 +1,7 @@
 local event = require "event"
-local b3 = import "module.scene.ai.bt.b3_const"
-local decorator = import "module.scene.ai.bt.core.Decorator"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtRepeatUntilSuccess = decorator.cBtDecorator:inherit("btRepeatUntilSuccess")
+cBtRepeatUntilSuccess = import("module.scene.ai.bt.core.Decorator").cBtDecorator:inherit("btRepeatUntilSuccess")
 
 function cBtRepeatUntilSuccess:ctor(params)
 	super(cBtRepeatUntilSuccess).ctor(self,params)
@@ -16,17 +15,17 @@ end
 
 function cBtRepeatUntilSuccess:tick(tick)
 	if not self.child then
-		return b3.ERROR
+		return BT_CONST.ERROR
 	end
 
 	local i = tick.blackboard.get("i", tick.tree.id , self.id)
-	local status = b3.ERROR
+	local status = BT_CONST.ERROR
 
 	while(self.maxLoop < 0 or i < self.maxLoop)
 	do
 		local status = self.child:_execute(tick)
 
-		if status == b3.FAILURE then
+		if status == BT_CONST.FAILURE then
 			i = i + 1
 		else
 			break

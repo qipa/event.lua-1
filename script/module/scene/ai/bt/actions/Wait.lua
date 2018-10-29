@@ -1,8 +1,7 @@
 local event = require "event"
-local b3 = import "module.scene.ai.bt.b3_const"
-local baseNode = import "module.scene.ai.bt.core.BaseNode"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtWait = baseNode.cBtBaseNode:inherit("btWait")
+cBtWait = import("module.scene.ai.bt.core.Action").cBtAction:inherit("btWait")
 
 function cBtWait:ctor(params)
 	super(cBtWait).ctor(self, params)
@@ -11,7 +10,7 @@ end
 
 function cBtWait:open(tick)
 	local status = super(cBtWait).open(self,tick)
-	if status == b3.SUCCESS then
+	if status == BT_CONST.SUCCESS then
 		tick.blackboard:set("startTime", event.now(), tick.tree.id, self.id)
 	end
 	return status
@@ -21,8 +20,8 @@ function cBtWait:tick(tick)
 	local currTime = event.now()
 	local startTime = tick.blackboard:get("startTime", tick.tree.id, self.id)
 	if currTime - startTime > self.milliseconds then
-		return b3.SUCCESS
+		return BT_CONST.SUCCESS
 	end
 
-	return b3.RUNNING
+	return BT_CONST.RUNNING
 end

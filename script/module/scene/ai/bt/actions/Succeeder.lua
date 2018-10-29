@@ -1,12 +1,11 @@
-local b3 = import "module.scene.ai.bt.b3_const"
-local baseNode = import "module.scene.ai.bt.core.BaseNode"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtSucceeder = baseNode.cBtBaseNode:inherit("btSuccessder")
+cBtSucceeder = import("module.scene.ai.bt.core.Action").cBtAction:inherit("btSuccessder")
 
 function cBtSucceeder:ctor(params)
 	super(cBtSucceeder).ctor(self,params)
 end
 
 function cBtSucceeder:tick(tick)
-	return b3.SUCCESS
+	return BT_CONST.SUCCESS
 end

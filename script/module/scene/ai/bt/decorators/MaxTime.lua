@@ -1,8 +1,7 @@
 local event = require "event"
-local b3 = import "module.scene.ai.bt.b3_const"
-local decorator = import "module.scene.ai.bt.core.Decorator"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtMaxTime = decorator.cBtDecorator:inherit("btMaxTime")
+cBtMaxTime = import("module.scene.ai.bt.core.Decorator").cBtDecorator:inherit("btMaxTime")
 
 function cBtMaxTime:ctor(params)
 	super(cBtMaxTime).ctor(self,params)
@@ -21,7 +20,7 @@ end
 
 function cBtMaxTime:tick(tick)
 	if not self.child then
-		return b3.ERROR
+		return BT_CONST.ERROR
 	end
 
 	local currTime = event.now()
@@ -29,7 +28,7 @@ function cBtMaxTime:tick(tick)
 
 	local status = self.child:_execute(tick)
 	if currTime - startTime > self.maxTime then
-		return b3.FAILURE
+		return BT_CONST.FAILURE
 	end
 
 	return status

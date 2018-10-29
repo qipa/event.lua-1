@@ -1,12 +1,12 @@
-local b3 = import "module.scene.ai.bt.b3_const"
-local baseNode = import "module.scene.ai.bt.core.BaseNode"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtFail = baseNode.cBtBaseNode:inherit("btFail")
+
+cBtFail = import("module.scene.ai.bt.core.Action").cBtAction:inherit("btFail")
 
 function cBtFail:ctor(params)
 	super(cBtFail).ctor(self,params)
 end
 
 function cBtFail:tick()
-	return b3.FAILURE
+	return BT_CONST.FAILURE
 end

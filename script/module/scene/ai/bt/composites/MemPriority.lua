@@ -1,7 +1,6 @@
-local b3 = import "module.scene.ai.bt.b3_const"
-local composite = import "module.scene.ai.bt.core.Composite"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtMemPriority = composite.cBtComposite:inherit("btMemPriority")
+cBtMemPriority = import("module.scene.ai.bt.core.Composite").cBtComposite:inherit("btMemPriority")
 
 function cBtMemPriority:ctor(params)
 	super(cBtMemPriority).ctor(self,params)
@@ -19,8 +18,8 @@ function cBtMemPriority:tick(tick)
 		local node = self.children[i]
 		local status = node:_execute(tick)
 
-		if status ~= b3.FAILURE then
-			if status == b3.RUNNING then
+		if status ~= BT_CONST.FAILURE then
+			if status == BT_CONST.RUNNING then
 				tick.blackboard:set("runningChild", i, tick.tree.id, self.id)
 			end
 			
@@ -28,5 +27,5 @@ function cBtMemPriority:tick(tick)
 		end
 	end
 
-	return b3.FAILURE
+	return BT_CONST.FAILURE
 end

@@ -1,6 +1,6 @@
 local util = require "util"
 local model = require "model"
-local b3 = import "module.scene.ai.bt.b3_const"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
@@ -105,23 +105,23 @@ end
 
 function cAICharactor:isNeedGoHome()
 	if self:isOutOfRange() then
-		return b3.SUCCESS
+		return BT_CONST.SUCCESS
 	end
-	return b3.FAILURE
+	return BT_CONST.FAILURE
 end
 
 function cAICharactor:noTarget()
 	if not self:haveEnemy() then
-		return b3.SUCCESS 
+		return BT_CONST.SUCCESS 
 	end
-	return b3.FAILURE
+	return BT_CONST.FAILURE
 end
 
 function cAICharactor:findTarget()
 	if self:haveEnemy() then
-		return b3.SUCCESS
+		return BT_CONST.SUCCESS
 	end
-	return b3.FAILURE
+	return BT_CONST.FAILURE
 end
 
 function cAICharactor:goHome()
@@ -132,15 +132,15 @@ function cAICharactor:goHome()
 	end
 
 	if self:haveEnemy() then
-		return b3.FAILURE
+		return BT_CONST.FAILURE
 	end
 
-	return b3.RUNNING
+	return BT_CONST.RUNNING
 end
 
 function cAICharactor:randomSpeak()
 	print("randomSpeak")
-	return b3.SUCCESS
+	return BT_CONST.SUCCESS
 end
 
 function cAICharactor:randomMove()
@@ -148,13 +148,13 @@ function cAICharactor:randomMove()
 	
 	if self:haveEnemy() then
 		self.patrolPos = nil
-		return b3.FAILURE
+		return BT_CONST.FAILURE
 	end
 
 	if self.patrolPos then
 		if util.dot2dot(self.patrolPos[1],self.patrolPos[2],self.owner.pos[1],self.owner.pos[2]) <= 0.1 then
 			self.patrolPos = nil
-			return b3.SUCCESS
+			return BT_CONST.SUCCESS
 		end
 	else
 		self.patrolPos = {self:randomPatrolPos()}
@@ -164,12 +164,12 @@ function cAICharactor:randomMove()
 
 	local stateMgr = self.owner.stateMgr
 	if stateMgr:hasState("MOVE") then
-		return b3.RUNNING
+		return BT_CONST.RUNNING
 	end
 
-	return b3.RUNNING
+	return BT_CONST.RUNNING
 end
 
 function cAICharactor:attack()
-	return b3.RUNNING
+	return BT_CONST.RUNNING
 end

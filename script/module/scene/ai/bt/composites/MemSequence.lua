@@ -1,7 +1,6 @@
-local b3 = import "module.scene.ai.bt.b3_const"
-local composite = import "module.scene.ai.bt.core.Composite"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtMemSequence = composite.cBtComposite:inherit("btMemSequence")
+cBtMemSequence = import("module.scene.ai.bt.core.Composite").cBtComposite:inherit("btMemSequence")
 
 function cBtMemSequence:ctor(params)
 	super(cBtMemSequence).ctor(self,params)
@@ -19,8 +18,8 @@ function cBtMemSequence:tick(tick)
 		local node = self.children[i]
 		local status = node:_execute(tick)
 
-		if status ~= b3.SUCCESS then
-			if status == b3.RUNNING then
+		if status ~= BT_CONST.SUCCESS then
+			if status == BT_CONST.RUNNING then
 				tick.blackboard:set("runningChild", i, tick.tree.id, self.id)
 			end
 
@@ -28,5 +27,5 @@ function cBtMemSequence:tick(tick)
 		end
 	end
 
-	return b3.SUCCESS
+	return BT_CONST.SUCCESS
 end

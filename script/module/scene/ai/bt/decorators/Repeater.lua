@@ -1,8 +1,7 @@
 local event = require "event"
-local b3 = import "module.scene.ai.bt.b3_const"
-local decorator = import "module.scene.ai.bt.core.Decorator"
+local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtRepeater = decorator.cBtDecorator:inherit("btRepeater")
+cBtRepeater = import("module.scene.ai.bt.core.Decorator").cBtDecorator:inherit("btRepeater")
 
 function cBtRepeater:ctor(params)
 	super(cBtRepeater).ctor(self,params)
@@ -16,16 +15,16 @@ end
 
 function cBtRepeater:tick(tick)
 	if not self.child then
-		return b3.ERROR
+		return BT_CONST.ERROR
 	end
 
 	local i = tick.blackboard:get("i", tick.tree.id , self.id)
-	local status = b3.SUCCESS
+	local status = BT_CONST.SUCCESS
 
 	while(self.maxLoop < 0 or i < self.maxLoop)
 	do
 		local status = self.child:_execute(tick)
-		if status == b3.SUCCESS or status == b3.FAILURE then
+		if status == BT_CONST.SUCCESS or status == BT_CONST.FAILURE then
 			i = i + 1
 		else
 			break
