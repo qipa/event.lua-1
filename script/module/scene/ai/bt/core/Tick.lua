@@ -18,12 +18,16 @@ function cBtTick:_enterNode(node)
 end
 
 function cBtTick:_openNode(node)
+	print("open",node.title)
 end
 
 function cBtTick:_tickNode(node)
+	print("tick",node.title)
 end
 
 function cBtTick:_closeNode(node)
+	print("close",node.title)
+	table.remove(self._openNodes)
 end
 
 function cBtTick:_exitNode(node)

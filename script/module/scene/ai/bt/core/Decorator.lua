@@ -6,6 +6,7 @@ cBtDecorator = baseNode.cBtBaseNode:inherit("btDecorator")
 function cBtDecorator:ctor(params)
 	super(cBtDecorator).ctor(self, params)
 
+	self.category = b3.DECORATOR
 	if not params then
 		params = {}
 	end

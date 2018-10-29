@@ -5,4 +5,5 @@ cBtCondition = baseNode.cBtBaseNode:inherit("btCondition")
 
 function cBtCondition:ctor(params)
 	super(cBtCondition).ctor(self, params)
+	self.category = b3.CONDITION
 end

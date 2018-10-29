@@ -1,3 +1,5 @@
+local b3 = import "module.scene.ai.bt.bt_const"
+
 local object = import "module.object"
 
 cBtTree = object.cObject:inherit("btTree")
@@ -50,11 +52,14 @@ function cBtTree:load(data)
 		spec = v
 		node = nodes[id]
 
-		if v.children then
+		if v.children and node.category == b3.COMPOSITE then
 			for i = 1,#v.children do
 				local cid = spec.children[i]
 				table.insert(node.children, nodes[cid])
 			end
+		elseif v.child and node.category == b3.DECORATOR then
+			local cid = spec.children[i]
+			node.child = nodes[cid]
 		end
 	end
 

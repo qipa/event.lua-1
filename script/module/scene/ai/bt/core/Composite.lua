@@ -5,5 +5,6 @@ cBtComposite = baseNode.cBtBaseNode:inherit("btComposite")
 
 function cBtComposite:ctor(params)
 	super(cBtComposite).ctor(self,params)
+	self.category = b3.COMPOSITE
 	self.children = {}
 end
