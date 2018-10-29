@@ -3,10 +3,8 @@ local baseNode = import "module.scene.ai.bt.core.BaseNode"
 
 cBtSucceeder = baseNode.cBtBaseNode:inherit("btSuccessder")
 
-function cBtSucceeder:ctor()
-	super(cBtSucceeder).ctor(self)
-
-	self.name = "Succeeder"
+function cBtSucceeder:ctor(params)
+	super(cBtSucceeder).ctor(self,params)
 end
 
 function cBtSucceeder:tick(tick)

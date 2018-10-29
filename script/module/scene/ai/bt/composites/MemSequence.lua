@@ -3,10 +3,8 @@ local composite = import "module.scene.ai.bt.core.Composite"
 
 cBtMemSequence = composite.cBtComposite:inherit("btMemSequence")
 
-function cBtMemSequence:ctor()
-	super(cBtMemSequence).ctor(self)
-
-	self.name = "MemSequence"
+function cBtMemSequence:ctor(params)
+	super(cBtMemSequence).ctor(self,params)
 end
 
 function cBtMemSequence:open(tick)

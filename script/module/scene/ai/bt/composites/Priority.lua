@@ -3,10 +3,8 @@ local composite = import "module.scene.ai.bt.core.Composite"
 
 cBtPriority = composite.cBtComposite:inherit("btPriority")
 
-function cBtPriority:ctor()
-	super(cBtPriority).ctor(self)
-
-	self.name = "Priority"
+function cBtPriority:ctor(params)
+	super(cBtPriority).ctor(self,params)
 end
 
 function cBtPriority:tick(tick)

@@ -3,10 +3,8 @@ local composite = import "module.scene.ai.bt.core.Composite"
 
 cBtSequence = composite.cBtComposite:inherit("btSequence")
 
-function cBtSequence:ctor()
-	super(cBtSequence).ctor(self)
-
-	self.name = "Sequence"
+function cBtSequence:ctor(params)
+	super(cBtSequence).ctor(self,params)
 end
 
 function cBtSequence:tick(tick)

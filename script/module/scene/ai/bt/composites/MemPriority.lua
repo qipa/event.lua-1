@@ -3,21 +3,21 @@ local composite = import "module.scene.ai.bt.core.Composite"
 
 cBtMemPriority = composite.cBtComposite:inherit("btMemPriority")
 
-function cBtMemPriority:ctor()
-	super(cBtMemPriority).ctor(self)
-
-	self.name = "MemPriority"
+function cBtMemPriority:ctor(params)
+	super(cBtMemPriority).ctor(self,params)
 end
 
 function cBtMemPriority:open(tick)
-	tick.blackboard:set("runningChild", 0, tick.tree.id, self.id)
+	tick.blackboard:set("runningChild", 1, tick.tree.id, self.id)
 	return super(cBtMemPriority).open(self,tick)
 end
 
 function cBtMemPriority:tick(tick)
 	local child = tick.blackboard:get("runningChild", tick.tree.id, self.id)
-	for i,v in pairs(self.children) do
-		local status = v:_execute(tick)
+	
+	for i = child,#self.children do
+		local node = self.children[i]
+		local status = node:_execute(tick)
 
 		if status ~= b3.FAILURE then
 			if status == b3.RUNNING then

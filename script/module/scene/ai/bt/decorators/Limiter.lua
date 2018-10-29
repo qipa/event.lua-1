@@ -3,8 +3,8 @@ require 'core.Composite'
 local limiter = b3.Class("Limiter", b3.Decorator)
 b3.Limiter = limiter
 
-function limiter:ctor()
-	b3.Decorator.ctor(self)
+function limiter:ctor(params)
+	b3.Decorator.ctor(self,params)
 
 	self.name = "Limiter"
 	self.title = "Limit <maxLoop> Activations"

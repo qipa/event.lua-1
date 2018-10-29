@@ -3,8 +3,8 @@ require 'core.Decorator'
 local inverter = b3.Class("Inverter", b3.Decorator)
 b3.Inverter = inverter
 
-function inverter:ctor()
-	b3.Inverter.ctor(self)
+function inverter:ctor(params)
+	b3.Inverter.ctor(self,params)
 
 	self.name = "Inverter"
 end

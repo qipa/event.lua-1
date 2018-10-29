@@ -4,14 +4,9 @@ local baseNode = import "module.scene.ai.bt.core.BaseNode"
 
 cBtWait = baseNode.cBtBaseNode:inherit("btWait")
 
-function cBtWait:ctor(settings)
-	b3.Action.ctor(self, settings)
-
-	self.name = "Wait"
-	self.title = "Wait <milliseconds>ms"
-	self.parameters = {milliseconds = 0,}
-
-	settings = settings or {}
+function cBtWait:ctor(params)
+	super(cBtWait).ctor(self, params)
+	self.milliseconds = params.properties.milliseconds or 0
 end
 
 function cBtWait:tick(tick)
@@ -22,8 +17,8 @@ function cBtWait:tick(tick)
 		startTime = currTime
 		tick.blackboard:set("startTime", currTime, tick.tree.id, self.id)
 	end
-
-	if currTime - startTime > self.endTime then
+	print(currTime,startTime,currTime - startTime)
+	if currTime - startTime > self.milliseconds then
 		return b3.SUCCESS
 	end
 

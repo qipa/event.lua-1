@@ -3,10 +3,8 @@ local baseNode = import "module.scene.ai.bt.core.BaseNode"
 
 cBtRunner = baseNode.cBtBaseNode:inherit("btRunner")
 
-function cBtRunner:ctor()
-	super(cBtRunner).ctor(self)
-
-	self.name = "Runner"
+function cBtRunner:ctor(params)
+	super(cBtRunner).ctor(self,params)
 end
 
 function cBtRunner:tick(tick)

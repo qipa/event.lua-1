@@ -143,16 +143,22 @@ function cAICharactor:randomSpeak()
 end
 
 function cAICharactor:randomMove()
-	print("randomMove 1")
+	print("randomMove")
 	local stateMgr = self.owner.stateMgr
 	if stateMgr:hasState("MOVE") then
-		print("randomMove 2")
 		return b3.RUNNING
 	end
 
 	if self:haveEnemy() then
-		print("randomMove 3")
+		self.patrolPos = nil
 		return b3.FAILURE
+	end
+
+	if self.patrolPos then
+		if util.dot2dot(self.patrolPos[1],self.patrolPos[2],self.owner.pos[1],self.owner.pos[2]) <= 0.1 then
+			self.patrolPos = nil
+			return b3.FAILURE
+		end
 	end
 
 	self.patrolPos = {self:randomPatrolPos()}
@@ -160,7 +166,7 @@ function cAICharactor:randomMove()
 	local moveCtrl = self.owner.moveCtrl
 
 	moveCtrl:onServerMoveStart({{self.owner.pos[1],self.owner.pos[2]}, self.patrolPos})
-	print("randomMove 4")
+	
 	return b3.RUNNING
 end
 

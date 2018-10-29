@@ -41,19 +41,7 @@ function cBtTree:load(data)
 		local cls = eBtNode[spec.name]
 		assert(cls ~= nil,string.format("no found bt node:%s",spec.name))
 
-		node = cls:new(spec.properties)
-		node.title = spec.title or node.title
-		node.description = spec.description or node.description
-		node.properties = spec.properties
-
-		if spec.properties.precondition ~= "" then
-			node.precondition = spec.properties.precondition
-		end
-
-		if spec.properties.operation ~= "" then
-			node.operation = spec.properties.operation
-		end
-
+		node = cls:new(spec)
 		nodes[id] = node
 	end
 

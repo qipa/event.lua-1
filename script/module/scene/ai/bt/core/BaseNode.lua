@@ -5,11 +5,17 @@ cBtBaseNode = object.cObject:inherit("btBaseNode")
 function cBtBaseNode:ctor(params)
 	self.id = self.__objectId
 
-	self.name = ""
-	self.title = self.title or self.name
-	self.description = ""
-	self.parameters = {}
-	self.properties = {}
+	self.name = params.name
+	self.title = params.title
+	self.description = params.description
+
+	if params.properties.precondition ~= "" then
+		self.precondition = params.properties.precondition
+	end
+
+	if params.properties.operation ~= "" then
+		self.operation = params.properties.operation
+	end
 end
 
 function cBtBaseNode:_execute(tick)
