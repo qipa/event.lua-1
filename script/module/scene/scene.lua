@@ -596,7 +596,7 @@ function cScene:commonUpdate()
 	elseif phase == sceneConst.eSCENE_PHASE.OVER then
 		if now - self.overTime >= sceneConst.kDESTROY_TIME then
 			local allUser = self:getAllObjByType(sceneConst.eSCENE_OBJ_TYPE.FIGHTER)
-			if next(allUser) then
+			if allUser and next(allUser) then
 				for _,user in pairs(allUser) do
 					self:kickUser(user)
 				end

@@ -1,6 +1,6 @@
 local util = require "util"
 local model = require "model"
-local b3 = import "module.scene.ai.bt.bt_const"
+local b3 = import "module.scene.ai.bt.b3_const"
 local object = import "module.object"
 local sceneConst = import "module.scene.scene_const"
 
@@ -145,11 +145,7 @@ end
 
 function cAICharactor:randomMove()
 	print("randomMove")
-	local stateMgr = self.owner.stateMgr
-	if stateMgr:hasState("MOVE") then
-		return b3.RUNNING
-	end
-
+	
 	if self:haveEnemy() then
 		self.patrolPos = nil
 		return b3.FAILURE
@@ -158,16 +154,19 @@ function cAICharactor:randomMove()
 	if self.patrolPos then
 		if util.dot2dot(self.patrolPos[1],self.patrolPos[2],self.owner.pos[1],self.owner.pos[2]) <= 0.1 then
 			self.patrolPos = nil
-			return b3.FAILURE
+			return b3.SUCCESS
 		end
+	else
+		self.patrolPos = {self:randomPatrolPos()}
+		local moveCtrl = self.owner.moveCtrl
+		moveCtrl:onServerMoveStart({{self.owner.pos[1],self.owner.pos[2]}, self.patrolPos})
 	end
 
-	self.patrolPos = {self:randomPatrolPos()}
+	local stateMgr = self.owner.stateMgr
+	if stateMgr:hasState("MOVE") then
+		return b3.RUNNING
+	end
 
-	local moveCtrl = self.owner.moveCtrl
-
-	moveCtrl:onServerMoveStart({{self.owner.pos[1],self.owner.pos[2]}, self.patrolPos})
-	
 	return b3.RUNNING
 end
 

@@ -1,5 +1,5 @@
 local event = require "event"
-local b3 = import "module.scene.ai.bt.bt_const"
+local b3 = import "module.scene.ai.bt.b3_const"
 local decorator = import "module.scene.ai.bt.core.Decorator"
 
 cBtRepeater = decorator.cBtDecorator:inherit("btRepeater")

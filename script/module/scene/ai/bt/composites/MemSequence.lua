@@ -1,4 +1,4 @@
-local b3 = import "module.scene.ai.bt.bt_const"
+local b3 = import "module.scene.ai.bt.b3_const"
 local composite = import "module.scene.ai.bt.core.Composite"
 
 cBtMemSequence = composite.cBtComposite:inherit("btMemSequence")

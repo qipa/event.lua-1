@@ -1,20 +1,10 @@
 return {
 	["custom_nodes"] = {
-		{
-			["category"] = "action",
-			["description"] = "testaa",
-			["name"] = "test",
-			["properties"] = {
-			},
-			["scope"] = "node",
-			["title"] = "test",
-			["version"] = "0.3.0",
-		},
 	},
 	["description"] = "",
 	["display"] = {
-		["camera_x"] = 550,
-		["camera_y"] = 378,
+		["camera_x"] = 344,
+		["camera_y"] = 459,
 		["camera_z"] = 1,
 		["x"] = -144,
 		["y"] = 36,
@@ -41,6 +31,7 @@ return {
 		["3b237620-f3f1-481e-b327-b720b29c6848"] = {
 			["children"] = {
 				"53ed2210-24ed-41a5-8855-cdff56965e3b",
+				"97885195-cb6d-48a3-ac7c-b2fdccba8621",
 				"461bf738-37c3-4bc8-865e-8d741b89a1ad",
 			},
 			["description"] = "",
@@ -58,8 +49,8 @@ return {
 		["461bf738-37c3-4bc8-865e-8d741b89a1ad"] = {
 			["description"] = "",
 			["display"] = {
-				["x"] = 480,
-				["y"] = 60,
+				["x"] = 468,
+				["y"] = 72,
 			},
 			["id"] = "461bf738-37c3-4bc8-865e-8d741b89a1ad",
 			["name"] = "Runner",
@@ -72,8 +63,8 @@ return {
 		["53ed2210-24ed-41a5-8855-cdff56965e3b"] = {
 			["description"] = "",
 			["display"] = {
-				["x"] = 480,
-				["y"] = -24,
+				["x"] = 492,
+				["y"] = -48,
 			},
 			["id"] = "53ed2210-24ed-41a5-8855-cdff56965e3b",
 			["name"] = "Runner",
@@ -87,7 +78,7 @@ return {
 			["description"] = "",
 			["display"] = {
 				["x"] = 480,
-				["y"] = -120,
+				["y"] = -108,
 			},
 			["id"] = "59630548-aa01-4423-a437-1461917c9751",
 			["name"] = "Runner",
@@ -110,6 +101,32 @@ return {
 				["precondition"] = "",
 			},
 			["title"] = "攻击",
+		},
+		["7e00f410-d006-4040-8117-69b354e8755e"] = {
+			["description"] = "等待500ms",
+			["display"] = {
+				["x"] = 480,
+				["y"] = -192,
+			},
+			["id"] = "7e00f410-d006-4040-8117-69b354e8755e",
+			["name"] = "Wait",
+			["properties"] = {
+				["milliseconds"] = 500,
+			},
+			["title"] = "Wait <milliseconds>ms",
+		},
+		["97885195-cb6d-48a3-ac7c-b2fdccba8621"] = {
+			["description"] = "",
+			["display"] = {
+				["x"] = 480,
+				["y"] = 12,
+			},
+			["id"] = "97885195-cb6d-48a3-ac7c-b2fdccba8621",
+			["name"] = "Wait",
+			["properties"] = {
+				["milliseconds"] = 2000,
+			},
+			["title"] = "等待2000ms",
 		},
 		["c1b20100-b0ef-4137-99af-f48af9182318"] = {
 			["children"] = {
@@ -145,6 +162,7 @@ return {
 		},
 		["e886a318-7db1-436e-b83c-1755651c1d2b"] = {
 			["children"] = {
+				"7e00f410-d006-4040-8117-69b354e8755e",
 				"59630548-aa01-4423-a437-1461917c9751",
 			},
 			["description"] = "",
@@ -164,6 +182,6 @@ return {
 	},
 	["root"] = "c1b20100-b0ef-4137-99af-f48af9182318",
 	["scope"] = "tree",
-	["title"] = "测试",
+	["title"] = "A behavior tree",
 	["version"] = "0.3.0",
 }
