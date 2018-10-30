@@ -73,56 +73,56 @@ function _M:DEBUG(...)
 	if self.logLevel < kLOG_LV_DEBUG then
 		return
 	end
-	appendLog(self,nil,kLOG_LV_DEBUG,...)
+	return appendLog(self,nil,kLOG_LV_DEBUG,...)
 end
 
 function _M:DEBUG_FM(fm,...)
 	if self.logLevel < kLOG_LV_DEBUG then
 		return
 	end
-	appendLog(self,fm,kLOG_LV_DEBUG,...)
+	return appendLog(self,fm,kLOG_LV_DEBUG,...)
 end
 
 function _M:INFO(...)
 	if self.logLevel < kLOG_LV_INFO then
 		return
 	end
-	appendLog(self,nil,kLOG_LV_INFO,...)
+	return appendLog(self,nil,kLOG_LV_INFO,...)
 end
 
 function _M:INFO_FM(fm,...)
 	if self.logLevel < kLOG_LV_INFO then
 		return
 	end
-	appendLog(self,fm,kLOG_LV_INFO,...)
+	return appendLog(self,fm,kLOG_LV_INFO,...)
 end
 
 function _M:WARN(...)
 	if self.logLevel < kLOG_LV_WARN then
 		return
 	end
-	appendLog(self,nil,kLOG_LV_WARN,...)
+	return appendLog(self,nil,kLOG_LV_WARN,...)
 end
 
 function _M:WARN_FM(fm,...)
 	if self.logLevel < kLOG_LV_WARN then
 		return
 	end
-	appendLog(self,fm,kLOG_LV_WARN,...)
+	return appendLog(self,fm,kLOG_LV_WARN,...)
 end
 
 function _M:ERROR(...)
 	if self.logLevel < kLOG_LV_ERROR then
 		return
 	end
-	appendLog(self,nil,kLOG_LV_ERROR,...)
+	return appendLog(self,nil,kLOG_LV_ERROR,...)
 end
 
 function _M:ERROR_FM(fm,...)
 	if self.logLevel < kLOG_LV_ERROR then
 		return
 	end
-	appendLog(self,fm,kLOG_LV_ERROR,...)
+	return appendLog(self,fm,kLOG_LV_ERROR,...)
 end
 
 
