@@ -1,5 +1,3 @@
-
-
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -284,114 +282,122 @@ finder_raycast(pathfinder_t* finder, int x0, int z0, int x1, int z1, int ignore,
 	float rz = fz0;
 	int founded = 0;
 
-	float slope = (fz1 - fz0) / (fx1 - fx0);
-	if (fx0 == fx1) {
-		if (z0 < z1) {
-			float z = z0;
-			for (; z <= z1; z++) {
-				if (dump != NULL)
-					dump(ud, x0, z);
-				if (movable(finder, x0, z, ignore) == 0) {
-					founded = 1;
-					break;
-				} else {
-					rx = x0;
-					rz = z;
-				}
+	if ( fx0 == fx1 ) {
+		float z = z0;
+		for ( ; z0 < z1 ? z <= z1 : z >= z1; z0 < z1 ? z++ :z--) {
+			if ( dump != NULL )
+				dump(ud, x0, z);
+			if ( movable(finder, x0, z, ignore) == 0 ) {
+				founded = 1;
+				break;
 			}
-		} else {
-			float z = z0;
-			for (; z >= z1; z--) {
-				if (dump != NULL)
-					dump(ud, x0, z);
-				if (movable(finder, x0, z, ignore) == 0) {
+			else {
+				rx = x0;
+				rz = z;
+			}
+		}
+	}
+	else {
+		float slope = ( fz1 - fz0 ) / ( fx1 - fx0 );
+		if ( abs(slope) < 1 ) {
+			float inc = fx1 >= fx0 ? 1 : -1;
+			float x = fx0;
+			for ( ; fx1 >= fx0 ? x <= fx1 : x >= fx1; x += inc ) {
+				float z = slope * ( x - fx0 ) + fz0;
+				if ( dump != NULL )
+					dump(ud, x, z);
+				if ( movable(finder, x, z, ignore) == 0 ) {
 					founded = 1;
 					break;
-				} else {
-					rx = x0;
+				}
+				else {
+					rx = x;
 					rz = z;
 				}
 			}
 		}
-	} else {
-		if (abs(slope) < 1) {
-			if (fx1 >= fx0) {
-				float inc = 1;
-				float x = fx0;
-				for (; x <= fx1; x += inc) {
-					float z = slope * (x - fx0) + fz0;
-					if (dump != NULL)
-						dump(ud, x, z);
-
-					if (movable(finder, x, z, ignore) == 0) {
-						founded = 1;
-						break;
-					} else {
-						rx = x;
-						rz = z;
-					}
+		else {
+			float inc = fz1 >= fz0 ? 1 : -1;
+			float z = fz0;
+			for ( ; fz1 >= fz0 ? z <= fz1 : z >= fz1; z += inc ) {
+				float x = ( z - fz0 ) / slope + fx0;
+				if ( dump != NULL )
+					dump(ud, x, z);
+				if ( movable(finder, x, z, ignore) == 0 ) {
+					founded = 1;
+					break;
 				}
-			} else {
-				float inc = -1;
-				float x = fx0;
-				founded = 0;
-				for (; x >= fx1; x += inc) {
-					float z = slope * (x - fx0) + fz0;
-					if (dump != NULL)
-						dump(ud, x, z);
-					if (movable(finder, x, z, ignore) == 0) {
-						founded = 1;
-						break;
-					} else {
-						rx = x;
-						rz = z;
-					}
-				}
-			}
-		} else {
-			if (fz1 >= fz0) {
-				float inc = 1;
-				float z = fz0;
-				founded = 0;
-				for (; z <= fz1; z += inc) {
-					float x = (z - fz0) / slope + fx0;
-					if (dump != NULL)
-						dump(ud, x, z);
-					if (movable(finder, x, z, ignore) == 0) {
-						founded = 1;
-						break;
-					} else {
-						rx = x;
-						rz = z;
-					}
-				}
-			} else {
-				float inc = -1;
-				float z = fz0;
-				founded = 0;
-				for (; z >= fz1; z += inc) {
-					float x = (z - fz0) / slope + fx0;
-					if (dump != NULL)
-						dump(ud, x, z);
-					if (movable(finder, x, z, ignore) == 0) {
-						founded = 1;
-						break;
-					} else {
-						rx = x;
-						rz = z;
-					}
+				else {
+					rx = x;
+					rz = z;
 				}
 			}
 		}
 	}
 
-	if (founded == 0 && movable(finder, (int)fx1, (int)fz1, ignore) == 1) {
+	if ( founded == 0 && movable(finder, (int)fx1, (int)fz1, ignore) == 1 ) {
 		rx = (float)x1;
 		rz = (float)z1;
 	}
 
 	*resultx = (int)rx;
 	*resultz = (int)rz;
+}
+
+static inline void
+swap(int* a, int *b) {
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+//breshenham直线算法
+void
+finder_raycast_breshenham(pathfinder_t* finder, int x0, int z0, int x1, int z1, int ignore, int* rx, int* rz, finder_dump dump, void* ud) {
+	int dx = abs(x1 - x0);
+	int dz = abs(z1 - z0);
+
+	int steep = dz > dx ? 1 : 0;
+	if (steep) {
+		swap(&x0, &z0);
+		swap(&x1, &z1);
+		swap(&dx, &dz);
+	}
+
+	int xstep = x0 < x1 ? 1 : -1;
+	int zstep = z0 < z1 ? 1 : -1;
+
+	int x, z;
+
+	int dt;
+	for ( dt = dz - dx; xstep == 1 ? x0 <= x1 : x1 <= x0; ) {
+		if (steep) {
+			x = z0;
+			z = x0;
+		} else {
+			x = x0;
+			z = z0;
+		}
+		
+		if ( movable(finder, x, z, ignore) == 0 ) {
+			return;
+		}
+
+		*rx = x;
+		*rz = z;
+
+		if ( dump != NULL ) {
+			dump(ud, x, z);
+		}
+
+		if (dt >= 0) {
+			z0 += zstep;
+			dt -= dx;
+		}
+
+		x0 += xstep;
+		dt += dz;
+	}
 }
 
 int 
