@@ -1,10 +1,10 @@
 local event = require "event"
 local util = require "util"
 
-local strformat = string.format
+local strFm = string.format
 local tostring = tostring
-local os_time = os.time
-local os_date = os.date
+local osTime = os.time
+local osData = os.date
 
 _logCtx = _logCtx or {}
 
@@ -22,16 +22,16 @@ function log(_,args)
 	local log
 	local fm = args.fm
 	if fm then
-		log = strformat(fm,table.unpack(args.log))
+		log = strFm(fm,table.unpack(args.log))
 	else
 		log = table.concat(args.log,"\t")
 	end
 
 	local content
 	if source then
-		content = strformat("[%s][%s %s%s:%d] %s\r\n",logTag,os_date("%Y-%m-%d %H:%M:%S",args.time),args.server,source,line,log)
+		content = strFm("[%s][%s %s%s:%d] %s\r\n",logTag,osData("%Y-%m-%d %H:%M:%S",args.time),args.server,source,line,log)
 	else
-		content = strformat("[%s][%s %s] %s\r\n",logTag,os_date("%Y-%m-%d %H:%M:%S",args.time),args.server,log)
+		content = strFm("[%s][%s %s] %s\r\n",logTag,osData("%Y-%m-%d %H:%M:%S",args.time),args.server,log)
 	end
 
 	local FILE = _logCtx[logName]
