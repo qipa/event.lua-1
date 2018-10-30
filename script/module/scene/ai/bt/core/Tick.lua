@@ -3,32 +3,34 @@ local object = import "module.object"
 btTick = {}
 
 function btTick.create()
-	self.tree = nil
-	self.debug = nil
-	self.target = nil
-	self.blackboard = nil
+	local ctx = {}
+	ctx.tree = nil
+	ctx.debug = nil
+	ctx.target = nil
+	ctx.blackboard = nil
 
-	self._openNodes = {}
-	self._nodeCount = 0
+	ctx._openNodes = {}
+	ctx._nodeCount = 0
+	return ctx
 end
 
-function btTick.enterNode(node)
-	self._nodeCount = self._nodeCount + 1
-	table.insert(self._openNodes, node)
+function btTick.enterNode(ctx, node)
+	ctx._nodeCount = ctx._nodeCount + 1
+	table.insert(ctx._openNodes, node)
 end
 
-function btTick.openNode(node)
+function btTick.openNode(ctx, node)
 	-- print("open",node.title)
 end
 
-function btTick.tickNode(node)
-	-- print("tick",node.title)
+function btTick.tickNode(ctx, node)
+	print("tick",node.title)
 end
 
-function btTick.closeNode(node)
+function btTick.closeNode(ctx, node)
 	-- print("close",node.title)
-	table.remove(self._openNodes)
+	table.remove(ctx._openNodes)
 end
 
-function btTick.exitNode(node)
+function btTick.exitNode(ctx, node)
 end

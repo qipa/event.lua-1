@@ -1,6 +1,6 @@
 local BT_CONST = import "module.scene.ai.bt.bt_const"
 
-cBtCommonCondition = import("module.scene.ai.bt.core.Condtion").cBtCondition:inherit("btCommonCondition")
+cBtCommonCondition = import("module.scene.ai.bt.core.Condition").cBtCondition:inherit("btCommonCondition")
 
 function cBtCommonCondition:ctor(params)
 	super(cBtCommonCondition).ctor(self,params)

@@ -1,20 +1,21 @@
-local object = import "module.object"
 
-cBtBlackboard = object.cObject:inherit("btBlackboard")
+btBlackboard = {}
 
-function cBtBlackboard:ctor()
-	self._baseMemory = {}
-	self._treeMemory = {}
+function btBlackboard.create()
+	local ctx = {}
+	ctx._baseMemory = {}
+	ctx._treeMemory = {}
+	return ctx
 end
 
-function cBtBlackboard:_getTreeMemory(treeScope)
-	if not self._treeMemory[treeScope] then
-		self._treeMemory[treeScope] = {nodeMemory = {}, openNodes = {}, traversalDepth = 0, traversalCycle = 0}
+local function _getTreeMemory(ctx, treeScope)
+	if not ctx._treeMemory[treeScope] then
+		ctx._treeMemory[treeScope] = {nodeMemory = {}, openNodes = {}, traversalDepth = 0, traversalCycle = 0}
 	end
-	return self._treeMemory[treeScope]
+	return ctx._treeMemory[treeScope]
 end
 
-function cBtBlackboard:_getNodeMemory(treeMemory, nodeScope)
+local function _getNodeMemory(ctx, treeMemory, nodeScope)
 	local memory = treeMemory.nodeMemory
 
 	if not memory then
@@ -28,27 +29,27 @@ function cBtBlackboard:_getNodeMemory(treeMemory, nodeScope)
 	return memory[nodeScope]
 end
 
-function cBtBlackboard:_getMemory(treeScope, nodeScope)
-	local memory = self._baseMemory
+local function _getMemory(ctx, treeScope, nodeScope)
+	local memory = ctx._baseMemory
 
 	if treeScope then
-		memory = self:_getTreeMemory(treeScope)
+		memory = _getTreeMemory(ctx, treeScope)
 
 		if nodeScope then
-			memory = self:_getNodeMemory(memory, nodeScope)
+			memory = _getNodeMemory(ctx, memory, nodeScope)
 		end
 	end
 
 	return memory
 end
 
-function cBtBlackboard:set(key, value, treeScope, nodeScope)
-	local memory = self:_getMemory(treeScope, nodeScope)
+function btBlackboard.set(ctx, key, value, treeScope, nodeScope)
+	local memory = _getMemory(ctx, treeScope, nodeScope)
 	memory[key] = value
 end
 
-function cBtBlackboard:get(key, treeScope, nodeScope)
-	local memory = self:_getMemory(treeScope, nodeScope)
+function btBlackboard.get(ctx, key, treeScope, nodeScope)
+	local memory = _getMemory(ctx, treeScope, nodeScope)
 	if memory then
 		return memory[key]
 	end

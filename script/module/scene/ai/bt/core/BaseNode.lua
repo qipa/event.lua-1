@@ -1,6 +1,11 @@
 local BT_CONST = import "module.scene.ai.bt.bt_const"
-local BtTick = import "module.scene.ai.bt.core.Tick".BtTick
+local btTick = import "module.scene.ai.bt.core.Tick".btTick
 local object = import "module.object"
+local btBlackboard = import "module.scene.ai.bt.core.Blackboard".btBlackboard
+
+local BLACKBOARD_SET = btBlackboard.set
+local BLACKBOARD_GET = btBlackboard.get
+
 cBtBaseNode = object.cObject:inherit("btBaseNode")
 
 function cBtBaseNode:ctor(params)
@@ -26,7 +31,7 @@ function cBtBaseNode:_execute(tick)
 
 	local status = BT_CONST.SUCCESS
 	--OPEN
-	if not (tick.blackboard:get("isOpen", tick.tree.id, self.id)) then
+	if not (BLACKBOARD_GET(tick.blackboard, "isOpen", tick.tree.id, self.id)) then
 		status = self:_open(tick)
 	end
 
@@ -49,29 +54,29 @@ function cBtBaseNode:_execute(tick)
 end
 
 function cBtBaseNode:_enter(tick)
-	BtTick.enterNode(tick,self)
+	btTick.enterNode(tick,self)
 	self:enter(tick)
 end
 
 function cBtBaseNode:_open(tick)
-	BtTick.openNode(tick,self)
-	tick.blackboard:set("isOpen", true, tick.tree.id, self.id)
+	btTick.openNode(tick,self)
+	BLACKBOARD_SET(tick.blackboard, "isOpen", true, tick.tree.id, self.id)
 	return self:open(tick)
 end
 
 function cBtBaseNode:_tick(tick)
-	BtTick.tickNode(tick,self)
+	btTick.tickNode(tick,self)
 	return self:tick(tick)
 end
 
 function cBtBaseNode:_close(tick)
-	BtTick.closeNode(tick,self)
-	tick.blackboard:set("isOpen", false, tick.tree.id, self.id)
+	btTick.closeNode(tick,self)
+	BLACKBOARD_SET(tick.blackboard, "isOpen", false, tick.tree.id, self.id)
 	self:close(tick)
 end
 
 function cBtBaseNode:_exit(tick)
-	BtTick.exitNode(tick,self)
+	btTick.exitNode(tick,self)
 	self:exit(tick)
 end
 

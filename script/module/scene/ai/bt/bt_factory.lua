@@ -1,5 +1,6 @@
 local bt = import "module.scene.ai.bt.core.BehaviorTree"
-local btTick = import "module.scene.ai.bt.core.Tick"
+local btTick = import "module.scene.ai.bt.core.Tick".btTick
+local btBlackboard = import "module.scene.ai.bt.core.Blackboard".btBlackboard
 
 local kEXPAND_NUM = 50
 
@@ -10,7 +11,7 @@ function __init__(self)
 end
 
 
-function CreateTreeById(self, aiName, aiTarget)
+function createTreeById(self, aiName, aiTarget)
 
 	while true do
 		local poolObjs = self.__allBTreeObjs[aiName] or {}
@@ -18,10 +19,10 @@ function CreateTreeById(self, aiName, aiTarget)
 		if not treeObj then
 			self:expandTree(aiName)
 		else
-			treeObj.tick = btTick.btTick.create()
+			treeObj.tick = btTick.create()
 			treeObj.tick.tree = treeObj
 			treeObj.tick.target = aiTarget
-			treeObj.tick.blackboard = BT3_BLACKBOARD.BtBlackBoard.create()
+			treeObj.tick.blackboard = btBlackboard.create()
 			return treeObj
 		end
 	end

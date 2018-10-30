@@ -41,11 +41,11 @@ function cBtTree:load(data)
 
 		if info.children and node.category == BT_CONST.COMPOSITE then
 			for i = 1,#info.children do
-				local cid = spec.children[i]
+				local cid = info.children[i]
 				table.insert(node.children, nodes[cid])
 			end
 		elseif info.child and node.category == BT_CONST.DECORATOR then
-			local cid = spec.children[i]
+			local cid = info.children[i]
 			node.child = nodes[cid]
 		end
 	end
@@ -54,11 +54,7 @@ function cBtTree:load(data)
 end
 
 
-function cBtTree:tick(tick, target, blackboard)
-	tick.target		= target
-	tick.blackboard = blackboard
-	tick.tree 		= self
-
+function cBtTree:onTick()
 	--TICK NODE
-	return self.root:_execute(tick)
+	return self.root:_execute(self.tick)
 end
