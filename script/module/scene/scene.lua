@@ -463,6 +463,20 @@ function cScene:onMonsterDead(monster,killer)
 		return
 	end
 
+	local evInfo = self.passEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
+	if evInfo and evInfo[monster.id] then
+		self:over()
+		self.onWin()
+		return
+	end
+	
+	local evInfo = self.failEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
+	if evInfo and evInfo[monster.id] then
+		self:over()
+		self.onFail()
+		return
+	end
+
 	local areaId = monster.areaId
 	if areaId then
 		local areaInfo = self.areaMonster[areaId]
@@ -471,24 +485,6 @@ function cScene:onMonsterDead(monster,killer)
 				areaInfo.waveIndex = areaInfo.waveIndex + 1
 				self:spawnMonsterArea(areaId)
 			end
-		end
-	end
-
-	local evInfo = self.passEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
-	if evInfo then
-		if evInfo[monster.id] then
-			self:over()
-			self.onWin()
-			return
-		end
-	end
-	
-	local evInfo = self.failEvent[sceneConst.eSCENE_PASS_EVENT.MONSTER_DIE]
-	if evInfo then
-		if evInfo[monster.id] then
-			self:over()
-			self.onFail()
-			return
 		end
 	end
 end
