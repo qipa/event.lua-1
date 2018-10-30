@@ -451,7 +451,7 @@ function cScene:onMonsterAreaDone(areaId)
 		return
 	end
 	self:over()
-	self.onWin()
+	self:onWin()
 end
 
 function cScene:onMonsterCreate(monster)
