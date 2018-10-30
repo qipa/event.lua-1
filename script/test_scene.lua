@@ -2,6 +2,7 @@ local event = require "event"
 local mongo = require "mongo"
 local model = require "model"
 local helper = require "helper"
+local logger = require "module.logger"
 local idBuilder = import "module.id_builder"
 local startup = import "server.startup"
 local clientMgr = import "module.client_manager"
@@ -28,6 +29,7 @@ local bullet = import "module.scene.bullet"
 -- end
 --
 
+local LOG = logger:create("fuck")
 local mongodb_channel = mongo:inherit()
 function mongodb_channel:disconnect()
 	os.exit(1)
@@ -35,9 +37,10 @@ end
 
 local db_channel,reason = event.connect(env.mongodb,4,true,mongodb_channel)
 if not db_channel then
-	print(string.format("%s connect db:%s faield:%s",env.name,env.mongodb,reason))
+	LOG:ERROR_FM("%s connect db:%s faield:%s",env.name,env.mongodb,reason)
 	os.exit()
 end
+
 
 
 event.fork(function ()
@@ -71,5 +74,10 @@ event.fork(function ()
 	-- print("fighter.uid",fighter.uid)
 	-- model.bind_fighter_with_uid(fighter.uid,fighter)
 	-- sceneInst:enter(fighter,{120,120})
+
+	LOG:DEBUG_FM("%s connect db:%s ",env.name,env.mongodb)
+	LOG:INFO_FM("%s connect db:%s ",env.name,env.mongodb)
+	LOG:WARN_FM("%s connect db:%s ",env.name,env.mongodb)
+	LOG:ERROR_FM("%s connect db:%s ",env.name,env.mongodb)
 end)
 

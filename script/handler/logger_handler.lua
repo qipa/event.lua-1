@@ -14,27 +14,33 @@ end
 
 function log(_,args)
 	local logLevel = args.logLevel
-	local logType = args.logType
+	local logName = args.logName
 	local logTag = args.logTag
 	local source = args.source
 	local line = args.line
 	
-	local log = args[3]
-	local FILE = _logCtx[logType]
-	if not FILE then
-		if env.log_path then
-			local file = string.format("%s/%s.log",env.log_path,logType)
-			FILE = assert(io.open(file,"a+"))
-			_logCtx[logType] = FILE
-		end
+	local log
+	local fm = args.fm
+	if fm then
+		log = strformat(fm,table.unpack(args.log))
+	else
+		log = table.concat(args.log,"\t")
 	end
 
 	local content
 	if source then
-		content = strformat("[%s:%s][%s %s %s:%d] %s\r\n",logTag,logType,os_date("%Y-%m-%d %H:%M:%S",args.time),args.serverName,source,line,args.log)
+		content = strformat("[%s][%s %s%s:%d] %s\r\n",logTag,os_date("%Y-%m-%d %H:%M:%S",args.time),args.server,source,line,log)
 	else
-		content = strformat("[%s:%s][%s %s] %s\r\n",logTag,logType,os_date("%Y-%m-%d %H:%M:%S",args.time),args.serverName,args.log)
+		content = strformat("[%s][%s %s] %s\r\n",logTag,os_date("%Y-%m-%d %H:%M:%S",args.time),args.server,log)
 	end
+
+	local FILE = _logCtx[logName]
+	if env.logPath and not FILE then
+		local file = string.format("%s/%s.log",env.logPath,logName)
+		FILE = assert(io.open(file,"a+"))
+		_logCtx[logName] = FILE
+	end
+
 	if FILE then
 		FILE:write(content)
 		FILE:flush()

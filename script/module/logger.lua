@@ -25,21 +25,21 @@ local loggerCtx = {}
 
 local _M = {}
 
-function _M:create(logType,depth)
-	logType = logType or "unknown"
+function _M:create(logName,depth)
+	logName = logName or "unknown"
 	depth = depth or 4
 
-	local logger = loggerCtx[logType]
+	local logger = loggerCtx[logName]
 	if logger then
 		return logger
 	end
 
 	local ctx = setmetatable({},{__index = self})
 	ctx.logLevel = env.logLevel or kLOG_LV_DEBUG
-	ctx.logType = logType
+	ctx.logName = logName
 	ctx.depth = depth
 
-	loggerCtx[logType] = ctx
+	loggerCtx[logName] = ctx
 
 	return ctx
 end
@@ -49,16 +49,15 @@ local function getDebugInfo(logger)
 	return info.source,info.currentline
 end
 
-local function appendLog(logger,logLevel,...)
-	local log = tconcat({...},"\t")
-
+local function appendLog(logger,fm,logLevel,...)
 	local mb = {
 		logLevel = logLevel,
 		logTag = eLOG_TAG[logLevel],
-		logType = logger.logType,
+		logName = logger.logName,
 		time = osTime(),
-		serverName = env.name,
-		log = log,
+		server = env.name,
+		fm = fm,
+		log = {...},
 	}
 	
 	if logLevel == kLOG_LV_ERROR then
@@ -74,28 +73,56 @@ function _M:DEBUG(...)
 	if self.logLevel < kLOG_LV_DEBUG then
 		return
 	end
-	appendLog(self,kLOG_LV_DEBUG,...)
+	appendLog(self,nil,kLOG_LV_DEBUG,...)
+end
+
+function _M:DEBUG_FM(fm,...)
+	if self.logLevel < kLOG_LV_DEBUG then
+		return
+	end
+	appendLog(self,fm,kLOG_LV_DEBUG,...)
 end
 
 function _M:INFO(...)
 	if self.logLevel < kLOG_LV_INFO then
 		return
 	end
-	appendLog(self,kLOG_LV_INFO,...)
+	appendLog(self,nil,kLOG_LV_INFO,...)
+end
+
+function _M:INFO_FM(fm,...)
+	if self.logLevel < kLOG_LV_INFO then
+		return
+	end
+	appendLog(self,fm,kLOG_LV_INFO,...)
 end
 
 function _M:WARN(...)
 	if self.logLevel < kLOG_LV_WARN then
 		return
 	end
-	appendLog(self,kLOG_LV_WARN,...)
+	appendLog(self,nil,kLOG_LV_WARN,...)
+end
+
+function _M:WARN_FM(fm,...)
+	if self.logLevel < kLOG_LV_WARN then
+		return
+	end
+	appendLog(self,fm,kLOG_LV_WARN,...)
 end
 
 function _M:ERROR(...)
 	if self.logLevel < kLOG_LV_ERROR then
 		return
 	end
-	appendLog(self,kLOG_LV_ERROR,...)
+	appendLog(self,nil,kLOG_LV_ERROR,...)
+end
+
+function _M:ERROR_FM(fm,...)
+	if self.logLevel < kLOG_LV_ERROR then
+		return
+	end
+	appendLog(self,fm,kLOG_LV_ERROR,...)
 end
 
 

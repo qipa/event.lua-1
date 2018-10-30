@@ -82,8 +82,12 @@ _M.inside_sector = util_core.inside_sector
 --args:x0(矩形.起点x),z0(矩形.起点z),angle(矩形.朝向),length(矩形.长度),width(矩形.宽度),x1(圆.x),z1(圆.z),r1(圆.r)
 _M.inside_rectangle = util_core.inside_rectangle
 
+--在矩形随机一个点
+--args:x(矩形中点),z(矩开中点),length(长度),width(宽度),angle(角度)
 _M.random_in_rectangle = util_core.random_in_rectangle
 
+--在圆形随机一个点
+--args:x,z,r
 _M.random_in_circle = util_core.random_in_circle
 
 local function get_tag( t )
