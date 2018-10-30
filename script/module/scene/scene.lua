@@ -361,6 +361,38 @@ function cScene:spawnMonster(id,pos,face,...)
 	return monsterObj
 end
 
+function cScene:spawnMonsterArea(areaId)
+	local areaInfo = self.areaMonster[areaId]
+
+	for id,amount in pairs(areaInfo.monsterInfo) do
+		for i = 1,amount do
+			local pos = areaInfo.pos
+			if areaInfo.posRandom then
+				if areaInfo.region.type == sceneConst.eSCENE_MONSER_AREA_REGION.CIRCLE then
+					pos = self:randomInCircle(areaInfo.pos,areaInfo.region.range)
+				elseif areaInfo.region.type == sceneConst.eSCENE_MONSER_AREA_REGION.RECTANGLE then
+					pos = self:randomInRectangle(areaInfo.pos,areaInfo.region.length,areaInfo.region.width,areaInfo.region.angle)
+				end
+			end
+			self:spawnMonster(id,pos)
+			areaInfo.monsterAmount = areaInfo.monsterAmount + 1
+		end
+	end
+end
+
+function cScene:initMonsterArea(areaId,spawnData)
+	local areaInfo = {waveIndex = 0,
+					  waveMax = spawnData.waveMax,
+					  monsterAmount = 0,
+					  miniSurvive = spawnData.miniSurvive,
+					  monsterInfo = spawnData.monsterInfo,
+					  pos = spawnData.pos,
+					  posRandom = spawnData.posRandom,
+					  region = spawnData.region}
+
+	self.areaMonster[areaId] = areaInfo
+end
+
 function cScene:initArea(areaId,areaData)
 	local areaInfo = {areaId = areaId,areaData = areaData,fired = false}
 	self.areaMgr[areaId] = areaInfo
@@ -406,26 +438,11 @@ end
 
 function cScene:onAreaEventSpawnMonster(areaId,spawnData)
 	local areaInfo = self.areaMonster[areaId]
-	if not areaInfo then
-		areaInfo = {waveIndex = 1,waveMax = 3,monsterAmount = 0,miniSurvive = 5}
-		self.areaMonster[areaId] = areaInfo
-	end
-	if areaInfo.waveMax ~= 0 and areaInfo.waveIndex >= areaInfo.waveMax then
+	if areaInfo then
 		return
 	end
-	areaInfo.waveIndex = areaInfo.waveIndex + 1
-	areaInfo.time = os.time()
-	
-	for _,info in pairs(spawnData) do
-		for i = 1,info.amount do
-			local pos = info.pos
-			if info.posRandom then
-				pos = self:randomInCircle(info.pos,info.range)
-			end
-			self:spawnMonster(info.monsterId,info.pos)
-			areaInfo.monsterAmount = areaInfo.monsterAmount + 1
-		end
-	end
+	self:initMonsterArea(areaId,spawnData)
+	return self:spawnMonsterArea(areaId)
 end
 
 function cScene:onAreaEventActiveArea(areaId,activeData)

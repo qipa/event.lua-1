@@ -53,6 +53,11 @@ for eventName,eventType in pairs(eSCENE_AREA_EVENT) do
 	eSCENE_AREA_EVENT_NAME[eventType] = eventName
 end
 
+eSCENE_MONSER_AREA_REGION = {
+	CIRCLE = 1,
+	RECTANGLE = 2
+}
+
 kUPDATE_INTERVAL = 0.1
 kCOMMON_UPDATE_INTERVAL = 1
 kDESTROY_TIME = 10
