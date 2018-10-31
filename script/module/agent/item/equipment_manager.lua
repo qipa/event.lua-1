@@ -41,10 +41,15 @@ function cEquipmentMgr:onDeleteItem(item)
 end
 
 function cEquipmentMgr:puton(item)
-
+	local part = util.decimal_bit(item.cid)
+	if self.equipSlot[part] then
+		self:takedown(part)
+	end
+	self:insertItem(item)
 end
 
-function cEquipmentMgr:takedown(item)
-
+function cEquipmentMgr:takedown(part)
+	local uid = self.equipSlot[part]
+	self:deleteItemByUid(uid,1)
 end
 
