@@ -1,5 +1,3 @@
-
-
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -27,8 +25,20 @@
 #define DX(A,B) (A->x - B->x)
 #define DZ(A,B) (A->z - B->z)
 
+typedef struct path_node {
+	int x;
+	int z;
+} path_node_t;
+
+typedef struct path {
+	int index;
+	int size;
+	path_node_t* nodes;
+	path_node_t init[INIT_PATH_SIZE];
+} path_t;
+
 typedef struct node {
-	struct list_node list_node;
+	struct list_node list_head;
 	struct element elt;
 	struct node *parent;
 	int x;
@@ -51,19 +61,7 @@ typedef struct pathfinder {
 	struct list neighbors;
 } pathfinder_t;
 
-typedef struct path_node {
-	int x;
-	int z;
-} path_node_t;
-
-typedef struct path {
-	int index;
-	int size;
-	path_node_t* nodes;
-	path_node_t init[INIT_PATH_SIZE];
-} path_t;
-
-static int DIRECTION[8][2] = {
+static int direction[8][2] = {
 	{ -1, 0 },
 	{ 1, 0 },
 	{ 0, -1 },
@@ -104,11 +102,11 @@ find_neighbors(pathfinder_t * finder, struct node * node) {
 
 	int i;
 	for ( i = 0; i < 8; i++ ) {
-		int x = node->x + DIRECTION[i][0];
-		int z = node->z + DIRECTION[i][1];
+		int x = node->x + direction[i][0];
+		int z = node->z + direction[i][1];
 		node_t * neighbor = find_node(finder, x, z);
 		if ( neighbor ) {
-			if ( neighbor->list_node.pre || neighbor->list_node.next )
+			if ( neighbor->list_head.pre || neighbor->list_head.next )
 				continue;
 			if ( !isblock(finder, neighbor) )
 				list_push(&finder->neighbors, ( struct list_node* )neighbor);
@@ -127,7 +125,7 @@ neighbor_cost(node_t * from, node_t * to) {
 	int dz = from->z - to->z;
 	int i;
 	for ( i = 0; i < 8; ++i ) {
-		if ( DIRECTION[i][0] == dx && DIRECTION[i][1] == dz )
+		if ( direction[i][0] == dx && direction[i][1] == dz )
 			break;
 	}
 	if ( i < 4 )
@@ -164,21 +162,21 @@ less(struct element * left, struct element * right) {
 	return l->F < r->F;
 }
 
-void
+static void
 path_init(path_t* path) {
 	path->index = 0;
 	path->size = INIT_PATH_SIZE;
 	path->nodes = path->init;
 }
 
-void
+static void
 path_release(path_t* path) {
 	if ( path->nodes != path->init ) {
 		free(path->nodes);
 	}
 }
 
-void
+static void
 path_add(path_t* path, int x, int z) {
 	if ( path->index >= path->size ) {
 		int nsize = path->size * 2;
@@ -269,7 +267,6 @@ make_path(pathfinder_t *finder, node_t *current, node_t *from, int smooth, finde
 		node = &path.nodes[0];
 		cb(ud, node->x, node->z);
 	}
-
 	path_release(&path);
 }
 

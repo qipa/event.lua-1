@@ -109,22 +109,25 @@ create(lua_State *L) {
 
 	int width;
 	int heigh;
+	int version;
+	int grid;
 
 	char* data = NULL;
 
-	FILE* ptr = fopen(file,"r");
-	if (!ptr)
-		luaL_error(L,"no such file:%s",file);
+	FILE* ptr = fopen(file, "r");
+	if ( !ptr )
+		luaL_error(L, "no such file:%s", file);
 
-	fseek(ptr,0,SEEK_END);
-	int size = ftell(ptr);
-	rewind(ptr);
-	fread(&width,1,sizeof(int),ptr);
-	fread(&heigh,1,sizeof(int),ptr);
-	data = malloc(size - sizeof(int)*2);
-	memset(data,0,size - sizeof(int)*2);
-	fread(data,1,size - sizeof(int)*2,ptr);
+	fread(&version, 1, sizeof( int ), ptr);
+	fread(&width, 1, sizeof( int ), ptr);
+	fread(&heigh, 1, sizeof( int ), ptr);
+	fread(&grid, 1, sizeof( int ), ptr);
+	int size = width * heigh;
+	data = malloc(size);
+	memset(data, 0, size);
+	fread(data, 1, size, ptr);
 	fclose(ptr);
+
 
 	struct patfinder_context* ctx = (struct patfinder_context*)lua_newuserdata(L, sizeof(struct patfinder_context));
 	ctx->scene = scene;
