@@ -40,7 +40,7 @@
 #include "convert.h"
 #include "linenoise.h"
 #include "common/common.h"
-
+#include "common/timeutil.h"
 
 
 #define LOG_ERROR   "\033[40;31m%s\033[0m"
@@ -1179,6 +1179,80 @@ lrandom_in_rectangle(lua_State* L) {
 }
 
 static int
+lget_time_millis(lua_State* L) {
+    lua_pushnumber(L, get_time_millis());
+    return 1;
+}
+
+static int
+lget_today_start(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_today_start(ts));
+    return 1;
+}
+
+static int
+lget_today_over(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_today_over(ts));
+    return 1;
+}
+
+static int
+lget_week_start(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_week_start(ts));
+    return 1;
+}
+
+static int
+lget_week_over(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_week_over(ts));
+    return 1;
+}
+
+static int
+lget_month_start(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_month_start(ts));
+    return 1;
+}
+
+static int
+lget_month_over(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    lua_pushinteger(L, get_month_over(ts));
+    return 1;
+}
+
+static int
+lget_day_time(lua_State* L) {
+    time_t ts = luaL_optinteger(L, 1, 0);
+    int h = luaL_optinteger(L, 2, 0);
+    int m = luaL_optinteger(L, 3, 0);
+    int s = luaL_optinteger(L, 4, 0);
+    lua_pushinteger(L, get_day_time(ts, h, m, s));
+    return 1;
+}
+
+static int
+lget_diff_day(lua_State* L) {
+    time_t ts0 = luaL_checkinteger(L, 1);
+    time_t ts1 = luaL_checkinteger(L, 2);
+    lua_pushinteger(L, get_diff_day(ts0, ts1));
+    return 1;
+}
+
+static int
+lget_diff_week(lua_State* L) {
+    time_t ts0 = luaL_checkinteger(L, 1);
+    time_t ts1 = luaL_checkinteger(L, 2);
+    lua_pushinteger(L, get_diff_week(ts0, ts1));
+    return 1;
+}
+
+static int
 ldecimal_bit(lua_State* L) {
     int value = lua_tointeger(L, 1);
     int bit = lua_tointeger(L, 2);
@@ -1252,6 +1326,16 @@ luaopen_util_core(lua_State* L){
         { "segment_intersect_segment", lsegment_intersect_segment },
         { "random_in_circle", lrandom_in_circle },
         { "random_in_rectangle", lrandom_in_rectangle },
+        { "get_time_millis", lget_time_millis },
+        { "get_today_start", lget_today_start },
+        { "get_today_over", lget_today_over },
+        { "get_week_start", lget_week_start },
+        { "get_week_over", lget_week_over },
+        { "get_month_start", lget_month_start },
+        { "get_month_over", lget_month_over },
+        { "get_day_time", lget_day_time },
+        { "get_diff_day", lget_diff_day },
+        { "get_diff_week", lget_diff_week },
         { "decimal_bit", ldecimal_bit },
         { "decimal_sub", ldecimal_sub },
         { "size_of", lsize_of },
