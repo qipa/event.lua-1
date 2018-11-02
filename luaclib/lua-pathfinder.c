@@ -41,6 +41,7 @@ _find(lua_State *L) {
 	int z0 = lua_tointeger(L,3);
 	int x1 = lua_tointeger(L,4);
 	int z1 = lua_tointeger(L,5);
+	int smooth = luaL_optinteger(L,6,0);
 
 	struct pathfinder_args ud;
 	ud.L = L;
@@ -48,7 +49,7 @@ _find(lua_State *L) {
 
 	lua_newtable(L);
 
-	int ok = finder_find(ctx->finder, x0, z0, x1, z1, finder_callback, &ud, NULL, NULL, 50);
+	int ok = finder_find(ctx->finder, x0, z0, x1, z1, smooth, finder_callback, &ud, NULL, NULL, 50);
 	if (!ok) {
 		lua_pop(L,1);
 		return 0;
