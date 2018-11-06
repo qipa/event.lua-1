@@ -5,8 +5,11 @@
 #include <winsock2.h>
 #define LOCALTIME(ts,tm) localtime_s(&tm, &ts);
 #else
+#include <sys/time.h>
 #define LOCALTIME(ts,tm) localtime_r(&ts, &tm);
 #endif
+
+#define DAY_TIME_FAST
 
 double
 get_time_millis() {
@@ -45,10 +48,14 @@ get_today_start(time_t ts) {
 		ts = time(NULL);
 	}
 
+#ifdef DAY_TIME_FAST
+	return ts - (ts + 8 * 3600) % 86400;
+#else
 	struct tm local = { 0 };
 	LOCALTIME(ts, local);
 	local.tm_hour = local.tm_min = local.tm_sec = 0;
 	return mktime(&local);
+#endif
 }
 
 time_t
@@ -58,20 +65,16 @@ get_today_over(time_t ts) {
 
 time_t
 get_week_start(time_t ts) {
-	if (ts == 0) {
-		ts = time(NULL);
-	}
-
+	time_t week_time = get_today_start(ts);
 	struct tm local = { 0 };
-	LOCALTIME(ts, local);
-	local.tm_hour = local.tm_min = local.tm_sec = 0;
+	LOCALTIME(week_time, local);
 
-	time_t week_time = mktime(&local);
 	if (local.tm_wday == 0) {
 		week_time -= 6 * 24 * 3600;
 	} else {
 		week_time -= (local.tm_wday - 1) * 24 * 3600;
 	}
+	
 	return week_time;
 }
 
@@ -132,12 +135,7 @@ get_day_time(time_t ts, int hour, int min, int sec) {
 		ts = time(NULL);
 	}
 
-	time_t time;
-#ifdef DAY_TIME_FAST
-	time = time - (time + 8 * 3600) % 86400;
-#else
-	time = get_today_start(ts);
-#endif
+	time_t time = get_today_start(ts);
 	return time + hour * 3600 + min * 60 + sec;
 }
 
