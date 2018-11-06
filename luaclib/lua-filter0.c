@@ -103,15 +103,16 @@ word_delete(struct word_tree* root_tree, const char* word,size_t size) {
 
 char*
 word_filter(struct word_tree* root_tree,const char* source,size_t size,int replace,size_t* replace_offset) {
-	
 	char* dest = NULL;
 	int dest_offset = 0;
-	if (replace)
+	if ( replace ) {
 		dest = strdup(source);
-
+	}
+	
 	struct word_tree* tree = root_tree;
 
 	int filter_start = 0;
+	int filter_over = 0;
 	int filter_len = -1;
 	int founded = 0;
 
@@ -132,6 +133,7 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 					tree = kh_value(tree->hash, k);
 					phase = PHASE_MATCH;
 					filter_start = i - length;
+					filter_over = i;
 					filter_len = 1;
 					founded = 0;
 					if (tree->tail) {
@@ -160,9 +162,9 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 						founded = 1;
 					}
 				} else {
-					//回滚一个word
-					i -= length;
 					if (founded == 1) {
+						//回滚一个word
+						i -= length;
 						if (replace) {
 							//匹配成功
 							memset(dest + dest_offset, '*', filter_len);
@@ -173,9 +175,10 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 					} else {
 						//匹配失败
 						if (replace) {
-							memcpy(dest + dest_offset, source + filter_start, i - filter_start);
-							dest_offset += i - filter_start;
+							memcpy(dest + dest_offset, source + filter_start, filter_over - filter_start);
+							dest_offset += filter_over - filter_start;
 						}
+						i = filter_over;
 					}
 					
 					tree = root_tree;
