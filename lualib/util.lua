@@ -216,6 +216,12 @@ function _M.readline(prompt,history,func)
     
 end
 
+_M.day_time = util_core.get_day_time
+_M.today_start = util_core.get_today_start
+_M.today_over = util_core.get_today_over
+_M.week_start = util_core.get_week_start
+_M.week_over = util_core.get_week_over
+
 function _M.to_date(unix_time)
     return os.date("*t",unix_time)
 end
@@ -240,63 +246,6 @@ end
 function _M.format_to_daytime(unix_time,str)
     local hour,min = string.match(str,"(%d+):(%d+)")
     return _M.day_time(unix_time,tonumber(hour),tonumber(min))
-end
-
-_M.day_time0 = util_core.get_day_time
-
-function _M.day_time(unix_time,hour,min,sec)
-    -- local time = os.date("*t")
-    -- time.hour = 0
-    -- time.min = 0
-    -- time.sec = 0
-    -- local result = os.time(time)
-    local result = unix_time - (unix_time + 8 * 3600) % 86400
-    if hour then
-        result = result + hour * 3600
-    end
-    if min then
-        result = result + min * 60
-    end
-    if sec then
-        result = result + sec
-    end
-    return result
-end
-
-
-function _M.next_time(unix_time,sec)
-    return _M.day_time(unix_time) + sec
-end
-
-_M.day_start0 = util_core.get_today_start
-function _M.day_start(unix_time)
-    return _M.day_time(unix_time)
-end
-
-_M.day_over0 = util_core.get_today_over
-function _M.day_over(unix_time)
-    return _M.day_time(unix_time) + 24 * 3600
-end
-_M.week_start0 = util_core.get_week_start
-
-function _M.week_start(unix_time)
-    local time = _M.day_start(unix_time)
-    local result = os.date("*t",time)
-
-    local wday = result.wday
-    if wday == 2 then
-        return time
-    end
-
-    if wday == 1 then
-        wday = 8
-    end
-    return time - (wday-2) * 24 * 3600
-end
-
-_M.week_over0 = util_core.get_week_over
-function _M.week_over(unix_time)
-    return _M.week_start(unix_time) + 7 * 24 * 3600
 end
 
 function _M.same_day(ti0,ti1,sep)

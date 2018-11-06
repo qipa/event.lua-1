@@ -11,6 +11,8 @@
 
 #define DAY_TIME_FAST
 
+static int G_TIMEZONE = 0xffffffff;
+
 double
 get_time_millis() {
 	struct timeval tv;
@@ -42,6 +44,19 @@ get_time_millis() {
 	return (double)tv.tv_sec * 1000 + (double)tv.tv_usec / 1000;
 }
 
+static inline int
+get_timezone() {
+	if (G_TIMEZONE == 0xffffffff) {
+		time_t now = time(NULL);
+
+		struct tm local = { 0 };
+		LOCALTIME(now, local);
+
+		G_TIMEZONE = local.tm_gmtoff / 3600;
+	}
+	return G_TIMEZONE;
+}
+
 time_t
 get_today_start(time_t ts) {
 	if (ts == 0) {
@@ -49,7 +64,7 @@ get_today_start(time_t ts) {
 	}
 
 #ifdef DAY_TIME_FAST
-	return ts - (ts + 8 * 3600) % 86400;
+	return ts - (ts + get_timezone() * 3600) % 86400;
 #else
 	struct tm local = { 0 };
 	LOCALTIME(ts, local);

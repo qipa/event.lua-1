@@ -72,5 +72,3 @@ util.time_diff("week_over0",function ()
 		-- print(util.week_over0(os.time()))
 	end
 end)
-
-table.print(os.date("*t",os.time()))
