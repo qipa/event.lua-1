@@ -221,6 +221,8 @@ _M.today_start = util_core.get_today_start
 _M.today_over = util_core.get_today_over
 _M.week_start = util_core.get_week_start
 _M.week_over = util_core.get_week_over
+_M.diff_day = util_core.get_diff_day
+_M.diff_week = util_core.get_diff_week
 
 function _M.to_date(unix_time)
     return os.date("*t",unix_time)
@@ -248,29 +250,17 @@ function _M.format_to_daytime(unix_time,str)
     return _M.day_time(unix_time,tonumber(hour),tonumber(min))
 end
 
-function _M.same_day(ti0,ti1,sep)
-    assert(ti0 ~= nil and ti1 ~= nil)
-    local sep = sep or 0
-    return _M.day_time(ti0 - sep) == _M.day_time(ti1 - sep)
+function _M.same_day(ti1,ti2,sep)
+    local ti1 = ti1 - (sep or 0)
+    local ti2 = ti2 - (sep or 0)
+    return _M.diff_day(ti1,ti2) == 0
 end
 
 function _M.same_week(ti1,ti2,sep)
     local ti1 = ti1 - (sep or 0)
     local ti2 = ti2 - (sep or 0)
 
-    local wstart
-    if ti1 < ti2 then
-        wstart = _M.week_start(ti2)
-        if ti1 < wstart then
-            return false
-        end
-    else
-        wstart = _M.week_start(ti1)
-        if ti2 < wstart then
-            return false
-        end
-    end
-    return true
+    return _M.diff_week(ti1,ti2) == 0
 end
 
 function _M.time_diff(desc,func)
