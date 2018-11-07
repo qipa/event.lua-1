@@ -189,15 +189,19 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 		}
 	}
 
-	if (!replace)
+	if (!replace) {
 		return (char*)source;
+	}
 
-	if (founded == 1) {
-		memset(dest + dest_offset, '*', filter_len);
-		dest_offset += filter_len;
-	} else {
-		memcpy(dest + dest_offset, source + filter_start, i - filter_start);
-		dest_offset += i - filter_start;
+	if ( phase == PHASE_MATCH ) {
+		if ( founded == 1 ) {
+			memset(dest + dest_offset, '*', filter_len);
+			dest_offset += filter_len;
+		}
+		else {
+			memcpy(dest + dest_offset, source + filter_start, i - filter_start);
+			dest_offset += i - filter_start;
+		}
 	}
 
 	*replace_offset = dest_offset;
