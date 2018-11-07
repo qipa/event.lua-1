@@ -61,7 +61,7 @@ typedef struct pathfinder {
 	struct list neighbors;
 } pathfinder_t;
 
-static int direction[8][2] = {
+static int DIRECTION[8][2] = {
 	{ -1, 0 },
 	{ 1, 0 },
 	{ 0, -1 },
@@ -71,6 +71,7 @@ static int direction[8][2] = {
 	{ 1, -1 },
 	{ 1, 1 },
 };
+
 
 #define CAST(elt) (node_t*)((int8_t*)elt - sizeof(struct list_node))
 
@@ -84,6 +85,27 @@ find_node(pathfinder_t* finder, int x, int z) {
 static inline int
 isblock(pathfinder_t* finder, node_t* node) {
 	return node->block != 0;
+}
+
+node_t*
+search_node(pathfinder_t* finder, int x, int z, int extend, finder_dump dump, void* ud) {
+	int i;
+	for ( i = 1; i <= extend; i++ ) {
+		int j;
+		for ( j = 0; j < 8; j++ ) {
+			int tx = x + DIRECTION[j][0] * i;
+			int tz = z + DIRECTION[j][1] * i;
+			node_t * node = find_node(finder, tx, tz);
+			if ( dump ) {
+				dump(ud, node->x, node->z);
+			}
+			
+			if ( !isblock(finder, node) ) {
+				return node;
+			}
+		}
+	}
+	return NULL;
 }
 
 static inline int
@@ -102,8 +124,8 @@ find_neighbors(pathfinder_t * finder, struct node * node) {
 
 	int i;
 	for ( i = 0; i < 8; i++ ) {
-		int x = node->x + direction[i][0];
-		int z = node->z + direction[i][1];
+		int x = node->x + DIRECTION[i][0];
+		int z = node->z + DIRECTION[i][1];
 		node_t * neighbor = find_node(finder, x, z);
 		if ( neighbor ) {
 			if ( neighbor->list_head.pre || neighbor->list_head.next )
@@ -125,7 +147,7 @@ neighbor_cost(node_t * from, node_t * to) {
 	int dz = from->z - to->z;
 	int i;
 	for ( i = 0; i < 8; ++i ) {
-		if ( direction[i][0] == dx && direction[i][1] == dz )
+		if ( DIRECTION[i][0] == dx && DIRECTION[i][1] == dz )
 			break;
 	}
 	if ( i < 4 )
@@ -315,10 +337,21 @@ finder_release(pathfinder_t* finder) {
 int
 finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, finder_cb cb, void* cb_args, finder_dump dump, void* dump_args, float cost) {
 	node_t * from = find_node(finder, x0, z0);
-	node_t * to = find_node(finder, x1, z1);
+	if (!from) {
+		return ERROR_START_POINT;
+	}
 
-	if ( !from || !to || from == to || isblock(finder, to) )
-		return 0;
+	node_t * to = find_node(finder, x1, z1);
+	if ( !to || isblock(finder, to) ) {
+		to = search_node(finder, x1, z1, 5, NULL, NULL);
+		if (!to) {
+			return ERROR_OVER_POINT;
+		}
+	}
+
+	if ( from == to ) {
+		return ERROR_SAME_POINT;
+	}
 
 	minheap_push(finder->openlist, &from->elt);
 
@@ -328,7 +361,7 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 		struct element * elt = minheap_pop(finder->openlist);
 		if ( !elt ) {
 			reset(finder);
-			return 0;
+			return ERROR_CANNOT_REACH;
 		}
 		current = CAST(elt);
 		list_push(&finder->closelist, ( struct list_node * )current);
@@ -336,7 +369,7 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 		if ( current == to ) {
 			make_path(finder, current, from, smooth, cb, cb_args);
 			reset(finder);
-			return 1;
+			return 0;
 		}
 
 		struct list * neighbors = find_neighbors(finder, current);
@@ -364,6 +397,8 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 			}
 		}
 	}
+	assert(0);
+	return 0;
 }
 
 void
