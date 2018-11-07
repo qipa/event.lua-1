@@ -19,14 +19,33 @@ struct word_tree;
 
 KHASH_MAP_INIT_STR(word,struct word_tree*);
 
-struct word_tree {
-	khash_t(word)* hash;
+typedef khash_t(word) tree_hash_t;
+
+typedef struct word_tree {
+	tree_hash_t* hash;
 	uint8_t tail;
-};
+} tree_t;
+
+void
+tree_set(tree_hash_t* hash, char* str, tree_t* tree) {
+	int ok;
+	khiter_t k = kh_put(word, hash, _strdup(str), &ok);
+	assert(ok == 1 || ok == 2);
+	kh_value(hash, k) = tree;
+}
+
+tree_t*
+tree_get(tree_hash_t* hash, const char* str) {
+	khiter_t k = kh_get(word, hash, str);
+	if ( k == kh_end(hash) ) {
+		return NULL;
+	}
+	return kh_value(hash, k);
+}
 
 static inline int
 split_utf8(const char* word,size_t size,int offset) {
-	int i;
+	size_t i;
 	for(i = offset;i < size;i++) {
 		char ch = word[i];
 		if((ch & 0x80) == 0) {  
@@ -47,54 +66,47 @@ split_utf8(const char* word,size_t size,int offset) {
 }
 
 void
-word_add(struct word_tree* root_tree, const char* word,size_t size) {
-	struct word_tree* tree = root_tree;
-	int i;
+word_add(tree_t* root_tree, const char* word, size_t size) {
+	tree_t* tree = root_tree;
+	size_t i;
 	for(i = 0;i < size;) {
 		char ch[8] = {0};
 		int length = split_utf8(word,size,i);
 		memcpy(ch,&word[i],length);
 		i += length;
 
-		khiter_t k = kh_get(word, tree->hash, ch);
-		if (k == kh_end(tree->hash)) {
-			struct word_tree* next_tree = NULL;
-			int result;
-			khiter_t k = kh_put(word, tree->hash, strdup(ch), &result);
-			if (result == 1 || result == 2) {
-				next_tree = malloc(sizeof(*next_tree));
-				next_tree->tail = 0;
-				next_tree->hash = kh_init(word);
-				kh_value(tree->hash, k) = next_tree;
-			}else {
-				assert(0);
-			}
-			
-			if (i == size)
-				next_tree->tail = 1;
+		tree_t* tmp = tree_get(tree->hash, ch);
+		if ( !tmp ) {
+			tree_t* next_tree = malloc(sizeof( *tree ));
+			next_tree->tail = 0;
+			next_tree->hash = kh_init(word);
+
+			tree_set(tree->hash, ch, next_tree);
+
 			tree = next_tree;
-		} else {
-			tree = kh_value(tree->hash, k);
-			if (i == size)
-				tree->tail = 1;
+		}
+		else {
+			tree = tmp;
+		}
+
+		if (i == size) {
+			tree->tail = 1;
 		}
 	}
 }
 
 void
-word_delete(struct word_tree* root_tree, const char* word,size_t size) {
-	struct word_tree* tree = root_tree;
-	int i;
+word_delete(tree_t* root_tree, const char* word, size_t size) {
+	tree_t* tree = root_tree;
+	size_t i;
 	for(i = 0;i < size;) {
 		char ch[8] = {0};
 		int length = split_utf8(word,size,i);
 		memcpy(ch,&word[i],length);
 		i += length;
 
-		khiter_t k = kh_get(word, tree->hash, ch);
-		if (k != kh_end(tree->hash)) {
-			tree = kh_value(tree->hash, k);
-		} else {
+		tree = tree_get(tree->hash, ch);
+		if (!tree) {
 			return;
 		}
 	}
@@ -108,7 +120,7 @@ typedef struct replace_context {
 } replace_ctx_t;
 
 static inline int
-replace_commit(replace_ctx_t* ctx, char* data, int size) {
+replace_commit(replace_ctx_t* ctx, const char* data, int size) {
 	int left = ctx->size - ctx->offset;
 	if (left <= 0) {
 		return -1;
@@ -142,7 +154,7 @@ replace_star(replace_ctx_t* ctx, int size) {
 }
 
 int
-word_filter(struct word_tree* root_tree, const char* source, size_t size, char* replace, int replace_size, int* replace_offset) {
+word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, int replace_size, int* replace_offset) {
 	
 	replace_ctx_t* replace_ctx = NULL;
 	if ( replace ) {
@@ -154,7 +166,7 @@ word_filter(struct word_tree* root_tree, const char* source, size_t size, char* 
 		replace_ctx = &ctx;
 	}
 	
-	struct word_tree* tree = root_tree;
+	tree_t* tree = root_tree;
 
 	int filter_start = 0;
 	int filter_over = 0;
@@ -165,7 +177,7 @@ word_filter(struct word_tree* root_tree, const char* source, size_t size, char* 
 
 	int phase = PHASE_SEARCH;
 
-	int i;
+	size_t i;
 	for(i = 0;i < size;) {
 		char word[8] = {0};
 		
@@ -175,17 +187,17 @@ word_filter(struct word_tree* root_tree, const char* source, size_t size, char* 
 
 		switch(phase) {
 			case PHASE_SEARCH: {
-				khiter_t k = kh_get(word, tree->hash, word);
-				if (k != kh_end(tree->hash)) {
-					tree = kh_value(tree->hash, k);
+				tree_t* tmp = tree_get(tree->hash, word);
+				if (tmp) {
+					tree = tmp;
 					phase = PHASE_MATCH;
 					filter_start = i - length;
 					filter_over = i;
+					filter_back = i;
 					filter_len = 1;
 					filter_offset = 1;
-					filter_back = i;
 					founded = 0;
-					if (tree->tail) {
+					if ( tree->tail ) {
 						if ( !replace_ctx ) {
 							return -1;
 						}
@@ -207,9 +219,9 @@ word_filter(struct word_tree* root_tree, const char* source, size_t size, char* 
 						continue;
 					}
 				}
-				khiter_t k = kh_get(word, tree->hash, word);
-				if (k != kh_end(tree->hash)) {
-					tree = kh_value(tree->hash, k);
+				tree_t* tmp = tree_get(tree->hash, word);
+				if (tmp) {
+					tree = tmp;
 					++filter_offset;
 					if (tree->tail) {
 						if ( !replace_ctx ) {
@@ -273,14 +285,13 @@ word_filter(struct word_tree* root_tree, const char* source, size_t size, char* 
 	}
 
 _replace_over:
-
 	*replace_offset = replace_ctx->offset;
 	return 0;
 }
 
 static int
 lcreate(lua_State* L) {
-	struct word_tree* tree = lua_newuserdata(L,sizeof(*tree));
+	tree_t* tree = lua_newuserdata(L, sizeof( *tree ));
 	tree->hash = kh_init(word);
 	luaL_newmetatable(L,"meta_filter");
  	lua_setmetatable(L, -2);
@@ -288,9 +299,9 @@ lcreate(lua_State* L) {
 }
 
 void
-release(char* word,struct word_tree* tree) {
+release(char* word, tree_t* tree) {
 	if (tree->hash) {
-		struct word_tree* child = NULL;
+		tree_t* child = NULL;
 		const char* word = NULL;
 		kh_foreach(tree->hash, word, child, release((char*)word, child));
 		kh_destroy(word,tree->hash);
@@ -301,9 +312,9 @@ release(char* word,struct word_tree* tree) {
 
 static int
 lrelease(lua_State* L) {
-	struct word_tree* tree = lua_touserdata(L,1);
+	tree_t* tree = lua_touserdata(L, 1);
 
-	struct word_tree* child = NULL;
+	tree_t* child = NULL;
 	const char* word = NULL;
 	kh_foreach(tree->hash, word, child, release((char*)word, child));
 	kh_destroy(word,tree->hash);
@@ -313,7 +324,7 @@ lrelease(lua_State* L) {
 
 static int
 ladd(lua_State* L) {
-	struct word_tree* tree = lua_touserdata(L,1);
+	tree_t* tree = lua_touserdata(L, 1);
 	size_t size;
 	const char* word = lua_tolstring(L,2,&size);
 	word_add(tree,word,size);
@@ -322,7 +333,7 @@ ladd(lua_State* L) {
 
 static int
 ldelete(lua_State* L) {
-	struct word_tree* tree = lua_touserdata(L,1);
+	tree_t* tree = lua_touserdata(L, 1);
 	size_t size;
 	const char* word = lua_tolstring(L,2,&size);
 	word_delete(tree,word,size);
@@ -331,7 +342,7 @@ ldelete(lua_State* L) {
 
 static int
 lfilter(lua_State* L) {
-	struct word_tree* tree = lua_touserdata(L,1);
+	tree_t* tree = lua_touserdata(L, 1);
 	size_t size;
 	const char* word = lua_tolstring(L,2,&size);
 	int replace = luaL_optinteger(L,3,1);
@@ -394,7 +405,7 @@ lsplit(lua_State* L) {
 	lua_newtable(L);
 
 	int index = 1;
-	int i;
+	size_t i;
 	for(i = 0;i < size;) {
 		char ch[8] = {0};
 
@@ -411,14 +422,14 @@ lsplit(lua_State* L) {
 }
 
 void
-dump(const char* word,struct word_tree* tree,int depth) {
+dump(const char* word,tree_t* tree,int depth) {
 	int i;
 	for(i=0;i<depth;i++)
 		printf("  ");
 	printf("%s\n",word);
 	depth++;
 	if (tree->hash) {
-		struct word_tree* child = NULL;
+		tree_t* child = NULL;
 		const char* word = NULL;
 		kh_foreach(tree->hash, word, child, dump((char*)word, child,depth));
 	}
@@ -426,8 +437,8 @@ dump(const char* word,struct word_tree* tree,int depth) {
 
 static int
 ldump(lua_State* L) {
-	struct word_tree* tree = lua_touserdata(L,1);
-	struct word_tree* child = NULL;
+	tree_t* tree = lua_touserdata(L,1);
+	tree_t* child = NULL;
 	const char* word = NULL;
 	int depth = 0;
 	kh_foreach(tree->hash, word, child, dump((char*)word, child, depth));
