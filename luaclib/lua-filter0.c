@@ -103,10 +103,11 @@ word_delete(struct word_tree* root_tree, const char* word,size_t size) {
 
 char*
 word_filter(struct word_tree* root_tree,const char* source,size_t size,int replace,size_t* replace_offset) {
+
 	char* dest = NULL;
 	int dest_offset = 0;
 	if ( replace ) {
-		dest = strdup(source);
+		dest = _strdup(source);
 	}
 	
 	struct word_tree* tree = root_tree;
@@ -114,6 +115,8 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 	int filter_start = 0;
 	int filter_over = 0;
 	int filter_len = -1;
+	int filter_offset = -1;
+	int filter_back = -1;
 	int founded = 0;
 
 	int phase = PHASE_SEARCH;
@@ -135,8 +138,13 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 					filter_start = i - length;
 					filter_over = i;
 					filter_len = 1;
+					filter_offset = 1;
+					filter_back = i;
 					founded = 0;
 					if (tree->tail) {
+						if (!replace) {
+							return NULL;
+						}
 						founded = 1;
 					}
 				} else {
@@ -150,28 +158,35 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 			case PHASE_MATCH: {
 				if (length == 1) {
 					if (isspace(word[0]) || iscntrl(word[0]) || ispunct(word[0])) {
-						++filter_len;
+						++filter_offset;
 						continue;
 					}
 				}
 				khiter_t k = kh_get(word, tree->hash, word);
 				if (k != kh_end(tree->hash)) {
 					tree = kh_value(tree->hash, k);
-					++filter_len;
+					++filter_offset;
 					if (tree->tail) {
+						if ( !replace ) {
+							return NULL;
+						}
+						filter_len = filter_offset;
+						filter_back = i;
 						founded = 1;
 					}
 				} else {
 					if (founded == 1) {
-						//回滚一个word
-						i -= length;
-						if (replace) {
-							//匹配成功
-							memset(dest + dest_offset, '*', filter_len);
-							dest_offset += filter_len;
-						} else {
+						//回滚
+						i = filter_back;
+
+						if ( !replace ) {
 							return NULL;
 						}
+
+						//匹配成功
+						memset(dest + dest_offset, '*', filter_len);
+						dest_offset += filter_len;
+					
 					} else {
 						//匹配失败
 						if (replace) {
@@ -189,14 +204,17 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 		}
 	}
 
-	if (!replace) {
+	if ( !replace ) {
 		return (char*)source;
 	}
-
+	
 	if ( phase == PHASE_MATCH ) {
 		if ( founded == 1 ) {
 			memset(dest + dest_offset, '*', filter_len);
 			dest_offset += filter_len;
+
+			memcpy(dest + dest_offset, source + filter_back, size - filter_back);
+			dest_offset += size - filter_back;
 		}
 		else {
 			memcpy(dest + dest_offset, source + filter_start, i - filter_start);
