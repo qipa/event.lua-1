@@ -29,7 +29,7 @@ typedef struct word_tree {
 void
 tree_set(tree_hash_t* hash, char* str, tree_t* tree) {
 	int ok;
-	khiter_t k = kh_put(word, hash, _strdup(str), &ok);
+	khiter_t k = kh_put(word, hash, strdup(str), &ok);
 	assert(ok == 1 || ok == 2);
 	kh_value(hash, k) = tree;
 }
@@ -156,14 +156,11 @@ replace_star(replace_ctx_t* ctx, int size) {
 int
 word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, int replace_size, int* replace_offset) {
 	
-	replace_ctx_t* replace_ctx = NULL;
+	replace_ctx_t replace_ctx;
 	if ( replace ) {
-		replace_ctx_t ctx;
-		ctx.replace = replace;
-		ctx.offset = 0;
-		ctx.size = replace_size;
-
-		replace_ctx = &ctx;
+		replace_ctx.replace = replace;
+		replace_ctx.offset = 0;
+		replace_ctx.size = replace_size;
 	}
 	
 	tree_t* tree = root_tree;
@@ -198,14 +195,14 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 					filter_offset = 1;
 					founded = 0;
 					if ( tree->tail ) {
-						if ( !replace_ctx ) {
+						if ( !replace ) {
 							return -1;
 						}
 						founded = 1;
 					}
 				} else {
-					if ( replace_ctx ) {
-						if ( replace_commit(replace_ctx, word, length) < 0 ) {
+					if ( replace ) {
+						if ( replace_commit(&replace_ctx, word, length) < 0 ) {
 							goto _replace_over;
 						}
 					}
@@ -224,7 +221,7 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 					tree = tmp;
 					++filter_offset;
 					if (tree->tail) {
-						if ( !replace_ctx ) {
+						if ( !replace ) {
 							return -1;
 						}
 						filter_len = filter_offset;
@@ -236,19 +233,19 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 						//回滚
 						i = filter_back;
 
-						if ( !replace_ctx ) {
+						if ( !replace ) {
 							return -1;
 						}
 
 						//匹配成功
-						if ( replace_star(replace_ctx, filter_len) < 0 ) {
+						if ( replace_star(&replace_ctx, filter_len) < 0 ) {
 							goto _replace_over;
 						}
 					
 					} else {
 						//匹配失败
-						if ( replace_ctx ) {
-							if ( replace_commit(replace_ctx, source + filter_start, filter_over - filter_start) < 0 ) {
+						if ( replace ) {
+							if ( replace_commit(&replace_ctx, source + filter_start, filter_over - filter_start) < 0 ) {
 								goto _replace_over;
 							}
 						}
@@ -263,29 +260,29 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 		}
 	}
 
-	if ( !replace_ctx ) {
+	if ( !replace ) {
 		return 0;
 	}
 	
 	if ( phase == PHASE_MATCH ) {
 		if ( founded == 1 ) {
-			if ( replace_star(replace_ctx, filter_len) < 0 ) {
+			if ( replace_star(&replace_ctx, filter_len) < 0 ) {
 				goto _replace_over;
 			}
 
-			if ( replace_commit(replace_ctx, source + filter_back, size - filter_back) < 0 ) {
+			if ( replace_commit(&replace_ctx, source + filter_back, size - filter_back) < 0 ) {
 				goto _replace_over;
 			}
 		}
 		else {
-			if ( replace_commit(replace_ctx, source + filter_start, i - filter_start) < 0 ) {
+			if ( replace_commit(&replace_ctx, source + filter_start, i - filter_start) < 0 ) {
 				goto _replace_over;
 			}
 		}
 	}
 
 _replace_over:
-	*replace_offset = replace_ctx->offset;
+	*replace_offset = replace_ctx.offset;
 	return 0;
 }
 
