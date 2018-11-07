@@ -101,13 +101,57 @@ word_delete(struct word_tree* root_tree, const char* word,size_t size) {
 	tree->tail = 0;
 }
 
-char*
-word_filter(struct word_tree* root_tree,const char* source,size_t size,int replace,size_t* replace_offset) {
+typedef struct replace_context {
+	char* replace;
+	int offset;
+	int size;
+} replace_ctx_t;
 
-	char* dest = NULL;
-	int dest_offset = 0;
+static inline int
+replace_commit(replace_ctx_t* ctx, char* data, int size) {
+	int left = ctx->size - ctx->offset;
+	if (left <= 0) {
+		return -1;
+	}
+
+	if ( left > size ) {
+		memcpy(ctx->replace + ctx->offset, data, size);
+		ctx->offset += size;
+		return 0;
+	}
+	memcpy(ctx->replace + ctx->offset, data, left);
+	ctx->offset += left;
+	return -1;
+}
+
+static inline int
+replace_star(replace_ctx_t* ctx, int size) {
+	int left = ctx->size - ctx->offset;
+	if ( left <= 0 ) {
+		return -1;
+	}
+
+	if ( left > size ) {
+		memset(ctx->replace + ctx->offset, '*', size);
+		ctx->offset += size;
+		return 0;
+	}
+	memset(ctx->replace + ctx->offset, '*', left);
+	ctx->offset += left;
+	return -1;
+}
+
+int
+word_filter(struct word_tree* root_tree, const char* source, size_t size, char* replace, int replace_size, int* replace_offset) {
+	
+	replace_ctx_t* replace_ctx = NULL;
 	if ( replace ) {
-		dest = _strdup(source);
+		replace_ctx_t ctx;
+		ctx.replace = replace;
+		ctx.offset = 0;
+		ctx.size = replace_size;
+
+		replace_ctx = &ctx;
 	}
 	
 	struct word_tree* tree = root_tree;
@@ -142,15 +186,16 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 					filter_back = i;
 					founded = 0;
 					if (tree->tail) {
-						if (!replace) {
-							return NULL;
+						if ( !replace_ctx ) {
+							return -1;
 						}
 						founded = 1;
 					}
 				} else {
-					if (replace) {
-						memcpy(dest + dest_offset, word, length);
-						dest_offset += length;
+					if ( replace_ctx ) {
+						if ( replace_commit(replace_ctx, word, length) < 0 ) {
+							goto _replace_over;
+						}
 					}
 				}
 				break;
@@ -167,8 +212,8 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 					tree = kh_value(tree->hash, k);
 					++filter_offset;
 					if (tree->tail) {
-						if ( !replace ) {
-							return NULL;
+						if ( !replace_ctx ) {
+							return -1;
 						}
 						filter_len = filter_offset;
 						filter_back = i;
@@ -179,19 +224,21 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 						//回滚
 						i = filter_back;
 
-						if ( !replace ) {
-							return NULL;
+						if ( !replace_ctx ) {
+							return -1;
 						}
 
 						//匹配成功
-						memset(dest + dest_offset, '*', filter_len);
-						dest_offset += filter_len;
+						if ( replace_star(replace_ctx, filter_len) < 0 ) {
+							goto _replace_over;
+						}
 					
 					} else {
 						//匹配失败
-						if (replace) {
-							memcpy(dest + dest_offset, source + filter_start, filter_over - filter_start);
-							dest_offset += filter_over - filter_start;
+						if ( replace_ctx ) {
+							if ( replace_commit(replace_ctx, source + filter_start, filter_over - filter_start) < 0 ) {
+								goto _replace_over;
+							}
 						}
 						i = filter_over;
 					}
@@ -204,27 +251,31 @@ word_filter(struct word_tree* root_tree,const char* source,size_t size,int repla
 		}
 	}
 
-	if ( !replace ) {
-		return (char*)source;
+	if ( !replace_ctx ) {
+		return 0;
 	}
 	
 	if ( phase == PHASE_MATCH ) {
 		if ( founded == 1 ) {
-			memset(dest + dest_offset, '*', filter_len);
-			dest_offset += filter_len;
+			if ( replace_star(replace_ctx, filter_len) < 0 ) {
+				goto _replace_over;
+			}
 
-			memcpy(dest + dest_offset, source + filter_back, size - filter_back);
-			dest_offset += size - filter_back;
+			if ( replace_commit(replace_ctx, source + filter_back, size - filter_back) < 0 ) {
+				goto _replace_over;
+			}
 		}
 		else {
-			memcpy(dest + dest_offset, source + filter_start, i - filter_start);
-			dest_offset += i - filter_start;
+			if ( replace_commit(replace_ctx, source + filter_start, i - filter_start) < 0 ) {
+				goto _replace_over;
+			}
 		}
 	}
 
-	*replace_offset = dest_offset;
+_replace_over:
 
-	return dest;
+	*replace_offset = replace_ctx->offset;
+	return 0;
 }
 
 static int
@@ -285,17 +336,19 @@ lfilter(lua_State* L) {
 	const char* word = lua_tolstring(L,2,&size);
 	int replace = luaL_optinteger(L,3,1);
 
-	size_t replace_offset = 0;
-	char* dest = word_filter(tree,word,size,replace,&replace_offset); 
-	if (!replace) {
-		if (!dest)
-			lua_pushboolean(L,0);
-		else
-			lua_pushboolean(L,1);
+	int replace_offset = 0;
+	char* replace_bk = NULL;
+	if (replace) {
+		replace_bk = malloc(size);
+	}
+	
+	int ok = word_filter(tree, word, size, replace_bk, size, &replace_offset);
+	if ( !replace_bk ) {
+		lua_pushboolean(L, ok == 0);
 		return 1;
 	}
-	lua_pushlstring(L,dest,replace_offset);
-	free(dest);
+	lua_pushlstring(L, replace_bk, replace_offset);
+	free(replace_bk);
 	return 1;
 }
 
