@@ -75,18 +75,18 @@ word_add(tree_t* root_tree, const char* word, size_t size) {
 		memcpy(ch,&word[i],length);
 		i += length;
 
-		tree_t* tmp = tree_get(tree->hash, ch);
-		if ( !tmp ) {
-			tree_t* next_tree = malloc(sizeof( *tree ));
-			next_tree->tail = 0;
-			next_tree->hash = kh_init(word);
+		tree_t* child_tree = tree_get(tree->hash, ch);
+		if ( !child_tree ) {
+			child_tree = malloc(sizeof( *tree ));
+			child_tree->tail = 0;
+			child_tree->hash = kh_init(word);
 
-			tree_set(tree->hash, ch, next_tree);
+			tree_set(tree->hash, ch, child_tree);
 
-			tree = next_tree;
+			tree = child_tree;
 		}
 		else {
-			tree = tmp;
+			tree = child_tree;
 		}
 
 		if (i == size) {
@@ -184,9 +184,9 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 
 		switch(phase) {
 			case PHASE_SEARCH: {
-				tree_t* tmp = tree_get(tree->hash, word);
-				if (tmp) {
-					tree = tmp;
+				tree_t* child_tree = tree_get(tree->hash, word);
+				if (child_tree) {
+					tree = child_tree;
 					phase = PHASE_MATCH;
 					filter_start = i - length;
 					filter_over = i;
@@ -216,9 +216,9 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 						continue;
 					}
 				}
-				tree_t* tmp = tree_get(tree->hash, word);
-				if (tmp) {
-					tree = tmp;
+				tree_t* child_tree = tree_get(tree->hash, word);
+				if (child_tree) {
+					tree = child_tree;
 					++filter_offset;
 					if (tree->tail) {
 						if ( !replace ) {
