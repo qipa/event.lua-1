@@ -207,11 +207,11 @@ function _M.gate(max)
 end
 
 function _M.run_process(cmd,line)
-    local FILE,fd = assert(io.popen(cmd))
+    local FILE = assert(io.popen(cmd))
     if not _stream_base then
     	_stream_base = require "stream"
     end
-    local ch = _M.bind(fd,_stream_base)
+    local ch = _M.bind(FILE:fd(),_stream_base)
     local result
     if line then
     	result = ch:wait_lines()
