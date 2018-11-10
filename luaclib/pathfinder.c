@@ -1,3 +1,5 @@
+
+
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -6,7 +8,7 @@
 #include <stdint.h>
 
 
-#include "common/list.h"
+
 #include "common/minheap.h"
 #include "pathfinder.h"
 #ifndef _MSC_VER
@@ -38,8 +40,8 @@ typedef struct path {
 } path_t;
 
 typedef struct node {
-	struct list_node list_head;
 	struct element elt;
+	struct node *next;
 	struct node *parent;
 	int x;
 	int z;
@@ -57,8 +59,7 @@ typedef struct pathfinder {
 	char mask[MARK_MAX];
 
 	struct minheap* openlist;
-	struct list closelist;
-	struct list neighbors;
+	node_t* closelist;
 } pathfinder_t;
 
 static int DIRECTION[8][2] = {
@@ -73,7 +74,6 @@ static int DIRECTION[8][2] = {
 };
 
 
-#define CAST(elt) (node_t*)((int8_t*)elt - sizeof(struct list_node))
 
 static inline node_t*
 find_node(pathfinder_t* finder, int x, int z) {
@@ -118,27 +118,20 @@ movable(pathfinder_t* finder, int x, int z, int ignore) {
 	return finder->mask[node->block] != 1;
 }
 
-static inline struct list *
-find_neighbors(pathfinder_t * finder, struct node * node) {
-	assert(list_empty(&finder->neighbors) == 1);
-
+static inline void
+find_neighbors(pathfinder_t * finder, struct node * node, node_t **neighbours) {
 	int i;
 	for ( i = 0; i < 8; i++ ) {
 		int x = node->x + DIRECTION[i][0];
 		int z = node->z + DIRECTION[i][1];
-		node_t * neighbor = find_node(finder, x, z);
-		if ( neighbor ) {
-			if ( neighbor->list_head.pre || neighbor->list_head.next )
-				continue;
-			if ( !isblock(finder, neighbor) )
-				list_push(&finder->neighbors, ( struct list_node* )neighbor);
+		node_t * nei = find_node(finder, x, z);
+		if ( nei && nei->next == NULL ) {
+			if ( !isblock(finder, nei) ) {
+				nei->next = ( *neighbours );
+				( *neighbours ) = nei;
+			}
 		}
 	}
-
-	if ( list_empty(&finder->neighbors) )
-		return NULL;
-
-	return &finder->neighbors;
 }
 
 static inline float
@@ -160,27 +153,31 @@ clear_node(node_t* node) {
 	node->parent = NULL;
 	node->F = node->G = node->H = 0;
 	node->elt.index = 0;
+	node->next = NULL;
 }
 
 static inline void
 heap_clear(struct element* elt) {
-	node_t *node = CAST(elt);
+	node_t *node = (node_t*)elt;
 	clear_node(node);
 }
 
 static inline void
 reset(pathfinder_t* finder) {
-	node_t * node = NULL;
-	while ( ( node = (node_t*)list_pop(&finder->closelist) ) ) {
-		clear_node(node);
+	node_t * node = finder->closelist;
+	while ( node ) {
+		node_t * tmp = node;
+		node = tmp->next;
+		clear_node(tmp);
 	}
+	finder->closelist = NULL;
 	minheap_clear(finder->openlist, heap_clear);
 }
 
 static inline int
 less(struct element * left, struct element * right) {
-	node_t *l = CAST(left);
-	node_t *r = CAST(right);
+	node_t *l = (node_t*)left;
+	node_t *r = (node_t*)right;
 	return l->F < r->F;
 }
 
@@ -320,8 +317,7 @@ finder_create(int width, int heigh, char* data) {
 	}
 
 	finder->openlist = minheap_create(50 * 50, less);
-	list_init(&finder->closelist);
-	list_init(&finder->neighbors);
+	finder->closelist = NULL;
 
 	return finder;
 }
@@ -357,14 +353,9 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 
 	node_t * current = NULL;
 
-	for ( ;; ) {
-		struct element * elt = minheap_pop(finder->openlist);
-		if ( !elt ) {
-			reset(finder);
-			return ERROR_CANNOT_REACH;
-		}
-		current = CAST(elt);
-		list_push(&finder->closelist, ( struct list_node * )current);
+	while ( ( current = (node_t*)minheap_pop(finder->openlist) ) != NULL ) {
+		current->next = finder->closelist;
+		finder->closelist = current;
 
 		if ( current == to ) {
 			make_path(finder, current, from, smooth, cb, cb_args);
@@ -372,33 +363,38 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 			return 0;
 		}
 
-		struct list * neighbors = find_neighbors(finder, current);
-		if ( neighbors ) {
-			node_t * node;
-			while ( ( node = (node_t*)list_pop(neighbors) ) ) {
-				if ( node->elt.index ) {
-					int nG = current->G + neighbor_cost(current, node);
-					if ( nG < node->G ) {
-						node->G = nG;
-						node->F = node->G + node->H;
-						node->parent = current;
-						minheap_change(finder->openlist, &node->elt);
-					}
-				}
-				else {
-					node->parent = current;
-					node->G = current->G + neighbor_cost(current, node);
-					node->H = GOAL_COST(node, to, cost);
+		node_t* neighbors = NULL;
+
+		find_neighbors(finder, current, &neighbors);
+		while ( neighbors ) {
+			node_t* node = neighbors;
+
+			if ( node->elt.index ) {
+				int nG = current->G + neighbor_cost(current, node);
+				if ( nG < node->G ) {
+					node->G = nG;
 					node->F = node->G + node->H;
-					minheap_push(finder->openlist, &node->elt);
-					if ( dump != NULL )
-						dump(dump_args, node->x, node->z);
+					node->parent = current;
+					minheap_change(finder->openlist, &node->elt);
 				}
 			}
+			else {
+				node->parent = current;
+				node->G = current->G + neighbor_cost(current, node);
+				node->H = GOAL_COST(node, to, cost);
+				node->F = node->G + node->H;
+				minheap_push(finder->openlist, &node->elt);
+				if ( dump != NULL ) {
+					dump(dump_args, node->x, node->z);
+				}	
+			}
+
+			neighbors = node->next;
+			node->next = NULL;
 		}
 	}
-	assert(0);
-	return 0;
+	reset(finder);
+	return ERROR_CANNOT_REACH;
 }
 
 void
