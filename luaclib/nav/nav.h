@@ -26,8 +26,6 @@
 
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 
-#define cast_node(elt) ((struct nav_node*)((int8_t*)elt - sizeof(struct list_node)))
-
 struct vector3
 {
 	double x;
@@ -50,9 +48,11 @@ struct nav_mesh_mask
 
 struct nav_node
 {
-	struct list_node list_head;
+#ifdef MINHEAP_USE_LIBEVENT
+	min_elt_t elt;
+#else
 	struct element elt;
-
+#endif	
 	int id;
 
 	int* poly;
@@ -65,14 +65,17 @@ struct nav_node
 
 	double area;
 
-	//å¤šè¾¹å½¢çš„ä¸­å¿ƒç‚¹
+	//¶à±ßĞÎµÄÖĞĞÄµã
 	struct vector3 center;
 
 	double G;
 	double H;
 	double F;
 
-	//ç¼“å­˜A*å¯»è·¯å‡ºæ¥çš„ç›¸é‚»å¤šè¾¹å½¢å’Œä¸ç›¸é‚»å¤šè¾¹å½¢å…±è¾¹çš„è¾¹
+	struct nav_node* next;
+	int closed;
+
+	//»º´æA*Ñ°Â·³öÀ´µÄÏàÁÚ¶à±ßĞÎºÍÓëÏàÁÚ¶à±ßĞÎ¹²±ßµÄ±ß
 	struct nav_node* link_parent;
 	int link_border;
 
@@ -104,22 +107,22 @@ struct nav_tile
 
 struct nav_mesh_context
 {
-	//é¡¶ç‚¹
+	//¶¥µã
 	struct vector3 * vertices;
 	int vertices_size;
 
-	//æ‰€æœ‰è¾¹(åŒä¸€æ¡è¾¹æœ‰abå’Œbaä¸¤æ¡)
+	//ËùÓĞ±ß(Í¬Ò»Ìõ±ßÓĞabºÍbaÁ½Ìõ)
 	struct nav_border* borders;
 	int border_size;
 	int border_offset;
 
-	//å¤šè¾¹å½¢èŠ‚ç‚¹
+	//¶à±ßĞÎ½Úµã
 	struct nav_node* node;
 	int node_size;
 
 	double area;
 	
-	//æ ¼å­ä¿¡æ¯
+	//¸ñ×ÓĞÅÏ¢
 	struct nav_tile* tile;
 	uint32_t tile_unit;
 	uint32_t tile_width;
@@ -131,17 +134,18 @@ struct nav_mesh_context
 	uint32_t width;
 	uint32_t heigh;
 
-	//å¤šè¾¹å½¢èŠ‚ç‚¹çš„mask
+	//¶à±ßĞÎ½ÚµãµÄmask
 	struct nav_mesh_mask mask_ctx;
 
-	//å¯»è·¯ç»“æœç¼“å­˜
+	//Ñ°Â·½á¹û»º´æ
 	struct nav_path result;
 
-	//è·å–ç›¸é‚»å¤šè¾¹å½¢ç¼“å­˜
-	struct list linked;
-
+#ifdef MINHEAP_USE_LIBEVENT
+	min_heap_t openlist;
+#else
 	struct minheap* openlist;
-	struct list closelist;
+#endif
+	struct nav_node* closelist;
 };
 
 typedef void(*search_dumper)(void* ud, int index);

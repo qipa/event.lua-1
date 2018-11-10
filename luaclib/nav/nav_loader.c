@@ -32,9 +32,13 @@ poly_area(struct nav_mesh_context* ctx, int size, int* poly) {
 
 static int
 node_cmp(struct element * left, struct element * right) {
-	struct nav_node *l = cast_node(left);
-	struct nav_node *r = cast_node(right);
+	struct nav_node *l = ( struct nav_node *) left;
+	struct nav_node *r = ( struct nav_node *) right;
+#ifdef MINHEAP_USE_LIBEVENT
+	return l->F > r->F;
+#else
 	return l->F < r->F;
+#endif
 }
 
 int
@@ -163,9 +167,12 @@ init_mesh(struct nav_mesh_context* mesh_ctx) {
 	mesh_ctx->result.offset = 0;
 	mesh_ctx->result.wp = ( struct vector3* )malloc(sizeof( struct vector3 )*mesh_ctx->result.size);
 
+#ifdef MINHEAP_USE_LIBEVENT
+	min_heap_ctor_(&mesh_ctx->openlist, node_cmp);
+#else
 	mesh_ctx->openlist = minheap_create(50 * 50, node_cmp);
-	list_init(&mesh_ctx->closelist);
-	list_init(&mesh_ctx->linked);
+#endif
+	mesh_ctx->closelist = NULL;
 }
 
 struct nav_mesh_context*
@@ -237,6 +244,11 @@ load_mesh(double** v, int vertices_size, int** p, int node_size) {
 	for ( i = 0; i < node_size; i++ ) {
 		struct nav_node* node = &mesh_ctx->node[i];
 		memset(node, 0, sizeof( *node ));
+#ifdef MINHEAP_USE_LIBEVENT
+		node->elt.index = -1;
+#else
+		node->elt.index = 0;
+#endif
 		node->id = i;
 
 		node->size = p[i][0];
@@ -310,7 +322,11 @@ release_mesh(struct nav_mesh_context* ctx) {
 	free(ctx->node);
 	free(ctx->mask_ctx.mask);
 	free(ctx->result.wp);
+#ifdef MINHEAP_USE_LIBEVENT
+	min_heap_dtor_(&ctx->openlist);
+#else
 	minheap_release(ctx->openlist);
+#endif
 	if ( ctx->tile != NULL ) {
 		release_tile(ctx, ctx->tile);
 	}
