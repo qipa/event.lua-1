@@ -742,6 +742,49 @@ _lpipe_release(lua_State* L) {
 //-------------------------endof pipe api---------------------------
 
 //-------------------------event api---------------------------
+
+union un_sockaddr {
+	struct sockaddr_un su;
+	struct sockaddr_in si;
+};
+
+struct sockaddr*
+get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen) {
+	luaL_checktype(L, index, LUA_TTABLE);
+	lua_getfield(L, index, "file");
+
+	struct sockaddr* addr;
+
+	if (!lua_isnil(L, -1)) {
+		const char* file = luaL_checkstring(L, -1);
+		lua_pop(L, 1);
+		unlink(file);
+
+		sa->su.sun_family = AF_UNIX;  
+		strcpy(sa->su.sun_path, file);
+
+		addr = (struct sockaddr*)&sa->su;
+		*addrlen = sizeof(sa->su);
+	} else {
+		lua_pop(L, 1);
+		lua_getfield(L, index, "ip");
+		const char* ip = luaL_checkstring(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, index, "port");
+		int port = luaL_checkinteger(L, -1);
+		lua_pop(L, 1);
+
+		sa->si.sin_family = AF_INET;
+		sa->si.sin_addr.s_addr = inet_addr(ip);
+		sa->si.sin_port = htons(port);
+
+		addr = (struct sockaddr*)&sa->si;
+		*addrlen = sizeof(sa->si);
+	}
+	return addr;
+}
+
 static int
 _listen(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
@@ -754,41 +797,11 @@ _listen(lua_State* L) {
 	}
 	
 	int multi = lua_toboolean(L, 3);
-	luaL_checktype(L, 4, LUA_TTABLE);
-	lua_getfield(L, 4, "file");
 
-	struct sockaddr* addr;
+	union un_sockaddr sa;
 	int addrlen = 0;
-	if (!lua_isnil(L, -1)) {
-		const char* file = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-		unlink(file);
-
-		struct sockaddr_un su;
-		su.sun_family = AF_UNIX;  
-		strcpy(su.sun_path, file);
-
-		addr = (struct sockaddr*)&su;
-		addrlen = sizeof(su);
-	} else {
-		lua_pop(L, 1);
-		lua_getfield(L, 4, "ip");
-		const char* ip = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, 4, "port");
-		int port = luaL_checkinteger(L, -1);
-		lua_pop(L, 1);
-
-		struct sockaddr_in si;
-		si.sin_family = AF_INET;
-		si.sin_addr.s_addr = inet_addr(ip);
-		si.sin_port = htons(port);
-
-		addr = (struct sockaddr*)&si;
-		addrlen = sizeof(si);
-	}
-
+	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen);
+	
 	struct lua_ev_listener* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
 	lev_listener->lev = lev;
 	lev_listener->closed = 0;
@@ -820,43 +833,14 @@ _connect(lua_State* L) {
 	}
 
 	int wait = lua_tointeger(L, 3);
-	luaL_checktype(L, 4, LUA_TTABLE);
-	lua_getfield(L, 4, "file");
-
-	struct sockaddr* addr;
+	union un_sockaddr sa;
 	int addrlen = 0;
-	if (!lua_isnil(L, -1)) {
-		const char* file = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		struct sockaddr_un su;
-		su.sun_family = AF_UNIX;  
-		strcpy(su.sun_path, file);
-
-		addr = (struct sockaddr*)&su;
-		addrlen = sizeof(su);
-	} else {
-		lua_pop(L, 1);
-		lua_getfield(L, 4, "ip");
-		const char* ip = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, 4, "port");
-		int port = luaL_checkinteger(L, -1);
-		lua_pop(L, 1);
-
-		struct sockaddr_in si;
-		si.sin_family = AF_INET;
-		si.sin_addr.s_addr = inet_addr(ip);
-		si.sin_port = htons(port);
-
-		addr = (struct sockaddr*)&si;
-		addrlen = sizeof(si);
-	}
+	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen);
 
 	int block = 1;
-	if (wait > 0)
+	if (wait > 0) {
 		block = 0;
+	}
 
 	int status;
 	struct lua_ev_session* lev_session = session_create(L,lev,-1,header);
