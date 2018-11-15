@@ -8,63 +8,63 @@
 #include <stdint.h>
 #include "pathfinder/tile/pathfinder.h"
 
-struct patfinder_context {
+typedef struct pathfinder_context {
 	int scene;
 	struct pathfinder* finder;
-};
+} finder_ctx_t;
 
+typedef struct pathfinder_ud {
+	lua_State *L;
+	int index;
+} finder_ud_t;
+
+void finder_result_callback(void *ud, int x, int z) {
+	finder_ud_t* args = (finder_ud_t*)ud;
+
+	lua_createtable(args->L,2,0);
+		lua_pushinteger(args->L,x);
+		lua_rawseti(args->L,-2,1);
+		lua_pushinteger(args->L,z);
+		lua_rawseti(args->L,-2,2);
+	lua_rawseti(args->L,-2,++args->index);
+}
 
 static int
 _release(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
 	finder_release(ctx->finder);
 	return 0;
 }
 
-struct pathfinder_args {
-	lua_State *L;
-	int index;
-};
-
-void finder_callback(void *ud, int x, int z) {
-	struct pathfinder_args* args = (struct pathfinder_args*)ud;
-	lua_pushinteger(args->L,x);
-	lua_rawseti(args->L,-2,++args->index);
-	lua_pushinteger(args->L,z);
-	lua_rawseti(args->L,-2,++args->index);
-}
-
 static int
 _find(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
-	int x0 = lua_tointeger(L,2);
-	int z0 = lua_tointeger(L,3);
-	int x1 = lua_tointeger(L,4);
-	int z1 = lua_tointeger(L,5);
-	int smooth = luaL_optinteger(L,6,0);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int x0 = luaL_checkinteger(L,2);
+	int z0 = luaL_checkinteger(L,3);
+	int x1 = luaL_checkinteger(L,4);
+	int z1 = luaL_checkinteger(L,5);
+	int smooth = luaL_checkinteger(L,6);
 
-	struct pathfinder_args ud;
+	finder_ud_t ud;
 	ud.L = L;
 	ud.index = 0;
 
 	lua_newtable(L);
 
-	int ok = finder_find(ctx->finder, x0, z0, x1, z1, smooth, finder_callback, &ud, NULL, NULL, 50);
-	if (!ok) {
-		lua_pop(L,1);
-		return 0;
-	}
-	return 1;
+	int ok = finder_find(ctx->finder, x0, z0, x1, z1, smooth, finder_result_callback, &ud, NULL, NULL, 64);
+	lua_pushinteger(L, ok);
+	lua_pushvalue(L, -2);
+	return 2;
 }
 
 static int
 _raycast(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
-	int x0 = lua_tointeger(L,2);
-	int z0 = lua_tointeger(L,3);
-	int x1 = lua_tointeger(L,4);
-	int z1 = lua_tointeger(L,5);
-	int ignore = lua_tointeger(L,6);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int x0 = luaL_checkinteger(L,2);
+	int z0 = luaL_checkinteger(L,3);
+	int x1 = luaL_checkinteger(L,4);
+	int z1 = luaL_checkinteger(L,5);
+	int ignore = luaL_checkinteger(L,6);
 
 	int rx,rz;
 	int sx,sz;
@@ -76,11 +76,21 @@ _raycast(lua_State *L) {
 }
 
 static int
+_bound(lua_State* L) {
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int width,heigh;
+	finder_bound(ctx->finder,&width,&heigh);
+	lua_pushinteger(L,width);
+	lua_pushinteger(L,heigh);
+	return 2;
+}
+
+static int
 _movable(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
-	int x = lua_tointeger(L,2);
-	int z = lua_tointeger(L,3);
-	int ignore = lua_tointeger(L,4);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int x = luaL_checkinteger(L,2);
+	int z = luaL_checkinteger(L,3);
+	int ignore = luaL_checkinteger(L,4);
 	int ok = finder_movable(ctx->finder, x, z, ignore);
 	lua_pushboolean(L,ok);
 	return 1;
@@ -88,16 +98,16 @@ _movable(lua_State *L) {
 
 static int
 _mask_set(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
-	int index = lua_tointeger(L,2);
-	int enable = lua_tointeger(L,3);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int index = luaL_checkinteger(L,2);
+	int enable = luaL_checkinteger(L,3);
 	finder_mask_set(ctx->finder, index, enable);
 	return 0;
 }
 
 static int
 _mask_reset(lua_State *L) {
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_touserdata(L, 1);
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
 	finder_mask_reset(ctx->finder);
 	return 0;
 }
@@ -129,7 +139,7 @@ create(lua_State *L) {
 	fclose(ptr);
 
 
-	struct patfinder_context* ctx = (struct patfinder_context*)lua_newuserdata(L, sizeof(struct patfinder_context));
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_newuserdata(L, sizeof(finder_ctx_t));
 	ctx->scene = scene;
 	ctx->finder = finder_create(width,heigh,data);
 	free(data);
@@ -142,6 +152,7 @@ create(lua_State *L) {
 	luaL_Reg l[] = {
 		{ "find", _find },
 		{ "raycast", _raycast },
+		{ "bound", _bound },
 		{ "movable", _movable },
 		{ "mask_set", _mask_set },
 		{ "mask_reset", _mask_reset },
