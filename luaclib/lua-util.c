@@ -24,8 +24,6 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
-#include "zlib.h"
-
 #include <unistd.h>
 #include <sys/prctl.h> 
 #include <sys/types.h>
@@ -38,6 +36,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>     
 #include <netdb.h>
+
+#include "zlib.h"
+#include "lz4.h" 
 
 #include "convert.h"
 #include "linenoise.h"
@@ -376,7 +377,7 @@ lrsa_decrypt(lua_State* L) {
 }
 
 int
-lcompress(lua_State* L) {
+lzlib_compress(lua_State* L) {
     size_t size;
     const char* source = luaL_checklstring(L, 1, &size);
     size_t out_size = compressBound(size);
@@ -384,6 +385,7 @@ lcompress(lua_State* L) {
 
     int status = compress((Bytef*)out, &out_size, (const Bytef*)source, size);
     if (status != Z_OK) {
+        free(out);
         lua_pushboolean(L, 0);
         return 1;
     }
@@ -393,7 +395,7 @@ lcompress(lua_State* L) {
 }
 
 int
-luncompress(lua_State* L) {
+lzlib_decompress(lua_State* L) {
     size_t size;
     const char* source = luaL_checklstring(L, 1, &size);
     size_t out_size = luaL_checkinteger(L, 2);
@@ -402,10 +404,48 @@ luncompress(lua_State* L) {
 
     int status = uncompress((Bytef*)out, &out_size, (const Bytef*)source, size);
     if (status != Z_OK) {
+        free(out);
         lua_pushboolean(L, 0);
         return 1;
     }
     lua_pushlstring(L, out, out_size);
+    free(out);
+    return 1;
+}
+
+int
+llz4_compress(lua_State* L) {
+    size_t size;
+    const char* source = luaL_checklstring(L, 1, &size);
+    size_t out_size = LZ4_compressBound(size);
+    char* out = malloc(out_size);
+
+    int compressed_size = LZ4_compress_default(source, out, size, out_size);
+    if (compressed_size <= 0) {
+        free(out);
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    lua_pushlstring(L, out, compressed_size);
+    free(out);
+    return 1;
+}
+
+int
+llz4_decompress(lua_State* L) {
+    size_t size;
+    const char* source = luaL_checklstring(L, 1, &size);
+    size_t out_size = luaL_checkinteger(L, 2);
+
+    char* out = malloc(out_size);
+
+    int decompressed_size = LZ4_decompress_safe(source, out, size, out_size);
+     if (decompressed_size <= 0) {
+        free(out);
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    lua_pushlstring(L, out, decompressed_size);
     free(out);
     return 1;
 }
@@ -1332,8 +1372,10 @@ luaopen_util_core(lua_State* L){
         { "rsa_generate_key", lrsa_generate_key },
         { "rsa_encrypt", lrsa_encrypt },
         { "rsa_decrypt", lrsa_decrypt },
-        { "compress", lcompress },
-        { "uncompress", luncompress },
+        { "zlib_compress", lzlib_compress },
+        { "zlib_decompress", lzlib_decompress },
+        { "lz4_compress", llz4_compress },
+        { "lz4_decompress", llz4_decompress },
         { "authcode", lauthcode },
         { "load_script", lload_script },
         { "thread_name", lthread_name },
