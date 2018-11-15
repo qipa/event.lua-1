@@ -10,7 +10,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "nav/nav.h"
+#include "pathfinder/nav/nav.h"
 
 #ifdef WIN32
 #define EXPORT  __declspec(dllexport)

@@ -142,10 +142,10 @@ $(LUA_CLIB_PATH)/toweraoi.so : $(LUA_CLIB_SRC)/lua-tower-aoi.c $(LUA_CLIB_SRC)/a
 $(LUA_CLIB_PATH)/linkaoi.so : $(LUA_CLIB_SRC)/lua-link-aoi.c $(LUA_CLIB_SRC)/aoi/link/link-aoi.c $(LUA_CLIB_SRC)/aoi/link/hash_witness.c  | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC) -I./3rd/klib
 
-$(LUA_CLIB_PATH)/pathfinder.so : $(LUA_CLIB_SRC)/lua-pathfinder.c $(LUA_CLIB_SRC)/pathfinder.c $(LUA_CLIB_SRC)/common/minheap.c  | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
+$(LUA_CLIB_PATH)/pathfinder.so : $(LUA_CLIB_SRC)/lua-pathfinder.c $(LUA_CLIB_SRC)/pathfinder/tile/pathfinder.c $(LUA_CLIB_SRC)/common/minheap.c  | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LUA_CLIB_SRC)
 
-$(LUA_CLIB_PATH)/nav.so : $(LUA_CLIB_SRC)/lua-nav.c $(LUA_CLIB_SRC)/nav/nav_loader.c $(LUA_CLIB_SRC)/nav/nav_finder.c $(LUA_CLIB_SRC)/nav/nav_tile.c $(LUA_CLIB_SRC)/common/minheap.c  | $(LUA_CLIB_PATH)
+$(LUA_CLIB_PATH)/nav.so : $(LUA_CLIB_SRC)/lua-nav.c $(LUA_CLIB_SRC)/pathfinder/nav/nav_loader.c $(LUA_CLIB_SRC)/pathfinder/nav/nav_finder.c $(LUA_CLIB_SRC)/pathfinder/nav/nav_tile.c $(LUA_CLIB_SRC)/common/minheap.c  | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@  -I$(LUA_INC) -I$(LUA_CLIB_SRC)
 
 $(LUA_CLIB_PATH)/mysql.so : $(LUA_CLIB_SRC)/lua-mysql.c | $(LUA_CLIB_PATH)

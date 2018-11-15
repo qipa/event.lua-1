@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "pathfinder.h"
+#include "pathfinder/tile/pathfinder.h"
 
 struct patfinder_context {
 	int scene;
