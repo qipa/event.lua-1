@@ -4,12 +4,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "common/minheap.h"
-#include "common/list.h"
 #include <stdbool.h>
+#include <assert.h>
+
 #ifdef _MSC_VER
 #define inline __inline
 #endif
+
+#define MINHEAP_USE_LIBEVENT
+
+#include "minheap-adapter.h"
 
 #define USE_NAV_TILE
 
@@ -48,11 +52,7 @@ struct nav_mesh_mask
 
 struct nav_node
 {
-#ifdef MINHEAP_USE_LIBEVENT
-	min_elt_t elt;
-#else
-	struct element elt;
-#endif	
+	mh_elt_t elt;
 	int id;
 
 	int* poly;
@@ -121,13 +121,13 @@ struct nav_mesh_context
 	int node_size;
 
 	double area;
-	
+
 	//格子信息
 	struct nav_tile* tile;
 	uint32_t tile_unit;
 	uint32_t tile_width;
 	uint32_t tile_heigh;
-	
+
 	struct vector3 lt;
 	struct vector3 br;
 
@@ -140,39 +140,35 @@ struct nav_mesh_context
 	//寻路结果缓存
 	struct nav_path result;
 
-#ifdef MINHEAP_USE_LIBEVENT
-	min_heap_t openlist;
-#else
-	struct minheap* openlist;
-#endif
+	mh_t openlist;
 	struct nav_node* closelist;
 };
 
-typedef void(*search_dumper)(void* ud, int index);
+typedef void(*search_dumper)( void* ud, int index );
 
-struct nav_mesh_context* load_mesh(double** v,int v_cnt,int** p,int p_cnt);
+struct nav_mesh_context* load_mesh(double** v, int v_cnt, int** p, int p_cnt);
 void init_mesh(struct nav_mesh_context* ctx);
 void release_mesh(struct nav_mesh_context* ctx);
 
-struct nav_node* search_node(struct nav_mesh_context* mesh_ctx,double x,double y,double z);
+struct nav_node* search_node(struct nav_mesh_context* mesh_ctx, double x, double y, double z);
 struct nav_path* astar_find(struct nav_mesh_context* mesh_ctx, struct vector3* pt_start, struct vector3* pt_over, search_dumper dumper, void* args);
 bool raycast(struct nav_mesh_context* ctx, struct vector3* pt_start, struct vector3* pt_over, struct vector3* result, search_dumper dumper, void* userdata);
 
-void set_mask(struct nav_mesh_mask* ctx,int mask,int enable);
+void set_mask(struct nav_mesh_mask* ctx, int mask, int enable);
 
 struct vector3* around_movable(struct nav_mesh_context*, double x, double z, int range, int* center_node, search_dumper, void*);
 bool point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, double* dt_offset);
 bool point_height(struct nav_mesh_context* ctx, double x, double z, double* height);
 void point_random(struct nav_mesh_context* ctx, struct vector3* result, int poly);
 
-bool intersect(struct vector3* a,struct vector3* b,struct vector3* c,struct vector3* d);
-bool inside_node(struct nav_mesh_context* mesh_ctx,int polyId,double x,double y,double z);
-double cross_product_direction(struct vector3* vt1,struct vector3* vt2);
-void cross_point(struct vector3* a,struct vector3* b,struct vector3* c,struct vector3* d,struct vector3* result);
-void vector3_copy(struct vector3* dst,struct vector3* src);
-void vector3_sub(struct vector3* a,struct vector3* b,struct vector3* result);
+bool intersect(struct vector3* a, struct vector3* b, struct vector3* c, struct vector3* d);
+bool inside_node(struct nav_mesh_context* mesh_ctx, int polyId, double x, double y, double z);
+double cross_product_direction(struct vector3* vt1, struct vector3* vt2);
+void cross_point(struct vector3* a, struct vector3* b, struct vector3* c, struct vector3* d, struct vector3* result);
+void vector3_copy(struct vector3* dst, struct vector3* src);
+void vector3_sub(struct vector3* a, struct vector3* b, struct vector3* result);
 
-struct nav_tile* create_tile(struct nav_mesh_context* ctx,uint32_t unit);
-void release_tile(struct nav_mesh_context* ctx,struct nav_tile* navtile);
+struct nav_tile* create_tile(struct nav_mesh_context* ctx, uint32_t unit);
+void release_tile(struct nav_mesh_context* ctx, struct nav_tile* navtile);
 
 #endif
