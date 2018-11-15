@@ -24,6 +24,8 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
+#include "zlib.h"
+
 #include <unistd.h>
 #include <sys/prctl.h> 
 #include <sys/types.h>
@@ -370,6 +372,41 @@ lrsa_decrypt(lua_State* L) {
     lua_pushlstring(L, (char*)outstr, outsize);
     RSA_free(rsa_private);
     free(outstr);
+    return 1;
+}
+
+int
+lcompress(lua_State* L) {
+    size_t size;
+    const char* source = luaL_checklstring(L, 1, &size);
+    size_t out_size = compressBound(size);
+    char* out = malloc(out_size);
+
+    int status = compress((Bytef*)out, &out_size, (const Bytef*)source, size);
+    if (status != Z_OK) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    lua_pushlstring(L, out, out_size);
+    free(out);
+    return 1;
+}
+
+int
+luncompress(lua_State* L) {
+    size_t size;
+    const char* source = luaL_checklstring(L, 1, &size);
+    size_t out_size = luaL_checkinteger(L, 2);
+
+    char* out = malloc(out_size);
+
+    int status = uncompress((Bytef*)out, &out_size, (const Bytef*)source, size);
+    if (status != Z_OK) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    lua_pushlstring(L, out, out_size);
+    free(out);
     return 1;
 }
 
@@ -1295,6 +1332,8 @@ luaopen_util_core(lua_State* L){
         { "rsa_generate_key", lrsa_generate_key },
         { "rsa_encrypt", lrsa_encrypt },
         { "rsa_decrypt", lrsa_decrypt },
+        { "compress", lcompress },
+        { "uncompress", luncompress },
         { "authcode", lauthcode },
         { "load_script", lload_script },
         { "thread_name", lthread_name },
