@@ -67,8 +67,8 @@ _raycast(lua_State *L) {
 	int ignore = lua_tointeger(L,6);
 
 	int rx,rz;
-
-	finder_raycast(ctx->finder, x0, z0, x1, z1, ignore, &rx, &rz, NULL, NULL);
+	int sx,sz;
+	finder_raycast(ctx->finder, x0, z0, x1, z1, ignore, &rx, &rz, &sx, &sz, NULL, NULL);
 
 	lua_pushinteger(L,rx);
 	lua_pushinteger(L,rz);
