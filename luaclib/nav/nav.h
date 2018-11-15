@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #define inline __inline
@@ -13,7 +14,7 @@
 
 #define MINHEAP_USE_LIBEVENT
 
-#include "minheap-adapter.h"
+#include "common/minheap-adapter.h"
 
 #define USE_NAV_TILE
 
@@ -25,10 +26,6 @@
 #define get_node(ctx,id) ((id < 0 || id >= ctx->node_size) ?NULL:&ctx->node[id])
 
 #define get_mask(ctx,index) (ctx.mask[index])
-
-#define max(a,b)    (((a) > (b)) ? (a) : (b))
-
-#define min(a,b)    (((a) < (b)) ? (a) : (b))
 
 struct vector3
 {

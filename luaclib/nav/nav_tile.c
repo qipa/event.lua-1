@@ -1,5 +1,8 @@
 #include "nav.h"
 
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
+
 #ifdef _WIN32
 #include <windows.h>
 #define USE_THREAD

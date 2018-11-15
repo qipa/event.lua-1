@@ -329,7 +329,7 @@ clear_node(struct nav_node* n) {
 }
 
 static inline void
-heap_clear(struct element* elt) {
+heap_clear(mh_elt_t* elt) {
 	struct nav_node *node = ( struct nav_node *)elt;
 	clear_node(node);
 }

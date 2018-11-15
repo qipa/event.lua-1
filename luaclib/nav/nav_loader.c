@@ -31,14 +31,14 @@ poly_area(struct nav_mesh_context* ctx, int size, int* poly) {
 }
 
 static int
-node_cmp_less(struct element * left, struct element * right) {
+node_cmp_less(mh_elt_t * left, mh_elt_t * right) {
 	struct nav_node *l = ( struct nav_node *) left;
 	struct nav_node *r = ( struct nav_node *) right;
 	return l->F < r->F;
 }
 
 static int
-node_cmp_great(struct element * left, struct element * right) {
+node_cmp_great(mh_elt_t * left, mh_elt_t * right) {
 	struct nav_node *l = ( struct nav_node * ) left;
 	struct nav_node *r = ( struct nav_node * ) right;
 	return l->F > r->F;
