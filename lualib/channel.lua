@@ -14,6 +14,10 @@ local tdecode = table.decode
 local setmetatable = setmetatable
 local pairs = pairs
 local gen_session = event.gen_session
+local event_fork = event.fork
+local event_wait = event.wait
+local event_wakeup = event.wakeup
+local event_error = event.error
 
 function channel:inherit()
 	local children = setmetatable({},{__index = self})
@@ -49,7 +53,7 @@ function channel:disconnect()
 	end)
 
 	for _,session in pairs(list) do
-		event.wakeup(session,false,"channel closed")
+		event_wakeup(session,false,"channel closed")
 	end
 	self.session_ctx = {}
 end
@@ -65,7 +69,7 @@ end
 local function call_method(channel,session,file,method,args)
 	local ok,result = xpcall(import.dispatch,debug.traceback,file,method,channel,args)
 	if not ok then
-		event.error(result)
+		event_error(result)
 	end
 	if session ~= 0 then
 		if not ok then
@@ -79,18 +83,18 @@ end
 function channel:dispatch(message,size)
 	if message.ret then
 		local call_ctx = self.session_ctx[message.session]
-		local ok = message.args[1]
-		if call_ctx.callback then
-			if ok then
-				event.fork(call_ctx.callback,tunpack(message.args,2))
+		local callback = call_ctx.callback 
+		if callback then
+			if message.args[1] then
+				event_fork(callback,tunpack(message.args,2))
 			end
 		else
-			event.wakeup(message.session,tunpack(message.args))
+			event_wakeup(message.session,tunpack(message.args))
 		end
 		self.session_ctx[message.session] = nil
 	else
 		-- monitor.report_input(message.file,message.method,size)
-		event.fork(call_method,self,message.session,message.file,message.method,message.args)
+		event_fork(call_method,self,message.session,message.file,message.method,message.args)
 	end
 end
 
@@ -121,7 +125,7 @@ function channel:call(file,method,args)
 
 	-- monitor.report_output(file,method,size)
 
-	local ok,value = event.wait(session)
+	local ok,value = event_wait(session)
 	if not ok then
 		error(value)
 	end

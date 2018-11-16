@@ -45,14 +45,14 @@ function run(serverId,distId,stat,dbAddr,cfgPath,ptoPath)
 	if cfgPath then
 		_G.config = {}
 
-		local list = util.list_dir(cfgPath,true,"lua",true)
+		-- local list = util.list_dir(cfgPath,true,"lua",true)
 
-		for _,path in pairs(list) do
-			local file = table.remove(path:split("/"))
-			local name = file:match("%S[^%.]+")
-			local data = loadfile(path)()
-			_G.config[name] = data
-		end
+		-- for _,path in pairs(list) do
+		-- 	local file = table.remove(path:split("/"))
+		-- 	local name = file:match("%S[^%.]+")
+		-- 	local data = loadfile(path)()
+		-- 	_G.config[name] = data
+		-- end
 	end
 
 	if ptoPath then
