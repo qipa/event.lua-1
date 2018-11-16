@@ -3,10 +3,9 @@ local protocol = require "protocol"
 local event = require "event"
 local model = require "model"
 
-local agentServer = import "module.agent_server"
+local agentServer = import "module.agent.agent_server"
 
 function __init__(self)
-	client.reader.c2s_agent_auth
 	protocol.handler["c2s_agent_auth"] = req_auth
 end
 

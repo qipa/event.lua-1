@@ -8,22 +8,37 @@ local persistence = require "persistence"
 local object = import "module.object"
 
 _serverChannel = _serverChannel or {}
-_serverNameCtx = _serverNameCtx or {}
 _serverCountor = _serverCountor or nil
+
+_loggerChannel = _loggerChannel or nil
+_loginChannel = _loginChannel or nil
+_worldChannel = _worldChannel or nil
+
 _eventListener = _eventListener or object.cObject:new()
+
+local function setChannel(name,channel)
+	if name == "logger" then
+		_loggerChannel = channel
+	elseif name == "login" then
+		_loginChannel = channel
+	elseif name == "world" then
+		_worldChannel = channel
+	end
+end
 
 local cClientChannel = channel:inherit()
 function cClientChannel:disconnect()
-	_eventListener:fireEvent("SERVER_DOWN",self.name,self.id)
 	_serverChannel[self.id] = nil
-	_serverNameCtx[self.name] = nil
+	setChannel(self.name,nil)
+	_eventListener:fireEvent("SERVER_DOWN",self.name,self.id)
+
 	event.wakeup(self.monitor)
 end
 
 local cServerChannel = channel:inherit()
 function cServerChannel:disconnect()
 	_serverChannel[self.id] = nil
-	_serverNameCtx[self.name] = nil
+	setChannel(self.name,nil)
 	_eventListener:fireEvent("SERVER_DOWN",self.name,self.id)
 end
 
@@ -65,7 +80,9 @@ function registerServer(channel,args)
 	assert(_serverChannel[args.id] == nil)
 
 	_serverChannel[args.id] = channel
-	_serverNameCtx[args.name] = args.id
+
+	setChannel(args.name,channel)
+
 	_eventListener:fireEvent("SERVER_CONNECT",args.name,args.id)
 
 	return env.distId
@@ -152,7 +169,9 @@ function connectServer(self,name,reconnect,try,addr)
 		assert(_serverChannel[channel.id] == nil)
 
 		_serverChannel[channel.id] = channel
-		_serverNameCtx[channel.name] = channel.id
+
+		setChannel(channel.name,channel)
+
 		_eventListener:fireEvent("SERVER_CONNECT",name,channel.id)
 	end
 
@@ -240,55 +259,43 @@ function callScene(self,serverId,file,method,args)
 end
 
 function sendLogin(self,file,method,args,callback)
-	local serverId = _serverNameCtx.login
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "login" then
+	if not _loginChannel then
 		error(string.format("sendLogin error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	channel:send(file,method,args,callback)
+	_loginChannel:send(file,method,args,callback)
 end
 
 function callLogin(self,file,method,args)
-	local serverId = _serverNameCtx.login
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "login" then
+	if not _loginChannel then
 		error(string.format("callLogin error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	return channel:call(file,method,args)
+	return _loginChannel:call(file,method,args)
 end
 
 function sendWorld(self,file,method,args,callback)
-	local serverId = _serverNameCtx.world
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "world" then
+	if not _worldChannel then
 		error(string.format("sendWorld error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	channel:send(file,method,args,callback)
+	_worldChannel:send(file,method,args,callback)
 end
 
 function callWorld(self,file,method,args)
-	local serverId = _serverNameCtx.world
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "world" then
+	if not _worldChannel then
 		error(string.format("callWorld error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	return channel:call(file,method,args)
+	return _worldChannel:call(file,method,args)
 end
 
 function sendLog(self,file,method,args,callback)
-	local serverId = _serverNameCtx.logger
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "logger" then
+	if not _loggerChannel then
 		error(string.format("sendLog error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	channel:send(file,method,args,callback)
+	_loggerChannel:send(file,method,args,callback)
 end
 
 function callLog(self,file,method,args)
-	local serverId = _serverNameCtx.log
-	local channel = _serverChannel[serverId]
-	if not channel or channel.name ~= "logger" then
+	if not _loggerChannel then
 		error(string.format("callLog error:serverId=%d,file=%s,method=%s",serverId or -1,file,method))
 	end
-	return channel:call(file,method,args)
+	return _loggerChannel:call(file,method,args)
 end
