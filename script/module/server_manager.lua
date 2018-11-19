@@ -7,8 +7,9 @@ local persistence = require "persistence"
 
 local object = import "module.object"
 
-_serverChannel = _serverChannel or {}
 _serverCountor = _serverCountor or nil
+
+_serverChannel = _serverChannel or {}
 
 _loggerChannel = _loggerChannel or nil
 _loginChannel = _loginChannel or nil

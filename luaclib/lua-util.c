@@ -551,10 +551,7 @@ lthread_id(lua_State* L) {
 
 int
 ltime(lua_State* L) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t now = (tv.tv_sec + tv.tv_usec * 1e-6) * 100;
-    lua_pushinteger(L,now);
+    lua_pushnumber(L, get_time_millis());
     return 1;
 }
 
@@ -1256,12 +1253,6 @@ lrandom_in_rectangle(lua_State* L) {
 }
 
 static int
-lget_time_millis(lua_State* L) {
-    lua_pushnumber(L, get_time_millis());
-    return 1;
-}
-
-static int
 lget_today_start(lua_State* L) {
     time_t ts = luaL_optinteger(L, 1, 0);
     lua_pushinteger(L, get_today_start(ts));
@@ -1407,7 +1398,6 @@ luaopen_util_core(lua_State* L){
         { "segment_intersect_segment", lsegment_intersect_segment },
         { "random_in_circle", lrandom_in_circle },
         { "random_in_rectangle", lrandom_in_rectangle },
-        { "get_time_millis", lget_time_millis },
         { "get_today_start", lget_today_start },
         { "get_today_over", lget_today_over },
         { "get_week_start", lget_week_start },
