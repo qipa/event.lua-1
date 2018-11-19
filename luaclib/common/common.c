@@ -113,6 +113,13 @@ message_decrypt(uint16_t* rseed,uint8_t* message,size_t size) {
 }
 
 //https://zhuanlan.zhihu.com/p/23903445
+//
+static inline void
+vector2_add(vector2_t* result, vector2_t* a, vector2_t* b) {
+    result->x = a->x + b->x;
+    result->z = a->z + b->z;
+}
+
 static inline void
 vector2_sub(vector2_t* result, vector2_t* a, vector2_t* b) {
     result->x = a->x - b->x;
@@ -125,19 +132,37 @@ vector2_dot(vector2_t* a, vector2_t* b) {
 }
 
 static inline float
-sqrt_vector2_magnitude(vector2_t* u) {
+vector2_magnitude2(vector2_t* u) {
     return u->x * u->x + u->z * u->z;
 }
 
 static inline float
 vector2_magnitude(vector2_t* u) {
-    return sqrt(sqrt_vector2_magnitude(u));
+    return sqrt(vector2_magnitude2(u));
 }
 
 static inline void
-lerp(vector2_t* result, vector2_t* from, vector2_t* to, float ratio) {
+vector2_lerp(vector2_t* result, vector2_t* from, vector2_t* to, float ratio) {
     result->x = from->x + (to->x - from->x) * ratio;
     result->z = from->z + (to->z - from->z) * ratio;
+}
+
+static inline float
+vector2_angle(vector2_t* a, vector2_t* b) {
+    float scalar = sqrt(vector2_magnitude2(a) * vector2_magnitude2(b));
+    return rad(acos(vector2_dot(a, b) / scalar));
+}
+
+static inline void
+vector2_rotation(vector2_t* dot, vector2_t* center,float angle) {
+    float r = rad(angle);
+    float si = sin(r);
+    float co = cos(r);
+
+    float x = dot->x;
+    float z = dot->z;
+    dot->x = (x - center->x) * co - (z - center->z) * si + center->x;
+    dot->z = (x - center->x) * si + (z - center->z) * co + center->z;
 }
 
 inline float
@@ -149,19 +174,6 @@ inline float
 dot2dot(vector2_t* a, vector2_t* b) {
     return sqrt(sqrt_dot2dot(a, b));
 }
-
-void
-rotation(vector2_t* dot, vector2_t* center,float angle) {
-    float r = rad(angle);
-    float si = sin(r);
-    float co = cos(r);
-
-    float x = dot->x;
-    float z = dot->z;
-    dot->x = (x - center->x) * co - (z - center->z) * si + center->x;
-    dot->z = (x - center->x) * si + (z - center->z) * co + center->z;
-}
-
 
 void
 move_torward(vector2_t* result, vector2_t* src, float angle, float dt) {
@@ -183,7 +195,7 @@ move_forward(vector2_t* result, vector2_t* from, vector2_t* to, float pass) {
         ratio = 1;
     }
 
-    lerp(result, from, to, ratio);
+    vector2_lerp(result, from, to, ratio);
 }
 
 static inline float
@@ -192,7 +204,7 @@ sqrt_dot2segment(vector2_t* x0, vector2_t* u, vector2_t* x) {
 
     vector2_sub(&vt, x, x0);
 
-    float t = vector2_dot(&vt, u) / sqrt_vector2_magnitude(u);
+    float t = vector2_dot(&vt, u) / vector2_magnitude2(u);
     if (t < 0) {
         t = 0;
     } else if (t > 1) {
@@ -231,7 +243,7 @@ rectangle_intersect(vector2_t* src, float length, float width, float angle, vect
     delta_center.x = center->x - rt_center.x;
     delta_center.z = center->z - rt_center.z;
 
-    rotation(&delta_center, (vector2_t*)&VECTOR2_ZERO, 360 - angle);
+    vector2_rotation(&delta_center, (vector2_t*)&VECTOR2_ZERO, 360 - angle);
 
     vector2_t h;
     h.x = length / 2;
@@ -245,7 +257,7 @@ rectangle_intersect(vector2_t* src, float length, float width, float angle, vect
     u.x = v.x - h.x < 0 ? 0 : v.x - h.x;
     u.z = v.z - h.z < 0 ? 0 : v.z - h.z;
 
-    return sqrt_vector2_magnitude(&u) <= r * r;
+    return vector2_magnitude2(&u) <= r * r;
 }
 
 int
@@ -255,7 +267,7 @@ sector_intersect(vector2_t* src, float angle, float degree, float l, vector2_t* 
 
     float range = l + r;
 
-    float sqrt_magnitude = sqrt_vector2_magnitude(&dt);
+    float sqrt_magnitude = vector2_magnitude2(&dt);
     if ( sqrt_magnitude > range * range) {
         return 0;
     }
@@ -296,7 +308,7 @@ circle_intersect(vector2_t* src, float l, vector2_t* center, float r) {
 
     float range = l + r;
     if (abs(d.x) <= range && abs(d.z) <= range) {
-        return sqrt_vector2_magnitude(&d) <= range * range;
+        return vector2_magnitude2(&d) <= range * range;
     }
     return 0;
 }
@@ -400,7 +412,7 @@ inside_rectangle(vector2_t* src, float angle, float length, float width, vector2
 
     float diff_z_radian = deg(abs(diff_z_angle));
 
-    float diff_len = sqrt(sqrt_vector2_magnitude(&delta));
+    float diff_len = sqrt(vector2_magnitude2(&delta));
 
     float change_x = diff_len * cos(diff_z_radian);
     float change_z = diff_len * sin(diff_z_radian);
@@ -479,5 +491,5 @@ random_in_rectangle(vector2_t* result, vector2_t* center, float length, float wi
         return;
     }
 
-    rotation(result, center, 360 - angle);
+    vector2_rotation(result, center, 360 - angle);
 }
