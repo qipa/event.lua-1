@@ -24,9 +24,9 @@ function channel:inherit()
 	return children
 end
 
-function channel:new(buffer,addr)
+function channel:new(channel_buff,addr)
 	local ctx = setmetatable({},{__index = self})
-	ctx.buffer = buffer
+	ctx.channel_buff = channel_buff
 	ctx.addr = addr or "unknown"
 	ctx.session_ctx = {}
 	return ctx
@@ -36,8 +36,8 @@ function channel:init(...)
 
 end
 
-function channel:attach(buffer)
-	self.buffer = buffer
+function channel:attach(channel_buff)
+	self.channel_buff = channel_buff
 end
 
 function channel:disconnect()
@@ -59,11 +59,11 @@ function channel:disconnect()
 end
 
 function channel:read(num)
-	return self.buffer:read(num)
+	return self.channel_buff:read(num)
 end
 
 function channel:read_util(sep)
-	return self.buffer:read_util(sep)
+	return self.channel_buff:read_util(sep)
 end
 
 local function call_method(channel,session,file,method,args)
@@ -111,7 +111,7 @@ function channel:send(file,method,args,callback)
 	end
 
 	local ptr,size = tencode({file = file,method = method,session = 0,args = args})
-	self.buffer:write(ptr,size)
+	self.channel_buff:write(ptr,size)
 	
 	-- monitor.report_output(file,method,size)
 end
@@ -121,7 +121,7 @@ function channel:call(file,method,args)
 	self.session_ctx[session] = {}
 
 	local ptr,size = tencode({file = file,method = method,session = session,args = args})
-	self.buffer:write(ptr,size)
+	self.channel_buff:write(ptr,size)
 
 	-- monitor.report_output(file,method,size)
 
@@ -134,15 +134,15 @@ end
 
 function channel:ret(session,...)
 	local ptr,size = tencode({ret = true,session = session,args = {...}})
-	self.buffer:write(ptr,size)
+	self.channel_buff:write(ptr,size)
 end
 
 function channel:close()
-	self.buffer:close(false)
+	self.channel_buff:close(false)
 end
 
 function channel:close_immediately()
-	self.buffer:close(true)
+	self.channel_buff:close(true)
 	self:disconnect()
 end
 
