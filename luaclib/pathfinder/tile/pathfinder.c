@@ -41,6 +41,7 @@ typedef struct node {
 	float H;
 	float F;
 	int closed;
+	int recorded;
 } node_t;
 
 typedef struct pathfinder {
@@ -85,6 +86,74 @@ search_node(pathfinder_t* finder, int x0, int z0, int x1, int z1, finder_dump du
 	finder_raycast(finder, x1, z1, x0, z0, 0, &rx, &rz, &stopx, &stopz, dump, ud);
 	finder_mask_reverse(finder);
 	return find_node(finder, stopx, stopz);
+}
+
+void
+is_min_node(pathfinder_t* finder, int cx, int cz, int dx, int dz, int* dt_min, int* mx, int* mz, node_t** list, finder_dump dump, void* ud) {
+	node_t* node = find_node(finder, cx + dx, cz + dz);
+	if (node && !isblock(finder, node)) {
+		if (node->recorded == 0) {
+			node->recorded = 1;
+			node->next = *list;
+			*list = node;
+
+			if (dump) {
+				dump(ud, cx + dx, cz + dz);
+			}
+			
+			int dt = dx * dx + dz * dz;
+			if ( *dt_min < 0 || *dt_min > dt ) {
+				*dt_min = dt;
+				*mx = cx + dx;
+				*mz = cz + dz;
+			}
+		}
+	}
+}
+
+void 
+search_node_in_circle(struct pathfinder* finder, int x, int z, int r, int* rx, int* rz, finder_dump dump, void* ud) {
+	int min_dt = -1;
+
+	node_t* list = NULL;
+
+	for ( int i = 1; i <= r;i++ ) {
+		int tx = 0;
+		int tz = i;
+
+		int d = 3 - 2 * r;
+		while ( tx <= tz )
+		{
+			is_min_node(finder, x, z, tx, tz, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, -tx, tz, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, tx, -tz, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, -tx, -tz, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, tz, tx, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, -tz, tx, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, tz, -tx, &min_dt, rx, rz, &list, dump, ud);
+			is_min_node(finder, x, z, -tz, -tx, &min_dt, rx, rz, &list, dump, ud);
+			if ( d < 0 ) {
+				d = d + 4 * tx + 6;
+			}
+			else {
+				d = d + 4 * ( tx - tz ) + 10;
+				tz--;
+			}
+			tx++;
+		}
+		if ( min_dt != -1 ) {
+			break;
+		}
+	}
+
+	while ( list ) {
+		node_t* tmp = list;
+		tmp->recorded = 0;
+		list = tmp->next;
+		tmp->next = NULL;
+	}
+
+	return find_node(finder, rx, rz);
 }
 
 static inline int
@@ -491,7 +560,7 @@ swap(int* a, int *b) {
 	*b = tmp;
 }
 
-//breshenham直线算法
+//breshenhamֱ���㷨
 void
 raycast_breshenham(pathfinder_t* finder, int x0, int z0, int x1, int z1, int ignore, int* rx, int* rz, int* stopx, int* stopz, finder_dump dump, void* ud) {
 	int dx = abs(x1 - x0);
