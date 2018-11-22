@@ -158,9 +158,9 @@ search_node_in_circle(struct pathfinder* finder, int x, int z, int r, finder_dum
 
 	while ( list ) {
 		node_t* tmp = list;
-		tmp->recorded = 0;
 		list = tmp->next;
 		tmp->next = NULL;
+		tmp->recorded = 0;
 	}
 
 	if ( min_dt < 0 ) {
