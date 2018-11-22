@@ -631,11 +631,6 @@ finder_raycast(struct pathfinder* finder, int x0, int z0, int x1, int z1, int ig
 #endif
 }
 
-int
-finder_movable(pathfinder_t * finder, int x, int z, int ignore) {
-	return movable(finder, x, z, ignore);
-}
-
 void
 finder_bound(pathfinder_t * finder, int* width, int* heigh) {
 	*width = finder->width;
@@ -664,4 +659,25 @@ finder_mask_reverse(pathfinder_t * finder) {
 	for ( ; i < MARK_MAX; i++ ) {
 		finder->mask[i] = !finder->mask[i];
 	}
+}
+
+void finder_random(struct pathfinder * finder, int* x, int* z) {
+	while(true) {
+		int index = rand() % (finder->heigh * finder->width);
+		node_t* node = finder->node[index];
+		if (movable(finder, node->x, node->z, 0)) {
+			*x = node->x;
+			*z = node->z;
+			return;
+		}
+	}
+}
+
+void finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* x, int* z) {
+
+}
+
+int
+finder_movable(pathfinder_t * finder, int x, int z, int ignore) {
+	return movable(finder, x, z, ignore);
 }
