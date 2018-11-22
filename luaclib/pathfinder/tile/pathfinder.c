@@ -78,6 +78,16 @@ isblock(pathfinder_t* finder, node_t* node) {
 	return node->block != 0;
 }
 
+static inline int
+movable(pathfinder_t* finder, int x, int z, int ignore) {
+	node_t *node = find_node(finder, x, z);
+	if ( node == NULL )
+		return 0;
+	if ( ignore )
+		return !isblock(finder, node);
+	return finder->mask[node->block] == 1;
+}
+
 node_t*
 search_node(pathfinder_t* finder, int x0, int z0, int x1, int z1, finder_dump dump, void* ud) {
 	int rx, rz;
@@ -90,8 +100,8 @@ search_node(pathfinder_t* finder, int x0, int z0, int x1, int z1, finder_dump du
 
 void
 is_min_node(pathfinder_t* finder, int cx, int cz, int dx, int dz, int* dt_min, int* mx, int* mz, node_t** list, finder_dump dump, void* ud) {
-	node_t* node = find_node(finder, cx + dx, cz + dz);
-	if (node && !isblock(finder, node)) {
+	if (movable(finder, cx + dx, cz + dz, 0)) {
+		node_t *node = find_node(finder, cx + dx, cz + dz);
 		if (node->recorded == 0) {
 			node->recorded = 1;
 			node->next = *list;
@@ -116,22 +126,18 @@ search_node_in_circle(struct pathfinder* finder, int x, int z, int r, int* rx, i
 	int min_dt = -1;
 
 	node_t* list = NULL;
-
-	for ( int i = 1; i <= r;i++ ) {
+	int i;
+	for ( i = 1; i <= r;i++ ) {
 		int tx = 0;
 		int tz = i;
 
 		int d = 3 - 2 * r;
-		while ( tx <= tz )
-		{
-			is_min_node(finder, x, z, tx, tz, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, -tx, tz, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, tx, -tz, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, -tx, -tz, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, tz, tx, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, -tz, tx, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, tz, -tx, &min_dt, rx, rz, &list, dump, ud);
-			is_min_node(finder, x, z, -tz, -tx, &min_dt, rx, rz, &list, dump, ud);
+		while ( tx <= tz ) {
+			int dir[][2] = {{tx, tz},{-tx, tz},{tx, -tz},{-tx, -tz},{tz, tx},{-tz, tx},{tz, -tx},{-tz, -tx}};
+			int j;
+			for(j = 0;j < 8;j++) {
+				is_min_node(finder, x, z, dir[j][1], dir[j][2], &min_dt, rx, rz, &list, dump, ud);
+			}
 			if ( d < 0 ) {
 				d = d + 4 * tx + 6;
 			}
@@ -141,6 +147,7 @@ search_node_in_circle(struct pathfinder* finder, int x, int z, int r, int* rx, i
 			}
 			tx++;
 		}
+
 		if ( min_dt != -1 ) {
 			break;
 		}
@@ -152,18 +159,6 @@ search_node_in_circle(struct pathfinder* finder, int x, int z, int r, int* rx, i
 		list = tmp->next;
 		tmp->next = NULL;
 	}
-
-	return find_node(finder, rx, rz);
-}
-
-static inline int
-movable(pathfinder_t* finder, int x, int z, int ignore) {
-	node_t *node = find_node(finder, x, z);
-	if ( node == NULL )
-		return 0;
-	if ( ignore )
-		return !isblock(finder, node);
-	return finder->mask[node->block] == 1;
 }
 
 static inline void
