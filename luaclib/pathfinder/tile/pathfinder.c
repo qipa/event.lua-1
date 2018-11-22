@@ -139,7 +139,7 @@ search_node_in_circle(struct pathfinder* finder, int x, int z, int r, finder_dum
 			int dir[][2] = { { tx, tz }, { -tx, tz }, { tx, -tz }, { -tx, -tz }, { tz, tx }, { -tz, tx }, { tz, -tx }, { -tz, -tx } };
 			int j;
 			for ( j = 0; j < 8; j++ ) {
-				is_min_node(finder, x, z, dir[j][1], dir[j][2], &min_dt, &rx, &rz, &list, dump, ud);
+				is_min_node(finder, x, z, dir[j][0], dir[j][1], &min_dt, &rx, &rz, &list, dump, ud);
 			}
 			if ( d < 0 ) {
 				d = d + 4 * tx + 6;
