@@ -55,13 +55,13 @@ word_add(tree_t* root_tree, const char* word, size_t size) {
 		int length = utf8codepointsize(utf8);
 		i += length;
 
-		tree_t* child_tree = tree_get(tree->hash, ch);
+		tree_t* child_tree = tree_get(tree->hash, utf8);
 		if ( !child_tree ) {
 			child_tree = malloc(sizeof( *tree ));
 			child_tree->tail = 0;
 			child_tree->hash = kh_init(word);
 
-			tree_set(tree->hash, ch, child_tree);
+			tree_set(tree->hash, utf8, child_tree);
 
 			tree = child_tree;
 		}
@@ -165,9 +165,9 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 
 		switch(phase) {
 			case PHASE_SEARCH: {
-				tree_t* tmp = tree_get(tree->hash, utf8);
-				if (tmp) {
-					tree = tmp;
+				tree_t* child_tree = tree_get(tree->hash, utf8);
+				if (child_tree) {
+					tree = child_tree;
 					phase = PHASE_MATCH;
 					filter_start = i - length;
 					filter_over = i;
@@ -197,9 +197,9 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 						continue;
 					}
 				}
-				tree_t* tmp = tree_get(tree->hash, utf8);
-				if (tmp) {
-					tree = tmp;
+				tree_t* child_tree = tree_get(tree->hash, utf8);
+				if (child_tree) {
+					tree = child_tree;
 					++filter_offset;
 					if (tree->tail) {
 						if ( !replace ) {
