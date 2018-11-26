@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <iconv.h>  
+
 
 #include "lua.h"
 #include "lualib.h"
@@ -339,39 +339,7 @@ lfilter(lua_State* L) {
 	return 1;
 }
 
-static int
-lconvert(lua_State* L) {
-	size_t size;
-	const char* word = lua_tolstring(L,1,&size);
 
-	const char* from_charset = lua_tostring(L, 2);
-	const char* to_charset = lua_tostring(L, 3);
-
-	iconv_t conv = iconv_open(to_charset, from_charset);
-	if (conv == (iconv_t)-1) {
-		lua_pushboolean(L, 0);
-		lua_pushstring(L, strerror(errno));
-        return 2; 
-	}
-
-	char* from = strdup(word);
-	size_t out_size = size * 4;
-	char* out = malloc(out_size);
-	memset(out, 0, out_size);
-
-	char* tmp = out;
-	
-	if (iconv(conv, &from, &size, &tmp, &out_size) == -1)   {
-		iconv_close(conv);
-		lua_pushboolean(L, 0);
-		lua_pushstring(L, strerror(errno));
-        return 2; 
-	}
-	iconv_close(conv);
-	lua_pushboolean(L, 1);
-    lua_pushstring(L, out);
-    return 2;
-}
 
 static int
 lsplit(lua_State* L) {
@@ -445,7 +413,6 @@ luaopen_filter0_core(lua_State *L) {
 	const luaL_Reg l[] = {
 		{ "create", lcreate },
 		{ "split", lsplit },
-		{ "convert", lconvert },
 		{ NULL, NULL },
 	};
 	luaL_newlib(L, l);

@@ -20,7 +20,7 @@ _M.rmdir = lfs.rmdir
 _M.chdir = lfs.chdir
 _M.dir = lfs.dir
 
-_M.convert = filter_core.convert
+
 _M.split_utf8 = filter_core.split
 _M.word_filter_create = filter_core.create
 
