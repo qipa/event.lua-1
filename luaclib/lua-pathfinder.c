@@ -8,8 +8,11 @@
 #include <stdint.h>
 #include "pathfinder/tile/pathfinder.h"
 
+#define CELL(ctx,val) (int)(val / ctx->grid)
+
 typedef struct pathfinder_context {
 	int scene;
+	int grid;
 	struct pathfinder* finder;
 } finder_ctx_t;
 
@@ -149,8 +152,9 @@ create(lua_State *L) {
 	char* data = NULL;
 
 	FILE* ptr = fopen(file, "r");
-	if ( !ptr )
+	if ( !ptr ) {
 		luaL_error(L, "no such file:%s", file);
+	}
 
 	fread(&version, 1, sizeof( int ), ptr);
 	fread(&width, 1, sizeof( int ), ptr);
@@ -162,9 +166,9 @@ create(lua_State *L) {
 	fread(data, 1, size, ptr);
 	fclose(ptr);
 
-
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_newuserdata(L, sizeof(finder_ctx_t));
 	ctx->scene = scene;
+	ctx->grid = grid;
 	ctx->finder = finder_create(width,heigh,data);
 	free(data);
 
