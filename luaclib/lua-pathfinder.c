@@ -70,7 +70,7 @@ _find(lua_State *L) {
 			lua_pushnumber(L, x0);
 			lua_rawseti(L, -2, 1);
 			lua_pushnumber(L, z0);
-			lua_rawseti(L, -2, 1);
+			lua_rawseti(L, -2, 2);
 
 		lua_rawseti(L, -2, 1);
 
@@ -78,7 +78,7 @@ _find(lua_State *L) {
 			lua_pushnumber(L, x1);
 			lua_rawseti(L, -2, 1);
 			lua_pushnumber(L, z1);
-			lua_rawseti(L, -2, 1);
+			lua_rawseti(L, -2, 2);
 
 		lua_rawseti(L, -2, 2);
 	}
