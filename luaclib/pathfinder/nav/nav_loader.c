@@ -31,17 +31,14 @@ poly_area(struct nav_mesh_context* ctx, int size, int* poly) {
 }
 
 static int
-node_cmp_less(mh_elt_t * left, mh_elt_t * right) {
-	struct nav_node *l = ( struct nav_node *) left;
-	struct nav_node *r = ( struct nav_node *) right;
-	return l->F < r->F;
-}
-
-static int
-node_cmp_great(mh_elt_t * left, mh_elt_t * right) {
+node_cmp(mh_elt_t * left, mh_elt_t * right) {
 	struct nav_node *l = ( struct nav_node * ) left;
 	struct nav_node *r = ( struct nav_node * ) right;
+#ifdef MINHEAP_USE_LIBEVENT
 	return l->F > r->F;
+#else
+	return l->F < r->F;
+#endif
 }
 
 int
@@ -170,11 +167,7 @@ init_mesh(struct nav_mesh_context* mesh_ctx) {
 	mesh_ctx->result.offset = 0;
 	mesh_ctx->result.wp = ( struct vector3* )malloc(sizeof( struct vector3 )*mesh_ctx->result.size);
 
-#ifdef MINHEAP_USE_LIBEVENT
-	mh_ctor(&mesh_ctx->openlist, node_cmp_great);
-#else
-	mh_ctor(&mesh_ctx->openlist, node_cmp_less);
-#endif
+	mh_ctor(&mesh_ctx->openlist, node_cmp);
 
 	mesh_ctx->closelist = NULL;
 }

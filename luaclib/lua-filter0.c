@@ -28,6 +28,12 @@ typedef struct word_tree {
 	uint8_t tail;
 } tree_t;
 
+typedef struct replace_context {
+	char* replace;
+	int offset;
+	int size;
+} replace_ctx_t;
+
 void
 tree_set(tree_hash_t* hash, utf8_int32_t utf8, tree_t* tree) {
 	int ok;
@@ -92,12 +98,6 @@ word_delete(tree_t* root_tree, const char* word, size_t size) {
 	}
 	tree->tail = 0;
 }
-
-typedef struct replace_context {
-	char* replace;
-	int offset;
-	int size;
-} replace_ctx_t;
 
 static inline int
 replace_commit(replace_ctx_t* ctx, const char* data, int size) {
@@ -338,8 +338,6 @@ lfilter(lua_State* L) {
 	free(replace_bk);
 	return 1;
 }
-
-
 
 static int
 lsplit(lua_State* L) {
