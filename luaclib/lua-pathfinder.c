@@ -88,12 +88,36 @@ _bound(lua_State* L) {
 static int
 _movable(lua_State *L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
-	int x = luaL_checkinteger(L,2);
-	int z = luaL_checkinteger(L,3);
-	int ignore = luaL_checkinteger(L,4);
+	int x = luaL_checkinteger(L, 2);
+	int z = luaL_checkinteger(L, 3);
+	int ignore = luaL_checkinteger(L, 4);
 	int ok = finder_movable(ctx->finder, x, z, ignore);
 	lua_pushboolean(L,ok);
 	return 1;
+}
+
+static int
+_random(lua_State* L) {
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int x,z;
+	finder_random(ctx->finder, &x, &z);
+	lua_pushinteger(L, x);
+	lua_pushinteger(L, z);
+	return 2;
+}
+
+static int
+_random_in_circle(lua_State* L) {
+	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
+	int cx = luaL_checkinteger(L, 2);
+	int cz = luaL_checkinteger(L, 3);
+	int r = luaL_checkinteger(L, 4);
+
+	int x,z;
+	finder_random_in_circle(ctx->finder, cx, cz, r, &x, &z);
+	lua_pushinteger(L, x);
+	lua_pushinteger(L, z);
+	return 2;
 }
 
 static int
@@ -154,6 +178,8 @@ create(lua_State *L) {
 		{ "raycast", _raycast },
 		{ "bound", _bound },
 		{ "movable", _movable },
+		{ "random", _random },
+		{ "random_in_circle", _random_in_circle },
 		{ "mask_set", _mask_set },
 		{ "mask_reset", _mask_reset },
 		{ NULL, NULL },
