@@ -1068,7 +1068,7 @@ lrotation(lua_State* L) {
     vector2_t dot = {x, z};
     vector2_t center = {cx, cz};
 
-    rotation(&dot, &center, angle);
+    vector2_rotation(&dot, &center, angle);
 
     lua_pushnumber(L, dot.x);
     lua_pushnumber(L, dot.z);

@@ -12,6 +12,8 @@
 
 #include "khash.h"
 
+#include "common/utf8.h"
+
 #define PHASE_SEARCH 0
 #define PHASE_MATCH 1
 
@@ -404,14 +406,12 @@ lsplit(lua_State* L) {
 	int index = 1;
 	size_t i;
 	for(i = 0;i < size;) {
-		char ch[8] = {0};
-
-		int length = split_utf8(word,size,i);
-		memcpy(ch,&word[i],length);
-
-		lua_pushlstring(L, ch, length);
+		utf8_int32_t utf8;
+		char* next = utf8codepoint(word,&utf8);
+		size_t length = utf8codepointsize(utf8);
+		lua_pushlstring(L, word, length);
 		lua_seti(L, -2, index++);
-
+		word = next;
 		i += length;
 	}
 

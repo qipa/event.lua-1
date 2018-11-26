@@ -153,7 +153,7 @@ vector2_angle(vector2_t* a, vector2_t* b) {
     return rad(acos(vector2_dot(a, b) / scalar));
 }
 
-static inline void
+inline void
 vector2_rotation(vector2_t* dot, vector2_t* center,float angle) {
     float r = rad(angle);
     float si = sin(r);
