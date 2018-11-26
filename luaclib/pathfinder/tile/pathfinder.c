@@ -416,7 +416,7 @@ finder_find(pathfinder_t * finder, int x0, int z0, int x1, int z1, int smooth, f
 
 	node_t * to = find_node(finder, x1, z1);
 	if (!to || isblock(finder, to)) {
-		to = search_node(finder, x1, z1, 10, NULL, NULL);
+		to = search_node(finder, x1, z1, 10);
 		if (!to) {
 			return FINDER_OVER_ERROR;
 		}

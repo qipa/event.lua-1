@@ -34,6 +34,6 @@ void finder_mask_reset(struct pathfinder * finder);
 void finder_mask_reverse(struct pathfinder * finder);
 
 void finder_random(struct pathfinder * finder, int* x, int* z);
-void finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* x, int* z);
+int finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* x, int* z);
 
 #endif
