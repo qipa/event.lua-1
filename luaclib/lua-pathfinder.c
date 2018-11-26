@@ -8,7 +8,8 @@
 #include <stdint.h>
 #include "pathfinder/tile/pathfinder.h"
 
-#define CELL(ctx,val) (int)(val / ctx->grid)
+#define TO_TILE(ctx,val) (int)(val / ctx->grid)
+#define TO_COORD(ctx,val) (double)(((double)val + 0.5) * (double)ctx->grid)
 
 typedef struct pathfinder_context {
 	int scene;
@@ -18,6 +19,7 @@ typedef struct pathfinder_context {
 
 typedef struct pathfinder_ud {
 	lua_State *L;
+	finder_ctx_t *ctx;
 	int index;
 } finder_ud_t;
 
@@ -25,9 +27,9 @@ void finder_result_callback(void *ud, int x, int z) {
 	finder_ud_t* args = (finder_ud_t*)ud;
 
 	lua_createtable(args->L,2,0);
-		lua_pushinteger(args->L,x);
+		lua_pushnumber(args->L,TO_COORD(args->ctx,x));
 		lua_rawseti(args->L,-2,1);
-		lua_pushinteger(args->L,z);
+		lua_pushnumber(args->L,TO_COORD(args->ctx,z));
 		lua_rawseti(args->L,-2,2);
 	lua_rawseti(args->L,-2,++args->index);
 }
@@ -42,39 +44,71 @@ _release(lua_State *L) {
 static int
 _find(lua_State *L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
-	int x0 = luaL_checkinteger(L,2);
-	int z0 = luaL_checkinteger(L,3);
-	int x1 = luaL_checkinteger(L,4);
-	int z1 = luaL_checkinteger(L,5);
+	double x0 = luaL_checknumber(L,2);
+	double z0 = luaL_checknumber(L,3);
+	double x1 = luaL_checknumber(L,4);
+	double z1 = luaL_checknumber(L,5);
 	int smooth = luaL_checkinteger(L,6);
+
+	int ix0 = TO_TILE(ctx,x0);
+	int iz0 = TO_TILE(ctx,z0);
+	int ix1 = TO_TILE(ctx,x1);
+	int iz1 = TO_TILE(ctx,z1);
 
 	finder_ud_t ud;
 	ud.L = L;
+	ud.ctx = ctx;
 	ud.index = 0;
 
 	lua_newtable(L);
 
-	int ok = finder_find(ctx->finder, x0, z0, x1, z1, smooth, finder_result_callback, &ud, NULL, NULL, 64);
+	int ok = finder_find(ctx->finder, ix0, iz0, ix1, iz1, smooth, finder_result_callback, &ud, NULL, NULL, 64);
 	lua_pushinteger(L, ok);
 	lua_pushvalue(L, -2);
+	if (ok == FINDER_SAME_POINT_ERROR) {
+		lua_newtable(L);
+			lua_pushnumber(L, x0);
+			lua_rawseti(L, -2, 1);
+			lua_pushnumber(L, z0);
+			lua_rawseti(L, -2, 1);
+
+		lua_rawseti(L, -2, 1);
+
+		lua_newtable(L);
+			lua_pushnumber(L, x1);
+			lua_rawseti(L, -2, 1);
+			lua_pushnumber(L, z1);
+			lua_rawseti(L, -2, 1);
+
+		lua_rawseti(L, -2, 2);
+	}
+	
 	return 2;
 }
 
 static int
 _raycast(lua_State *L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
-	int x0 = luaL_checkinteger(L,2);
-	int z0 = luaL_checkinteger(L,3);
-	int x1 = luaL_checkinteger(L,4);
-	int z1 = luaL_checkinteger(L,5);
+	double x0 = luaL_checknumber(L,2);
+	double z0 = luaL_checknumber(L,3);
+	double x1 = luaL_checknumber(L,4);
+	double z1 = luaL_checknumber(L,5);
 	int ignore = luaL_checkinteger(L,6);
+
+	int ix0 = TO_TILE(ctx,x0);
+	int iz0 = TO_TILE(ctx,z0);
+	int ix1 = TO_TILE(ctx,x1);
+	int iz1 = TO_TILE(ctx,z1);
 
 	int rx,rz;
 	int sx,sz;
-	finder_raycast(ctx->finder, x0, z0, x1, z1, ignore, &rx, &rz, &sx, &sz, NULL, NULL);
-
-	lua_pushinteger(L,rx);
-	lua_pushinteger(L,rz);
+	if (finder_raycast(ctx->finder, ix0, iz0, ix1, iz1, ignore, &rx, &rz, &sx, &sz, NULL, NULL) == 0) {
+		lua_pushnumber(L, x1);
+		lua_pushnumber(L, z1);
+	} else {
+		lua_pushnumber(L,TO_COORD(ctx,rx));
+		lua_pushnumber(L,TO_COORD(ctx,rz));
+	}
 	return 2;
 }
 
@@ -91,10 +125,14 @@ _bound(lua_State* L) {
 static int
 _movable(lua_State *L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
-	int x = luaL_checkinteger(L, 2);
-	int z = luaL_checkinteger(L, 3);
+	double x = luaL_checknumber(L, 2);
+	double z = luaL_checknumber(L, 3);
 	int ignore = luaL_checkinteger(L, 4);
-	int ok = finder_movable(ctx->finder, x, z, ignore);
+
+	int ix = TO_TILE(ctx,x);
+	int iz = TO_TILE(ctx,z);
+
+	int ok = finder_movable(ctx->finder, ix, iz, ignore);
 	lua_pushboolean(L,ok);
 	return 1;
 }
@@ -104,22 +142,25 @@ _random(lua_State* L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
 	int x,z;
 	finder_random(ctx->finder, &x, &z);
-	lua_pushinteger(L, x);
-	lua_pushinteger(L, z);
+	lua_pushnumber(L, TO_COORD(ctx,x));
+	lua_pushnumber(L, TO_COORD(ctx,z));
 	return 2;
 }
 
 static int
 _random_in_circle(lua_State* L) {
 	finder_ctx_t* ctx = (finder_ctx_t*)lua_touserdata(L, 1);
-	int cx = luaL_checkinteger(L, 2);
-	int cz = luaL_checkinteger(L, 3);
+	double cx = luaL_checknumber(L, 2);
+	double cz = luaL_checknumber(L, 3);
 	int r = luaL_checkinteger(L, 4);
+	
+	int icx = TO_TILE(ctx,cx);
+	int icz = TO_TILE(ctx,cz);
 
 	int x,z;
-	finder_random_in_circle(ctx->finder, cx, cz, r, &x, &z);
-	lua_pushinteger(L, x);
-	lua_pushinteger(L, z);
+	finder_random_in_circle(ctx->finder, icx, icz, r, &x, &z);
+	lua_pushnumber(L, TO_COORD(ctx,x));
+	lua_pushnumber(L, TO_COORD(ctx,z));
 	return 2;
 }
 
