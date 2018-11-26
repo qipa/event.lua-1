@@ -744,6 +744,7 @@ finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* 
 	}
 
 	if (index == 0) {
+		free(node_index);
 		return -1;
 	}
 
