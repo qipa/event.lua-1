@@ -26,8 +26,9 @@ void finder_release(struct pathfinder* finder);
 int finder_find(struct pathfinder * finder, int x0, int z0, int x1, int z1, int smooth, finder_result cb, void* result_ud, finder_dump dump, void* dump_ud,float cost);
 int finder_raycast(struct pathfinder* finder, int x0, int z0, int x1, int z1, int ignore, int* resultx, int* resultz, int* stopx, int* stopz, finder_dump dump, void* ud);
 
-void finder_bound(struct pathfinder* finder, int* width, int* heigh);
 int finder_movable(struct pathfinder * finder, int x, int z, int ignore);
+
+void finder_bound(struct pathfinder* finder, int* width, int* heigh);
 void finder_mask_set(struct pathfinder * finder, int mask_index, int enable);
 void finder_mask_reset(struct pathfinder * finder);
 void finder_mask_reverse(struct pathfinder * finder);
