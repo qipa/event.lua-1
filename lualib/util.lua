@@ -1,6 +1,6 @@
 require("lfs")
 local util_core = require "util.core"
-local filter_core = require "filter0.core"
+local trie = require "trie"
 
 local type = type
 local assert = assert
@@ -21,8 +21,8 @@ _M.chdir = lfs.chdir
 _M.dir = lfs.dir
 
 
-_M.split_utf8 = filter_core.split
-_M.word_filter_create = filter_core.create
+_M.split_utf8 = trie.split
+_M.trie_create = trie.create
 
 --十进制右边数起第b位
 _M.decimal_bit = util_core.decimal_bit

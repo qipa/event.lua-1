@@ -454,7 +454,7 @@ lcreate(lua_State* L) {
 }
 
 int 
-luaopen_filter1_core(lua_State *L) {
+luaopen_filter(lua_State *L) {
 	luaL_checkversion(L);
 
 	const luaL_Reg l[] = {

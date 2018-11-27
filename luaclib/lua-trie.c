@@ -298,7 +298,7 @@ static int
 lcreate(lua_State* L) {
 	tree_t* tree = lua_newuserdata(L, sizeof( *tree ));
 	tree->hash = kh_init(word);
-	luaL_newmetatable(L, "meta_filter");
+	luaL_newmetatable(L, "meta_trie");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -498,22 +498,24 @@ ldump(lua_State* L) {
 	int depth = 0;
 
 	FILE* f = NULL;
-	if ( file ) {
+	if (file) {
 		f = fopen(file, "w");
 	}
 
 	kh_foreach(tree->hash, utf8, child, dump(utf8, child, depth, f));
-
-	fclose(f);
-
+	
+	if (file) {
+		fclose(f);
+	}
+	
 	return 0;
 }
 
 int 
-luaopen_filter0_core(lua_State *L) {
+luaopen_trie(lua_State *L) {
 	luaL_checkversion(L);
 
-	luaL_newmetatable(L, "meta_filter");
+	luaL_newmetatable(L, "meta_trie");
 	const luaL_Reg meta[] = {
 		{ "add", ladd },
 		{ "delete", ldelete },

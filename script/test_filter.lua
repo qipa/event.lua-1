@@ -1,5 +1,5 @@
-local filter0 = require "filter0.core"
-local filter1 = require "filter1.core"
+
+local filter1 = require "filter"
 local dump = require "dump.core"
 local util = require "util"
 local event = require "event"
@@ -19,7 +19,7 @@ for _,word in pairs(filter_list.ForBiddenCharInName) do
 	forbidden_word[word] = true
 end
 
-local filter_inst0 = filter0.create()
+local filter_inst0 = util.trie_create()
 for word in pairs(forbidden_word) do
 	filter_inst0:add(word)
 end

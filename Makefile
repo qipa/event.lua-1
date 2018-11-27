@@ -22,7 +22,7 @@ EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
 LUA_CLIB_PATH ?= ./.libs
 LUA_CLIB_SRC ?= ./luaclib
-LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav mysql protocolparser protocolcore filter0 filter1 co snapshot
+LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav mysql protocolparser protocolcore trie filter co snapshot
 
 CONVERT_PATH ?= ./luaclib/convert
 
@@ -119,7 +119,7 @@ $(LUA_CLIB_PATH)/mongo.so : $(LUA_CLIB_SRC)/lua-mongo.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
 
 $(LUA_CLIB_PATH)/util.so : $(LUA_CLIB_SRC)/lua-util.c ./3rd/klib/kstring.c $(LUA_CLIB_SRC)/profiler/size_of.c $(LUA_CLIB_SRC)/profiler/profiler.c $(LUA_CLIB_SRC)/profiler/hash_frame.c $(LUA_CLIB_SRC)/profiler/stack_hot.c $(LUA_CLIB_SRC)/common/common.c $(LUA_CLIB_SRC)/common/timeutil.c $(CONVERT_OBJ) $(DOUBLE_CONVERSION_OBJ) ./3rd/linenoise/linenoise.c | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) -Wno-unused-value $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(CONVERT_PATH) -I$(CONVERT_PATH)/ -I./3rd/linenoise -I./3rd/klib -I./3rd/lz4-1.8.3/lib -L./3rd/lz4-1.8.3/lib -llz4
+	$(CC) $(CFLAGS) -Wno-unused-value $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(CONVERT_PATH) -I$(CONVERT_PATH)/ -I./3rd/linenoise -I./3rd/klib -I./3rd/lz4-1.8.3/lib -L./3rd/lz4-1.8.3/lib -llz4  -liconv
 
 $(LUA_CLIB_PATH)/lfs.so : ./3rd/luafilesystem/src/lfs.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
@@ -157,10 +157,10 @@ $(LUA_CLIB_PATH)/protocolparser.so : $(LUA_CLIB_SRC)/lua-protocol-parser.c | $(L
 $(LUA_CLIB_PATH)/protocolcore.so : $(LUA_CLIB_SRC)/lua-protocol.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC) -I./3rd/klib
 	
-$(LUA_CLIB_PATH)/filter0.so : $(LUA_CLIB_SRC)/lua-filter0.c | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)	-I./3rd/klib -liconv
+$(LUA_CLIB_PATH)/trie.so : $(LUA_CLIB_SRC)/lua-trie.c | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)	-I./3rd/klib
 
-$(LUA_CLIB_PATH)/filter1.so : $(LUA_CLIB_SRC)/lua-filter1.c | $(LUA_CLIB_PATH)
+$(LUA_CLIB_PATH)/filter.so : $(LUA_CLIB_SRC)/lua-filter.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)	-I./3rd/klib
 
 $(LUA_CLIB_PATH)/co.so : $(LUA_CLIB_SRC)/lua-co.c | $(LUA_CLIB_PATH)
