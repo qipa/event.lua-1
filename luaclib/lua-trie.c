@@ -292,10 +292,9 @@ static int
 lfilter(lua_State* L) {
 	tree_t* tree = lua_touserdata(L, 1);
 	size_t size;
-	const char* word = lua_tolstring(L, 2, &size);
+	const char* word = luaL_checklstring(L, 2, &size);
 	int replace = luaL_optinteger(L, 3, 1);
 
-	
 	if (!replace) {
 		int ok = word_filter(tree, word, size, NULL);
 		lua_pushboolean(L, ok == 0);
@@ -336,10 +335,15 @@ merge_word(search_ud_t* ud, utf8_link_t* link, tree_t* tree) {
 		node.utf8 = utf8;
 		node.next = NULL;
 
-		link->tail->next = &node;
-		link->tail = &node;
+		utf8_node_t* tail = link->tail;
+
+		tail->next = &node;
+		link->tail = tail->next;
 
 		merge_word(ud, link, child);
+
+		tail->next = NULL;
+		link->tail = tail;
 	});
 }
 
@@ -347,7 +351,7 @@ static int
 lsearch(lua_State* L) {
 	tree_t* tree = lua_touserdata(L, 1);
 	size_t size;
-	const char* word = lua_tolstring(L, 2, &size);
+	const char* word = luaL_checklstring(L, 2, &size);
 
 	search_ud_t ud;
 	ud.L = L;

@@ -23,7 +23,7 @@ local filter_inst0 = util.trie_create()
 for word in pairs(forbidden_word) do
 	filter_inst0:add(word)
 end
-filter_inst0:dump()
+-- filter_inst0:dump()
 -- local lua_mem = collectgarbage("count")
 -- event.error(string.format("lua mem:%fkb,c mem:%fkb",lua_mem,helper.allocated()/1024))
 
@@ -50,3 +50,11 @@ filter_inst0:dump()
 -- 	end
 -- end)
 
+while true do
+	local line = util.readline(">>")
+	if line == "q" then
+		break
+	end
+	print(filter_inst0:filter(line))
+	table.print(filter_inst0:search(line))
+end
