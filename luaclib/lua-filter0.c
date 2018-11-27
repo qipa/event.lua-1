@@ -28,6 +28,23 @@ typedef struct word_tree {
 	uint8_t tail;
 } tree_t;
 
+typedef struct utf8_node {
+	utf8_int32_t utf8;
+	struct utf8_node* next;
+} utf8_node_t;
+
+typedef struct utf8_link {
+	utf8_node_t* head;
+	utf8_node_t* tail;
+} utf8_link_t;
+
+typedef struct search_ud {
+	lua_State* L;
+	int index;
+	const char* prefix;
+	size_t size;
+} search_ud_t;
+
 typedef struct replace_context {
 	char* replace;
 	int offset;
@@ -99,6 +116,24 @@ word_delete(tree_t* root_tree, const char* word, size_t size) {
 	tree->tail = 0;
 }
 
+tree_t*
+word_search(tree_t* root_tree, const char* word, size_t size) {
+	tree_t* tree = root_tree;
+	size_t i;
+	for ( i = 0; i < size; ) {
+		utf8_int32_t utf8 = 0;
+		word = utf8codepoint(word, &utf8);
+		int length = utf8codepointsize(utf8);
+		i += length;
+
+		tree = tree_get(tree->hash, utf8);
+		if ( !tree ) {
+			return NULL;
+		}
+	}
+	return tree;
+}
+
 static inline int
 replace_commit(replace_ctx_t* ctx, const char* data, int size) {
 	int left = ctx->size - ctx->offset;
@@ -159,73 +194,76 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 
 		switch ( phase ) {
 			case PHASE_SEARCH: {
-				tree = tree_get(tree->hash, utf8);
-				if ( tree ) {
-					phase = PHASE_MATCH;
-					start = position - length;
-					rollback = position;
-					filter_length = 1;
-					filter_slider = 1;
-					founded = 0;
-					if ( tree->tail ) {
-						if ( !replace ) {
-							return -1;
-						}
-						founded = 1;
-					}
-				}
-				else {
-					tree = root_tree;
-					if ( replace ) {
-						char word[8] = { 0 };
-						utf8catcodepoint(word, utf8, 8);
-						if ( replace_commit(&replace_ctx, word, length) < 0 ) {
-							goto _replace_over;
-						}
-					}
-				}
-				break;
+			   tree = tree_get(tree->hash, utf8);
+			   if ( tree ) {
+				   phase = PHASE_MATCH;
+				   start = position - length;
+				   rollback = position;
+				   filter_length = 1;
+				   filter_slider = 1;
+				   founded = 0;
+				   if ( tree->tail ) {
+					   if ( !replace ) {
+						   return -1;
+					   }
+					   founded = 1;
+				   }
+			   }
+			   else {
+				   tree = root_tree;
+				   if ( replace ) {
+					   char word[8] = { 0 };
+					   utf8catcodepoint(word, utf8, 8);
+					   if ( replace_commit(&replace_ctx, word, length) < 0 ) {
+						   goto _replace_over;
+					   }
+				   }
+			   }
+			   break;
 			}
 			case PHASE_MATCH: {
-				if ( length == 1 ) {
-					if ( isspace(utf8) || iscntrl(utf8) || ispunct(utf8) ) {
-						++filter_slider;
-						continue;
-					}
-				}
-				tree = tree_get(tree->hash, utf8);
-				if ( tree ) {
-					++filter_slider;
-					if ( tree->tail ) {
-						if ( !replace ) {
-							return -1;
-						}
-						filter_length = filter_slider;
-						rollback = position;
-						founded = 1;
-					}
-				} else {
-					if ( founded == 1 ) {
-						//匹配成功
-						if ( replace ) {
-							if ( replace_star(&replace_ctx, filter_length) < 0 ) {
-								goto _replace_over;
-							}
-						} else {
-							return -1;
-						}
-					} else if ( replace ) {
-						//匹配失败
-						if ( replace_commit(&replace_ctx, source + start, rollback - start) < 0 ) {
-							goto _replace_over;
-						}
-					}
-					//回滚
-					position = rollback;
-					tree = root_tree;
-					phase = PHASE_SEARCH;
-				}
-				break;
+				  if ( length == 1 ) {
+					  if ( isspace(utf8) || iscntrl(utf8) || ispunct(utf8) ) {
+						  ++filter_slider;
+						  continue;
+					  }
+				  }
+				  tree = tree_get(tree->hash, utf8);
+				  if ( tree ) {
+					  ++filter_slider;
+					  if ( tree->tail ) {
+						  if ( !replace ) {
+							  return -1;
+						  }
+						  filter_length = filter_slider;
+						  rollback = position;
+						  founded = 1;
+					  }
+				  }
+				  else {
+					  if ( founded == 1 ) {
+						  //匹配成功
+						  if ( replace ) {
+							  if ( replace_star(&replace_ctx, filter_length) < 0 ) {
+								  goto _replace_over;
+							  }
+						  }
+						  else {
+							  return -1;
+						  }
+					  }
+					  else if ( replace ) {
+						  //匹配失败
+						  if ( replace_commit(&replace_ctx, source + start, rollback - start) < 0 ) {
+							  goto _replace_over;
+						  }
+					  }
+					  //回滚
+					  position = rollback;
+					  tree = root_tree;
+					  phase = PHASE_SEARCH;
+				  }
+				  break;
 			}
 		}
 	}
@@ -328,6 +366,76 @@ lfilter(lua_State* L) {
 	return 1;
 }
 
+static void
+merge_word(search_ud_t* ud, utf8_link_t* link, tree_t* tree) {
+	if ( tree->tail == 1 ) {
+		luaL_Buffer buffer;
+		luaL_buffinit(ud->L, &buffer);
+
+		luaL_addlstring(&buffer, ud->prefix, ud->size);
+
+		utf8_node_t* cursor = link->head;
+		while ( cursor ) {
+			char word[8] = { 0 };
+			utf8catcodepoint(word, cursor->utf8, 8);
+			luaL_addlstring(&buffer, word, strlen(word));
+			cursor = cursor->next;
+		}
+		luaL_pushresult(&buffer);
+		lua_rawseti(ud->L, -2, ud->index++);
+	}
+
+	utf8_int32_t utf8;
+	tree_t* child;
+
+	kh_foreach(tree->hash, utf8, child, {
+		utf8_node_t node;
+		node.utf8 = utf8;
+		node.next = NULL;
+
+		link->tail->next = &node;
+		link->tail = &node;
+
+		merge_word(ud, link, child);
+	});
+}
+
+static int
+lsearch(lua_State* L) {
+	tree_t* tree = lua_touserdata(L, 1);
+	size_t size;
+	const char* word = lua_tolstring(L, 2, &size);
+
+	search_ud_t ud;
+	ud.L = L;
+	ud.index = 1;
+	ud.prefix = word;
+	ud.size = size;
+
+	lua_newtable(L);
+
+	tree = word_search(tree, word, size);
+	if (!tree) {
+		return 1;
+	}
+	
+	utf8_int32_t utf8;
+	tree_t* child;
+
+	kh_foreach(tree->hash, utf8, child, {
+		utf8_node_t node;
+		node.utf8 = utf8;
+		node.next = NULL;
+
+		utf8_link_t link;
+		link.head = &node;
+		link.tail = &node;
+
+		merge_word(&ud, &link, child);
+	});
+	return 1;
+}
+
 static int
 lsplit(lua_State* L) {
 	size_t size;
@@ -410,6 +518,7 @@ luaopen_filter0_core(lua_State *L) {
 		{ "add", ladd },
 		{ "delete", ldelete },
 		{ "filter", lfilter },
+		{ "search", lsearch },
 		{ "dump", ldump },
 		{ NULL, NULL },
 	};
