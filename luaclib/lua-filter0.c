@@ -152,11 +152,9 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 
 	int position = 0;
 	while ( position < size ) {
-		char word[8] = { 0 };
 		utf8_int32_t utf8 = 0;
 		utf8codepoint(source + position, &utf8);
 		int length = utf8codepointsize(utf8);
-		memcpy(word, source + position, length);
 		position += length;
 
 		switch ( phase ) {
@@ -179,6 +177,8 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 				else {
 					tree = root_tree;
 					if ( replace ) {
+						char word[8] = { 0 };
+						utf8catcodepoint(word, utf8, 8);
 						if ( replace_commit(&replace_ctx, word, length) < 0 ) {
 							goto _replace_over;
 						}
@@ -188,7 +188,7 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 			}
 			case PHASE_MATCH: {
 				if ( length == 1 ) {
-					if ( isspace(word[0]) || iscntrl(word[0]) || ispunct(word[0]) ) {
+					if ( isspace(utf8) || iscntrl(utf8) || ispunct(utf8) ) {
 						++filter_slider;
 						continue;
 					}
