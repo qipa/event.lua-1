@@ -99,12 +99,6 @@ word_delete(tree_t* root_tree, const char* word, size_t size) {
 	tree->tail = 0;
 }
 
-typedef struct replace_context {
-	char* replace;
-	int offset;
-	int size;
-} replace_ctx_t;
-
 static inline int
 replace_commit(replace_ctx_t* ctx, const char* data, int size) {
 	int left = ctx->size - ctx->offset;
@@ -167,74 +161,71 @@ word_filter(tree_t* root_tree, const char* source, size_t size, char* replace, i
 
 		switch ( phase ) {
 			case PHASE_SEARCH: {
-								   tree = tree_get(tree->hash, utf8);
-								   if ( tree ) {
-									   phase = PHASE_MATCH;
-									   start = position - length;
-									   rollback = position;
-									   filter_length = 1;
-									   filter_slider = 1;
-									   founded = 0;
-									   if ( tree->tail ) {
-										   if ( !replace ) {
-											   return -1;
-										   }
-										   founded = 1;
-									   }
-								   }
-								   else {
-									   tree = root_tree;
-									   if ( replace ) {
-										   if ( replace_commit(&replace_ctx, word, length) < 0 ) {
-											   goto _replace_over;
-										   }
-									   }
-								   }
-								   break;
+				tree = tree_get(tree->hash, utf8);
+				if ( tree ) {
+					phase = PHASE_MATCH;
+					start = position - length;
+					rollback = position;
+					filter_length = 1;
+					filter_slider = 1;
+					founded = 0;
+					if ( tree->tail ) {
+						if ( !replace ) {
+							return -1;
+						}
+						founded = 1;
+					}
+				}
+				else {
+					tree = root_tree;
+					if ( replace ) {
+						if ( replace_commit(&replace_ctx, word, length) < 0 ) {
+							goto _replace_over;
+						}
+					}
+				}
+				break;
 			}
 			case PHASE_MATCH: {
-								  if ( length == 1 ) {
-									  if ( isspace(word[0]) || iscntrl(word[0]) || ispunct(word[0]) ) {
-										  ++filter_slider;
-										  continue;
-									  }
-								  }
-								  tree = tree_get(tree->hash, utf8);
-								  if ( tree ) {
-									  ++filter_slider;
-									  if ( tree->tail ) {
-										  if ( !replace ) {
-											  return -1;
-										  }
-										  filter_length = filter_slider;
-										  rollback = position;
-										  founded = 1;
-									  }
-								  }
-								  else {
-									  if ( founded == 1 ) {
-										  //匹配成功
-										  if ( replace ) {
-											  if ( replace_star(&replace_ctx, filter_length) < 0 ) {
-												  goto _replace_over;
-											  }
-										  }
-										  else {
-											  return -1;
-										  }
-									  }
-									  else if ( replace ) {
-										  //匹配失败
-										  if ( replace_commit(&replace_ctx, source + start, rollback - start) < 0 ) {
-											  goto _replace_over;
-										  }
-									  }
-									  //回滚
-									  position = rollback;
-									  tree = root_tree;
-									  phase = PHASE_SEARCH;
-								  }
-								  break;
+				if ( length == 1 ) {
+					if ( isspace(word[0]) || iscntrl(word[0]) || ispunct(word[0]) ) {
+						++filter_slider;
+						continue;
+					}
+				}
+				tree = tree_get(tree->hash, utf8);
+				if ( tree ) {
+					++filter_slider;
+					if ( tree->tail ) {
+						if ( !replace ) {
+							return -1;
+						}
+						filter_length = filter_slider;
+						rollback = position;
+						founded = 1;
+					}
+				} else {
+					if ( founded == 1 ) {
+						//匹配成功
+						if ( replace ) {
+							if ( replace_star(&replace_ctx, filter_length) < 0 ) {
+								goto _replace_over;
+							}
+						} else {
+							return -1;
+						}
+					} else if ( replace ) {
+						//匹配失败
+						if ( replace_commit(&replace_ctx, source + start, rollback - start) < 0 ) {
+							goto _replace_over;
+						}
+					}
+					//回滚
+					position = rollback;
+					tree = root_tree;
+					phase = PHASE_SEARCH;
+				}
+				break;
 			}
 		}
 	}
