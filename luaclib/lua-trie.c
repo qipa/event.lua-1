@@ -38,12 +38,15 @@ typedef struct utf8_link {
 	utf8_node_t* tail;
 } utf8_link_t;
 
-typedef struct search_ud {
+typedef struct search_ctx {
 	lua_State* L;
 	int index;
 	const char* prefix;
+	size_t prefix_size;
+	char* buffer;
 	size_t size;
-} search_ud_t;
+	size_t offset;
+} search_ctx_t;
 
 void
 tree_set(tree_hash_t* hash, utf8_int32_t utf8, tree_t* tree) {
@@ -140,7 +143,7 @@ word_filter(tree_t* root_tree, const char* source, size_t size, luaL_Buffer* buf
 
 	int phase = PHASE_SEARCH;
 
-	int position = 0;
+	size_t position = 0;
 	while ( position < size ) {
 		utf8_int32_t utf8 = 0;
 		utf8codepoint(source + position, &utf8);
@@ -308,23 +311,39 @@ lfilter(lua_State* L) {
 	return 1;
 }
 
+static void 
+buffer_init(search_ctx_t* search_ctx) {
+	search_ctx->offset = 0;
+}
+
 static void
-merge_word(search_ud_t* ud, utf8_link_t* link, tree_t* tree) {
+buffer_add(search_ctx_t* search_ctx, const char* str, size_t l) {
+	if (search_ctx->offset + l >= search_ctx->size) {
+		size_t nsize = search_ctx->size * 2;
+		if (nsize < search_ctx->offset + l) {
+			nsize = search_ctx->offset + l;
+		}
+		search_ctx->buffer = (char*)realloc(search_ctx->buffer,nsize);
+		search_ctx->size = nsize;
+	}
+	memcpy(search_ctx->buffer+search_ctx->offset,str,l);
+	search_ctx->offset+=l;
+}
+
+static void
+merge_word(search_ctx_t* search_ctx, utf8_link_t* link, tree_t* tree) {
 	if ( tree->tail == 1 ) {
-		luaL_Buffer buffer;
-		luaL_buffinit(ud->L, &buffer);
-
-		luaL_addlstring(&buffer, ud->prefix, ud->size);
-
+		buffer_init(search_ctx);
+		buffer_add(search_ctx, search_ctx->prefix, search_ctx->prefix_size);
 		utf8_node_t* cursor = link->head;
 		while ( cursor ) {
 			char word[8] = { 0 };
 			utf8catcodepoint(word, cursor->utf8, 8);
-			luaL_addlstring(&buffer, word, strlen(word));
+			buffer_add(search_ctx, word, strlen(word));
 			cursor = cursor->next;
 		}
-		luaL_pushresult(&buffer);
-		lua_rawseti(ud->L, -2, ud->index++);
+		lua_pushlstring(search_ctx->L, search_ctx->buffer, search_ctx->offset);
+		lua_rawseti(search_ctx->L, -2, search_ctx->index++);
 	}
 
 	utf8_int32_t utf8;
@@ -340,7 +359,7 @@ merge_word(search_ud_t* ud, utf8_link_t* link, tree_t* tree) {
 		tail->next = &node;
 		link->tail = tail->next;
 
-		merge_word(ud, link, child);
+		merge_word(search_ctx, link, child);
 
 		tail->next = NULL;
 		link->tail = tail;
@@ -353,16 +372,20 @@ lsearch(lua_State* L) {
 	size_t size;
 	const char* word = luaL_checklstring(L, 2, &size);
 
-	search_ud_t ud;
-	ud.L = L;
-	ud.index = 1;
-	ud.prefix = word;
-	ud.size = size;
+	search_ctx_t search_ctx;
+	search_ctx.L = L;
+	search_ctx.index = 1;
+	search_ctx.prefix = word;
+	search_ctx.prefix_size = size;
+	search_ctx.size = 128;
+	search_ctx.offset = 0;
+	search_ctx.buffer = (char*)malloc(search_ctx.size);
 
 	lua_newtable(L);
 
 	tree = word_search(tree, word, size);
 	if (!tree) {
+		free(search_ctx.buffer);
 		return 1;
 	}
 	
@@ -378,8 +401,9 @@ lsearch(lua_State* L) {
 		link.head = &node;
 		link.tail = &node;
 
-		merge_word(&ud, &link, child);
+		merge_word(&search_ctx, &link, child);
 	});
+	free(search_ctx.buffer);
 	return 1;
 }
 
