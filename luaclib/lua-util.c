@@ -643,8 +643,9 @@ static int
 lreadline(lua_State* L) {
     const char* prompt = luaL_optstring(L, 1, ">>");
     const char* history = luaL_optstring(L, 2, "history.txt");
+    luaL_checktype(L, 3, LUA_TFUNCTION);
 
-    linenoiseHistorySetMaxLen(10);
+    linenoiseHistorySetMaxLen(20);
     linenoiseSetCompletionCallback(completion);
     linenoiseHistoryLoad(history);
 
