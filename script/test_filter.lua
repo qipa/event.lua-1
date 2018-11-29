@@ -55,6 +55,14 @@ while true do
 	if line == "q" then
 		break
 	end
-	print(filter_inst0:filter(line))
-	table.print(filter_inst0:search(line))
+	table.print(filter_inst0:search("cao"))
+	table.print(filter_inst0:search("习"))
+	print(filter_inst0:filter("fuckxxx..ca..o,操.你妈"))
+	filter_inst0 = nil
+	collectgarbage("collect")
+
+	filter_inst0 = util.trie_create()
+	for word in pairs(forbidden_word) do
+		filter_inst0:add(word)
+	end
 end

@@ -727,38 +727,117 @@ lgetaddrinfo(lua_State* L) {
     return 1;
 }
 
+static iconv_t
+iconv_get(lua_State* L) {
+    void** ud = luaL_checkudata(L, 1, "meta_iconv");
+    if (ud == NULL) {
+        luaL_error(L, "meta_iconv expected,got %s",lua_typename(L, 1));
+    }
+    return *ud;
+}
+
+static int 
+iconv_list_push(unsigned int cnt, const char * const names[], void *ud) {
+    lua_State *L = (lua_State*) ud;
+    int n = lua_tointeger(L, -1);
+    int i;
+
+    lua_pop(L, 1);  
+    for (i = 0; i < cnt; i++) {
+        lua_pushinteger(L, n++);
+        lua_pushstring(L, names[i]);
+        lua_settable(L, -3);
+    }
+    lua_pushinteger(L, n);
+    return 0; 
+}
+
 static int
-lconvert(lua_State* L) {
-    size_t size;
-    const char* word = lua_tolstring(L,1,&size);
+liconv_execute(lua_State* L) {
 
-    const char* from_charset = lua_tostring(L, 2);
-    const char* to_charset = lua_tostring(L, 3);
+#define CONV_BUF_SIZE 256
 
-    iconv_t conv = iconv_open(to_charset, from_charset);
-    if (conv == (iconv_t)-1) {
-        lua_pushboolean(L, 0);
-        lua_pushstring(L, strerror(errno));
-        return 2; 
-    }
+    iconv_t cd = iconv_get(L);
+    size_t in_size;
+    char* in_buff = (char*)lua_tolstring(L, 2, &in_size);
 
-    char* from = strdup(word);
-    size_t out_size = size * 4;
-    char* out = malloc(out_size);
-    memset(out, 0, out_size);
+    char out_buff_stack[CONV_BUF_SIZE];
+    char *out_buff = out_buff_stack;
+    size_t out_size = CONV_BUF_SIZE;
 
-    char* tmp = out;
+    size_t result = -1;
+
+    luaL_Buffer buffer;
+    luaL_buffinit(L, &buffer);
     
-    if (iconv(conv, &from, &size, &tmp, &out_size) == -1)   {
-        iconv_close(conv);
+    do {
+        result = iconv(cd, &in_buff, &in_size, &out_buff, &out_size);
+        if (result == (size_t)-1) {
+            if (errno == E2BIG) {
+                luaL_addlstring(&buffer, out_buff_stack, CONV_BUF_SIZE - out_size);
+                out_buff = out_buff_stack;
+                out_size = CONV_BUF_SIZE;
+            } else {
+                lua_pushboolean(L, 0);
+                lua_pushstring(L, strerror(errno));
+                return 2;
+            }
+        } 
+    } while (result == (size_t)-1);
+
+    luaL_addlstring(&buffer, out_buff_stack, CONV_BUF_SIZE - out_size);
+    luaL_pushresult(&buffer);
+    return 1;
+}
+
+static int
+liconv_list(lua_State* L) {
+    iconv_t cd = iconv_get(L);
+    lua_newtable(L);
+    lua_pushinteger(L, 1);
+    iconvlist(iconv_list_push, L);
+    lua_pop(L, 1);
+    return 1;
+}
+
+static int
+liconv_close(lua_State* L) {
+    iconv_t cd = iconv_get(L);
+    iconv_close(cd);
+    return 0;
+}
+
+static int
+liconv_open(lua_State* L) {
+    const char* from = luaL_checkstring(L, 1);
+    const char* to = luaL_checkstring(L, 2);
+
+    iconv_t cd = iconv_open(to, from);
+    if (cd == (iconv_t)(-1)) {
         lua_pushboolean(L, 0);
         lua_pushstring(L, strerror(errno));
         return 2; 
     }
-    iconv_close(conv);
-    lua_pushboolean(L, 1);
-    lua_pushstring(L, out);
-    return 2;
+
+    void** ud = lua_newuserdata(L, sizeof(*ud));
+    *ud = cd;
+
+    if (luaL_newmetatable(L,"meta_iconv")) {
+        const luaL_Reg meta[] = {
+            { "execute", liconv_execute },
+            { "list", liconv_list },
+            { NULL, NULL },
+        };
+        luaL_newlib(L,meta);
+        lua_setfield(L, -2, "__index");
+
+        lua_pushcfunction(L,liconv_close);
+        lua_setfield(L, -2, "__gc");
+    }
+
+    lua_setmetatable(L, -2);
+
+    return 1;
 }
 
 static int
@@ -1411,7 +1490,7 @@ luaopen_util_core(lua_State* L){
         { "type", ltype },
         { "readline", lreadline },
         { "getaddrinfo", lgetaddrinfo },
-        { "convert", lconvert },
+        { "iconv_open", liconv_open },
         { "abort", labort },
         { "clone_string", lclone_string },
         { "packet_new", lpacket_new },
