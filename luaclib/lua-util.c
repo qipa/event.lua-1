@@ -156,9 +156,9 @@ int
 lmd5(lua_State* L) {
     size_t size;
     const unsigned char* source = (const unsigned char*)lua_tolstring(L,1,&size);
-    unsigned char md5[16] = {0};
+    unsigned char md5[MD5_DIGEST_LENGTH] = {0};
     MD5(source,size,md5); 
-    lua_pushlstring(L,(const char*)md5,16);
+    lua_pushlstring(L,(const char*)md5,MD5_DIGEST_LENGTH);
     return 1;
 }
 
@@ -791,16 +791,6 @@ liconv_execute(lua_State* L) {
 }
 
 static int
-liconv_list(lua_State* L) {
-    iconv_t cd = iconv_get(L);
-    lua_newtable(L);
-    lua_pushinteger(L, 1);
-    iconvlist(iconv_list_push, L);
-    lua_pop(L, 1);
-    return 1;
-}
-
-static int
 liconv_close(lua_State* L) {
     iconv_t cd = iconv_get(L);
     iconv_close(cd);
@@ -825,7 +815,6 @@ liconv_open(lua_State* L) {
     if (luaL_newmetatable(L,"meta_iconv")) {
         const luaL_Reg meta[] = {
             { "execute", liconv_execute },
-            { "list", liconv_list },
             { NULL, NULL },
         };
         luaL_newlib(L,meta);
@@ -837,6 +826,15 @@ liconv_open(lua_State* L) {
 
     lua_setmetatable(L, -2);
 
+    return 1;
+}
+
+static int
+liconv_list(lua_State* L) {
+    lua_newtable(L);
+    lua_pushinteger(L, 1);
+    iconvlist(iconv_list_push, L);
+    lua_pop(L, 1);
     return 1;
 }
 
@@ -1491,6 +1489,7 @@ luaopen_util_core(lua_State* L){
         { "readline", lreadline },
         { "getaddrinfo", lgetaddrinfo },
         { "iconv_open", liconv_open },
+        { "iconv_list", liconv_list },
         { "abort", labort },
         { "clone_string", lclone_string },
         { "packet_new", lpacket_new },
