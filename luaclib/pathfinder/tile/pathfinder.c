@@ -699,6 +699,7 @@ finder_mask_reverse(pathfinder_t * finder) {
 	}
 }
 
+//地图内随机一个点
 void finder_random(struct pathfinder * finder, int* x, int* z) {
 	if (finder->unblock == NULL) {
 		finder->unblock = malloc(sizeof(int)* finder->unblock_size);
@@ -719,6 +720,7 @@ void finder_random(struct pathfinder * finder, int* x, int* z) {
 	*z = node->z;
 }
 
+//圆内随机一个点
 int 
 finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int radius, int* x, int* z) {
 	int tx = 0;
@@ -764,6 +766,7 @@ finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int radius, 
 	}
 
 	if (index == 0) {
+		free(node_index);
 		return -1;
 	}
 
