@@ -99,57 +99,69 @@ random_index(int max) {
 	return ratio * max;
 }
 
-void
-is_min_node(pathfinder_t* finder, int cx, int cz, int dx, int dz, int* dt_min, int* mx, int* mz, node_t** list) {
+int
+is_best_node(pathfinder_t* finder, int cx, int cz, int dx, int dz, int* dt_min, node_t** list) {
 	int x = cx + dx;
 	int z = cz + dz;
-	if (movable(finder, x, z, 0)) {
-		node_t *node = find_node(finder, x, z);
-		if (node->recorded == 0) {
-			node->recorded = 1;
-			node->next = *list;
-			*list = node;
 
-			int dt = dx * dx + dz * dz;
-			if (*dt_min < 0 || *dt_min > dt) {
-				*dt_min = dt;
-				*mx = x;
-				*mz = z;
-			}
-		}
+	node_t *node = find_node(finder, x, z);
+	if ( node == NULL || node->recorded == 1 ) {
+		return 0;
 	}
+
+	node->recorded = 1;
+	node->next = *list;
+	*list = node;
+
+	if ( !movable(finder, x, z, 0) ) {
+		return 0;
+	}
+
+	int dt = dx * dx + dz * dz;
+	if ( *dt_min < 0 || *dt_min > dt ) {
+		*dt_min = dt;
+		return 1;
+	}
+	return 0;
 }
 
 node_t*
-search_node(struct pathfinder* finder, int x, int z, int r) {
-	int min_dt = -1;
-	int rx, rz;
+search_node(struct pathfinder* finder, int cx, int cz, int radius) {
+	int dt_min = -1;
+	int x_min, z_min;
 
 	node_t* list = NULL;
-	int i;
-	for (i = 1; i <= r; i++) {
+	int i, j;
+	for ( i = 1; i <= radius && dt_min == -1; i++ ) {
 		int tx = 0;
 		int tz = i;
 
-		int d = 3 - 2 * r;
+		int d = 3 - 2 * radius;
 		while (tx <= tz) {
-			int dir[][2] = { { tx, tz }, { -tx, tz }, { tx, -tz }, { -tx, -tz }, { tz, tx }, { -tz, tx }, { tz, -tx }, { -tz, -tx } };
-			int j;
-			for (j = 0; j < 8; j++) {
-				is_min_node(finder, x, z, dir[j][0], dir[j][1], &min_dt, &rx, &rz, &list);
+			int range[][2] = { 
+				{ tx, tz },
+				{ -tx, tz },
+				{ tx, -tz },
+				{ -tx, -tz },
+				{ tz, tx },
+				{ -tz, tx },
+				{ tz, -tx },
+				{ -tz, -tx } };
+
+			for ( j = 0; j < 8; j++ ) {
+				if ( is_best_node(finder, cx, cz, range[j][0], range[j][1], &dt_min, &list) ) {
+					x_min = cx + range[j][0];
+					z_min = cz + range[j][1];
+				}
 			}
+				
 			if (d < 0) {
 				d = d + 4 * tx + 6;
-			}
-			else {
+			} else {
 				d = d + 4 * (tx - tz) + 10;
 				tz--;
 			}
 			tx++;
-		}
-
-		if (min_dt != -1) {
-			break;
 		}
 	}
 
@@ -160,11 +172,11 @@ search_node(struct pathfinder* finder, int x, int z, int r) {
 		tmp->recorded = 0;
 	}
 
-	if (min_dt < 0) {
+	if ( dt_min < 0 ) {
 		return NULL;
 	}
 
-	return find_node(finder, rx, rz);
+	return find_node(finder, x_min, z_min);
 }
 
 static inline void
