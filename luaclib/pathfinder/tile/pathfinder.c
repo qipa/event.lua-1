@@ -720,35 +720,43 @@ void finder_random(struct pathfinder * finder, int* x, int* z) {
 }
 
 int 
-finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* x, int* z) {
+finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int radius, int* x, int* z) {
 	int tx = 0;
-	int tz = r;
+	int tz = radius;
+	int diameter = 2 * radius;
 
-	int* node_index = malloc((2 * r)*(2 * r) * sizeof(int));
+	int* node_index = malloc(diameter * diameter * sizeof( int ));
 	int index = 0;
 
-	int d = 3 - 2 * r;
+	int d = 3 - 2 * radius;
 	while (tx <= tz) {
 		int zi;
 		for (zi = tx; zi <= tz;zi++) {
-			int dir[][2] = { { tx, zi }, { -tx, zi }, { tx, -zi }, { -tx, -zi }, { zi, tx }, { -zi, tx }, { zi, -tx }, { -zi, -tx } };
-			int j;
-			for (j = 0; j < 8; j++) {
-				node_t* node = find_node(finder, cx + dir[j][0], cz + dir[j][1]);
+			int range[][2] = { 
+				{ tx, zi }, 
+				{ -tx, zi },
+				{ tx, -zi }, 
+				{ -tx, -zi }, 
+				{ zi, tx }, 
+				{ -zi, tx }, 
+				{ zi, -tx }, 
+				{ -zi, -tx } };
+
+			int i;
+			for ( i = 0; i < 8; i++ ) {
+				node_t* node = find_node(finder, cx + range[i][0], cz + range[i][1]);
 				if (node && node->recorded == 0) {
 					node->recorded = 1;
-					
-					if (!isblock(finder, node)) {
+		
+					if (!isblock(finder, node))
 						node_index[index++] = node->index;
-					}
 				}
 			}
 		}
 		
 		if (d < 0) {
 			d = d + 4 * tx + 6;
-		}
-		else {
+		} else {
 			d = d + 4 * (tx - tz) + 10;
 			tz--;
 		}
@@ -756,7 +764,6 @@ finder_random_in_circle(struct pathfinder * finder, int cx, int cz, int r, int* 
 	}
 
 	if (index == 0) {
-		free(node_index);
 		return -1;
 	}
 
