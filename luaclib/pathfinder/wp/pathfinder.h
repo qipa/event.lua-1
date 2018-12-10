@@ -1,5 +1,5 @@
-#ifndef PATHFINDER_H
-#define PATHFINDER_H
+#ifndef WAYPOINT_PATHFINDER_H
+#define WAYPOINT_PATHFINDER_H
 
 #ifndef _MSC_VER
 #include <stdbool.h>

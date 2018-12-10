@@ -1,5 +1,5 @@
-#ifndef PATHFINDER_H
-#define PATHFINDER_H
+#ifndef TILE_PATHFINDER_H
+#define TILE_PATHFINDER_H
 
 
 #ifdef _MSC_VER
