@@ -160,7 +160,7 @@ _random_in_circle(lua_State* L) {
 	int x,z;
 	if (finder_random_in_circle(ctx->finder, icx, icz, r, &x, &z) < 0 ) {
 		lua_pushboolean(L, 0);
-		lua_pushliteral(L, "error circle range")
+		lua_pushliteral(L, "error circle range");
 		return 2;
 	}
 	lua_pushnumber(L, TO_COORD(ctx,x));

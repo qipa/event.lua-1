@@ -99,7 +99,7 @@ random_index(int max) {
 	return ratio * max;
 }
 
-int
+static int
 is_best_node(pathfinder_t* finder, int cx, int cz, int dx, int dz, int* dt_min, node_t** list) {
 	int x = cx + dx;
 	int z = cz + dz;
@@ -242,17 +242,14 @@ finder_reset(pathfinder_t* finder) {
 }
 
 static inline int
-less(mh_elt_t * left, mh_elt_t * right) {
+node_cmp(mh_elt_t * left, mh_elt_t * right) {
 	node_t *l = (node_t*)left;
 	node_t *r = (node_t*)right;
-	return l->F < r->F;
-}
-
-static inline int
-great(mh_elt_t * left, mh_elt_t * right) {
-	node_t *l = (node_t*)left;
-	node_t *r = (node_t*)right;
+#ifdef MINHEAP_USE_LIBEVENT
 	return l->F > r->F;
+#else
+	return l->F < r->F;
+#endif
 }
 
 static inline void
@@ -394,11 +391,8 @@ finder_create(int width, int heigh, char* data) {
 		}
 	}
 
-#ifdef MINHEAP_USE_LIBEVENT
-	mh_ctor(&finder->openlist, great);
-#else
-	mh_ctor(&finder->openlist, less);
-#endif
+	mh_ctor(&finder->openlist, node_cmp);
+
 	finder->closelist = NULL;
 
 	finder_mask_reset(finder);
