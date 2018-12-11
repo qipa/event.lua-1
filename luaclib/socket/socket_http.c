@@ -14,6 +14,7 @@ typedef struct http_multi {
 typedef struct http_request {
 	http_multi_t* multi;
 	CURL* ctx;
+	int fd;
 	struct ev_io rio;
 	struct ev_io wio;
 	string_t header;
@@ -22,12 +23,6 @@ typedef struct http_request {
 	void* callback_ud;
 	request_callback callback;
 } http_request_t;
-
-typedef struct http_sock {
-	int fd;
-	http_request_t* request;
-} http_sock_t;
-
 
 static void 
 check_multi_info(http_multi_t *multi) {
@@ -50,79 +45,77 @@ check_multi_info(http_multi_t *multi) {
 static void
 timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
 	http_multi_t* multi = io->data;
-	CURLMcode rc = curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
+	curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
 	check_multi_info(multi);
 }
 
 static void
 read_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
-	http_sock_t* sock = io->data;
-	CURLMcode rc = curl_multi_socket_action(sock->request->multi->ctx, sock->fd, CURL_POLL_IN, &sock->request->multi->still_running);
-	check_multi_info(sock->request->multi);
+	http_request_t* request = io->data;
+	http_multi_t* multi = request->multi;
+	curl_multi_socket_action(multi->ctx, request->fd, CURL_POLL_IN, &multi->still_running);
+	check_multi_info(multi);
 
 	//BUG,FIXME
-	if (sock->request->multi->still_running <= 0) {
-		if (ev_is_active(&sock->request->multi->io)) {
-			ev_timer_stop(loop_ctx_get(sock->request->multi->ev_loop),(struct ev_timer*)&sock->request->multi->io);
+	if (multi->still_running <= 0) {
+		if (ev_is_active(&multi->io)) {
+			ev_timer_stop(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
 		}
 	}
 }
 
 static void
 write_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
-	http_sock_t* sock = io->data;;
-	curl_multi_socket_action(sock->request->multi->ctx, sock->fd, CURL_POLL_OUT, &sock->request->multi->still_running);
-	check_multi_info(sock->request->multi);
-	if (sock->request->multi->still_running <= 0) {
-		if (ev_is_active(&sock->request->multi->io)) {
-			ev_timer_stop(loop_ctx_get(sock->request->multi->ev_loop),(struct ev_timer*)&sock->request->multi->io);
+	http_request_t* request = io->data;
+	http_multi_t* multi = request->multi;
+	curl_multi_socket_action(multi->ctx, request->fd, CURL_POLL_OUT, &multi->still_running);
+	check_multi_info(multi);
+	if (multi->still_running <= 0) {
+		if (ev_is_active(&multi->io)) {
+			ev_timer_stop(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
 		}
 	}
 }
 
 static int 
-multi_sock_cb(CURL* e, curl_socket_t s, int what, void* cbp, void* sockp) {
+multi_sock_cb(CURL* e, curl_socket_t s, int what, void* cbp, void* ud) {
 	http_multi_t* multi = cbp;
-	http_sock_t* sock = sockp;
-	printf("multi_sock_cb:%d\n",what);
+	http_request_t* request = ud;
 	if (what == CURL_POLL_REMOVE) {
-		if (ev_is_active(&sock->request->rio)) {
-			ev_io_stop(loop_ctx_get(multi->ev_loop), &sock->request->rio);
+		if (ev_is_active(&request->rio)) {
+			ev_io_stop(loop_ctx_get(multi->ev_loop), &request->rio);
 		}
-		if (ev_is_active(&sock->request->wio)) {
-			ev_io_stop(loop_ctx_get(multi->ev_loop), &sock->request->wio);
+		if (ev_is_active(&request->wio)) {
+			ev_io_stop(loop_ctx_get(multi->ev_loop), &request->wio);
 		}
-	}
-	else {
-		if (!sock) {
-			sock = malloc(sizeof(*sock));
-			sock->fd = s;
-			curl_easy_getinfo(e, CURLINFO_PRIVATE, &sock->request);
-			curl_multi_assign(sock->request->multi->ctx, s, sock);
+	} else {
+		if (!request) {
+			curl_easy_getinfo(e, CURLINFO_PRIVATE, &request);
+			request->fd = s;
 
-			sock->request->rio.data = sock;
-			ev_io_init(&sock->request->rio,read_cb,s,EV_READ);
+			curl_multi_assign(request->multi->ctx, s, request);
 
-			sock->request->wio.data = sock;
-			ev_io_init(&sock->request->wio,write_cb,s,EV_WRITE);
+			request->rio.data = request;
+			ev_io_init(&request->rio,read_cb,s,EV_READ);
+
+			request->wio.data = request;
+			ev_io_init(&request->wio,write_cb,s,EV_WRITE);
 		}
 	
 		if ( what == CURL_POLL_IN ) {
-			if (!ev_is_active(&sock->request->rio)) {
-				ev_io_start(loop_ctx_get(multi->ev_loop), &sock->request->rio);
+			if (!ev_is_active(&request->rio)) {
+				ev_io_start(loop_ctx_get(multi->ev_loop), &request->rio);
 			}
-		}
-		else if ( what == CURL_POLL_OUT ){
-			if (!ev_is_active(&sock->request->wio)) {
-				ev_io_start(loop_ctx_get(multi->ev_loop), &sock->request->wio);
+		} else if ( what == CURL_POLL_OUT ){
+			if (!ev_is_active(&request->wio)) {
+				ev_io_start(loop_ctx_get(multi->ev_loop), &request->wio);
 			}
-		}
-		else if ( what == CURL_POLL_INOUT ){
-			if (!ev_is_active(&sock->request->rio)) {
-				ev_io_start(loop_ctx_get(multi->ev_loop), &sock->request->rio);
+		} else if ( what == CURL_POLL_INOUT ){
+			if (!ev_is_active(&request->rio)) {
+				ev_io_start(loop_ctx_get(multi->ev_loop), &request->rio);
 			}
-			if (!ev_is_active(&sock->request->wio)) {
-				ev_io_start(loop_ctx_get(multi->ev_loop), &sock->request->wio);
+			if (!ev_is_active(&request->wio)) {
+				ev_io_start(loop_ctx_get(multi->ev_loop), &request->wio);
 			}
 		}
 	}
@@ -132,7 +125,7 @@ multi_sock_cb(CURL* e, curl_socket_t s, int what, void* cbp, void* sockp) {
 static int 
 multi_timer_cb(CURLM* ctx, long timeout_ms,void* ud) {
 	http_multi_t* multi = ud;
-	printf("%d\n",timeout_ms);
+
 	if (timeout_ms == 0) {
 		curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
 	} else if (timeout_ms > 0) {
@@ -198,12 +191,6 @@ void http_request_init(http_request_t* request) {
 
 void http_request_release(http_request_t* request) {
 	curl_easy_cleanup(request->ctx);
-	if (ev_is_active(&request->rio)) {
-		ev_io_stop(loop_ctx_get(request->multi->ev_loop), &request->rio);
-	}
-	if (ev_is_active(&request->wio)) {
-		ev_io_stop(loop_ctx_get(request->multi->ev_loop), &request->wio);
-	}
 	string_release(&request->header);
 	string_release(&request->content);
 }
