@@ -9,6 +9,7 @@
 
 #include "ev.h"
 #include "socket/socket_event.h"
+#include "socket/socket_http.h"
 #include "socket/socket_util.h"
 #include "socket/pipe_message.h"
 
@@ -42,6 +43,7 @@ struct lua_ev_timer;
 
 struct lua_ev {
 	struct ev_loop_ctx* loop_ctx;
+	struct http_multi* multi;
 	lua_State* main;
 	int ref;
 	int callback;
@@ -101,6 +103,11 @@ struct lua_pipe {
 	int ref;
 	int callback;
 	int closed;
+};
+
+struct lua_httpc {
+	struct lua_ev* lev;
+	int callback;
 };
 
 static int
@@ -1019,6 +1026,45 @@ _lgate_new(lua_State* L) {
 	return lgate_create(L,lev->loop_ctx,max_client,max_freq);
 }
 
+void 
+request_done(struct http_request* request, void* ud) {
+	struct lua_httpc* userdata = ud;
+	struct lua_ev* lev = userdata->lev;
+
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, userdata->callback);
+	lua_pushstring(lev->main, get_headers(request));
+	lua_pushstring(lev->main, get_content(request));
+
+	lua_pcall(lev->main, 2, 0, 0);
+
+	free(userdata);
+}
+
+static int
+_lhttpc_get(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	const char* url = luaL_checkstring(L, 2);
+
+	luaL_checktype(L, 3, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	struct lua_httpc* ud = malloc(sizeof(*ud));
+	ud->lev = lev;
+	ud->callback = callback;
+
+	struct http_request* request = http_request_new();
+	set_url(request, url);
+	set_callback(request, request_done, ud);
+
+	http_multi_perform(lev->multi, request);
+	return 0;
+}
+
+static int
+_lhttpc_post(lua_State* L) {
+	
+}
+
 static int
 _dispatch(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
@@ -1069,7 +1115,7 @@ _event_new(lua_State* L) {
 
 	struct lua_ev* lev = lua_newuserdata(L, sizeof(*lev));
 	lev->loop_ctx = loop_ctx_create();
-
+	lev->multi = http_multi_new(lev->loop_ctx);
 	lev->main = L;
 	lev->callback = callback;
 	lev->freelist = NULL;
@@ -1091,6 +1137,8 @@ luaopen_ev_core(lua_State* L) {
 		{ "udp", _udp_new },
 		{ "pipe", _lpipe_new },
 		{ "gate", _lgate_new },
+		{ "httpc_get", _lhttpc_get },
+		{ "httpc_post", _lhttpc_post },
 		{ "breakout", _break },
 		{ "dispatch", _dispatch },
 		{ "clean", _clean },

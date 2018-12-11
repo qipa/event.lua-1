@@ -198,6 +198,14 @@ function _M.gate(max)
 	return gate
 end
 
+function _M.httpc_get(url,func)
+	_event:httpc_get(url,func)
+end
+
+function _M.httpc_post(url,data)
+
+end
+
 function _M.run_process(cmd,line)
     local FILE = assert(io.popen(cmd))
     if not _stream_base then
