@@ -32,23 +32,17 @@ typedef struct http_sock {
 } http_sock_t;
 
 
-static void check_multi_info(http_multi_t *multi)
-{
-	char *eff_url;
+static void 
+check_multi_info(http_multi_t *multi) {
 	CURLMsg *msg;
 	int msgs_left;
 	CURL *easy;
 	http_request_t * request = NULL;
 
-	while ((msg = curl_multi_info_read(multi->ctx, &msgs_left)))
-	{
-		if (msg->msg == CURLMSG_DONE)
-		{
+	while ((msg = curl_multi_info_read(multi->ctx, &msgs_left))) {
+		if (msg->msg == CURLMSG_DONE) {
 			easy = msg->easy_handle;
-
 			curl_easy_getinfo(easy, CURLINFO_PRIVATE, &request);
-			curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
-
 			curl_multi_remove_handle(multi->ctx, easy);
 			request->callback(request, request->callback_ud);
 			http_request_delete(request);
