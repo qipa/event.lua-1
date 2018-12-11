@@ -19,15 +19,17 @@ local count = 0
 -- end
 
 
+for i = 1,10 do
 event.httpc_get("www.baidu.com",function (header,content)
 	print(header)
-	print(content)
+	-- print(content)
 end)
+end
 
 
 event.fork(function ()
 	while true do
-		event.sleep(10)
+		event.sleep(0.1)
+		print(collectgarbage("count"))
 	end
 end)
-print("!!!!")

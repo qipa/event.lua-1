@@ -129,7 +129,7 @@ multi_timer_cb(CURLM* ctx, long timeout_ms,void* ud) {
 		curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
 	} else if (timeout_ms > 0) {
 		multi->io.data = multi;
-		ev_timer_init((struct ev_timer*)&multi->io,timeout_cb,timeout_ms,0);
+		ev_timer_init((struct ev_timer*)&multi->io,timeout_cb,(float)timeout_ms / 1000,0);
 		ev_timer_start(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
 	}
 
