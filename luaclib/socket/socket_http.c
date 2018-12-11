@@ -11,8 +11,6 @@ typedef struct http_multi {
 	struct ev_loop_ctx* ev_loop;
 } http_multi_t;
 
-
-
 typedef struct http_request {
 	http_multi_t* multi;
 	CURL* ctx;
@@ -24,7 +22,6 @@ typedef struct http_request {
 	void* callback_ud;
 	request_callback callback;
 } http_request_t;
-
 
 typedef struct http_sock {
 	int fd;
@@ -164,8 +161,8 @@ http_multi_t* http_multi_new(struct ev_loop_ctx* ev_loop) {
 	return multi;
 }
 
-size_t receive_data(char *buffer, size_t size, size_t nitems, void *userdata)
-{
+size_t 
+receive_data(char *buffer, size_t size, size_t nitems, void *userdata) {
 	string_t* data = (string_t*)userdata;
 	string_append_lstr(data, buffer, nitems * size);
 	return nitems * size;
@@ -200,6 +197,7 @@ void http_request_init(http_request_t* request) {
 }
 
 void http_request_release(http_request_t* request) {
+	curl_easy_cleanup(request->ctx);
 	string_release(&request->header);
 	string_release(&request->content);
 }
