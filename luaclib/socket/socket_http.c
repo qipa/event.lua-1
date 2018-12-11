@@ -43,7 +43,7 @@ check_multi_info(http_multi_t *multi) {
 }
 
 static void
-timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
+timeout_cb(struct ev_loop* loop,struct ev_timer* io,int revents) {
 	http_multi_t* multi = io->data;
 	curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
 	check_multi_info(multi);
@@ -56,7 +56,6 @@ read_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
 	curl_multi_socket_action(multi->ctx, request->fd, CURL_POLL_IN, &multi->still_running);
 	check_multi_info(multi);
 
-	//BUG,FIXME
 	if (multi->still_running <= 0) {
 		if (ev_is_active(&multi->io)) {
 			ev_timer_stop(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
@@ -130,7 +129,7 @@ multi_timer_cb(CURLM* ctx, long timeout_ms,void* ud) {
 		curl_multi_socket_action(multi->ctx, CURL_SOCKET_TIMEOUT, 0, &multi->still_running);
 	} else if (timeout_ms > 0) {
 		multi->io.data = multi;
-		ev_timer_init((struct ev_timer*)&multi->io,timeout,timeout_ms,0);
+		ev_timer_init((struct ev_timer*)&multi->io,timeout_cb,timeout_ms,0);
 		ev_timer_start(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
 	}
 
