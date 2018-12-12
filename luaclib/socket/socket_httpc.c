@@ -297,8 +297,10 @@ http_multi_perform(http_multi_t* multi, http_request_t* request, request_callbac
 	request->callback_ud = ud;
 	CURLMcode rc = curl_multi_add_handle(multi->ctx, request->ctx);
 
-	if (rc != CURLM_OK)
+	if (rc != CURLM_OK) {
 		http_request_delete(request);
+		return -1;
+	}
 
-	return rc;
+	return 0;
 }
