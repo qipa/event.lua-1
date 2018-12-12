@@ -38,7 +38,7 @@ check_multi_info(http_multi_t *multi) {
 			curl_easy_getinfo(easy, CURLINFO_PRIVATE, &request);
 			curl_multi_remove_handle(multi->ctx, easy);
 			request->callback(request, request->callback_ud);
-			http_request_delete(request); //BUG,FIXME
+			http_request_delete(request); 
 		}
 	}
 }
@@ -159,6 +159,17 @@ http_multi_new(struct ev_loop_ctx* ev_loop) {
 	http_multi_t* multi = malloc(sizeof( *multi ));
 	http_multi_init(multi, ev_loop);
 	return multi;
+}
+
+void
+http_multi_release(http_multi_t* multi) {
+	curl_multi_cleanup(multi->ctx);
+}
+
+void
+http_multi_delete(http_multi_t* multi) {
+	http_multi_release(multi);
+	free(multi);
 }
 
 size_t 

@@ -18,17 +18,15 @@ local count = 0
 	
 -- end
 
-
+local count = 0
 for i = 1,100 do
-event.httpc_get("www.baidu.com",function (header,content)
-	print(header)
-	print(content)
-end)
+	event.httpc_get("www.baidu.com",function (header,content)
+		-- print(header)
+		-- print(content)
+		count = count + 1
+		if count == 100 then
+			event.breakout()
+		end
+	end)
 end
 
-
-event.fork(function ()
-	while true do
-		event.sleep(0.1)
-	end
-end)

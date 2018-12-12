@@ -1074,6 +1074,7 @@ _dispatch(lua_State* L) {
 static int
 _release(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	http_multi_delete(lev->multi);
 	loop_ctx_release(lev->loop_ctx);
 	luaL_unref(L, LUA_REGISTRYINDEX, lev->ref);
 	return 0;
