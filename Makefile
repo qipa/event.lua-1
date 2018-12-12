@@ -10,6 +10,10 @@ TC_PATH ?= 3rd/gperftools
 TC_INC ?= 3rd/gperftools/src/gperftools
 TC_STATIC_LIB= 3rd/gperftools/.libs/libtcmalloc_and_profiler.a
 
+LIBCURL_PATH ?= 3rd/curl
+LIBCURL_INC ?= 3rd/curl
+LIBCURL_SHARE_LIB = 3rd/curl/lib/.libs/libcurl.so
+
 EFENCE_PATH ?= ./3rd/electric-fence
 EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
@@ -97,8 +101,8 @@ efence :
 $(TARGET) : $(MAIN_OBJ) $(STATIC_LIBS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -Wl,-E
 
-$(LUA_CLIB_PATH)/ev.so : $(LUA_CLIB_SRC)/lua-ev.c $(LUA_CLIB_SRC)/lua-gate.c $(LUA_CLIB_SRC)/common/common.c $(LUA_CLIB_SRC)/socket/gate.c $(LUA_CLIB_SRC)/socket/socket_event.c $(LUA_CLIB_SRC)/socket/socket_util.c $(LUA_CLIB_SRC)/socket/socket_http.c $(LUA_CLIB_SRC)/common/object_container.c $(LIBEV_SHARE_LIB) | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) -Wno-strict-aliasing $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LIBEV_INC) -I$(LUA_CLIB_SRC) -I./3rd/klib -I./3rd/curl
+$(LUA_CLIB_PATH)/ev.so : $(LUA_CLIB_SRC)/lua-ev.c $(LUA_CLIB_SRC)/lua-gate.c $(LUA_CLIB_SRC)/common/common.c $(LUA_CLIB_SRC)/socket/gate.c $(LUA_CLIB_SRC)/socket/socket_tcp.c $(LUA_CLIB_SRC)/socket/socket_util.c $(LUA_CLIB_SRC)/socket/socket_httpc.c $(LUA_CLIB_SRC)/common/object_container.c $(LUA_CLIB_SRC)/common/string.c $(LIBEV_SHARE_LIB) $(LIBCURL_SHARE_LIB) | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) -Wno-strict-aliasing $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LIBEV_INC) -I$(LUA_CLIB_SRC) -I$(LIBCURL_INC) -I./3rd/klib
 
 $(LUA_CLIB_PATH)/worker.so : $(LUA_CLIB_SRC)/lua-worker.c $(LUA_CLIB_SRC)/common/message_queue.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
