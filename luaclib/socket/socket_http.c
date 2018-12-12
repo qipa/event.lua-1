@@ -17,8 +17,9 @@ typedef struct http_request {
 	int fd;
 	struct ev_io rio;
 	struct ev_io wio;
-	string_t header;
-	string_t content;
+	void* headers;
+	string_t receive_header;
+	string_t receive_content;
 	char error[CURL_ERROR_SIZE];
 	void* callback_ud;
 	request_callback callback;
@@ -137,7 +138,8 @@ multi_timer_cb(CURLM* ctx, long timeout_ms,void* ud) {
 }
 
 
-void http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
+void 
+http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
 	multi->ctx = curl_multi_init();
 	multi->ev_loop = ev_loop;
 	multi->still_running = 0;
@@ -147,7 +149,8 @@ void http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
 	curl_multi_setopt(multi->ctx, CURLMOPT_TIMERDATA, multi);
 }
 
-http_multi_t* http_multi_new(struct ev_loop_ctx* ev_loop) {
+http_multi_t* 
+http_multi_new(struct ev_loop_ctx* ev_loop) {
 	http_multi_t* multi = malloc(sizeof( *multi ));
 	http_multi_init(multi, ev_loop);
 	return multi;
@@ -160,10 +163,12 @@ receive_data(char *buffer, size_t size, size_t nitems, void *userdata) {
 	return nitems * size;
 }
 
-void http_request_init(http_request_t* request) {
+void 
+http_request_init(http_request_t* request) {
 	request->error[0] = '\0';
-	string_init(&request->header, NULL, 64);
-	string_init(&request->content, NULL, 64);
+	request->headers = NULL;
+	string_init(&request->receive_header, NULL, 64);
+	string_init(&request->receive_content, NULL, 64);
 	request->multi = NULL;
 	request->callback = NULL;
 	request->ctx = curl_easy_init();
@@ -171,10 +176,10 @@ void http_request_init(http_request_t* request) {
 	curl_easy_setopt(request->ctx, CURLOPT_PRIVATE, request);
 
 	curl_easy_setopt(request->ctx, CURLOPT_HEADERFUNCTION, receive_data);
-	curl_easy_setopt(request->ctx, CURLOPT_HEADERDATA, &request->header);
+	curl_easy_setopt(request->ctx, CURLOPT_HEADERDATA, &request->receive_header);
 
 	curl_easy_setopt(request->ctx, CURLOPT_WRITEFUNCTION, receive_data);
-	curl_easy_setopt(request->ctx, CURLOPT_WRITEDATA, &request->content);
+	curl_easy_setopt(request->ctx, CURLOPT_WRITEDATA, &request->receive_content);
 
 	curl_easy_setopt(request->ctx, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(request->ctx, CURLOPT_NOSIGNAL, 1);
@@ -188,42 +193,103 @@ void http_request_init(http_request_t* request) {
 	curl_easy_setopt(request->ctx, CURLOPT_LOW_SPEED_LIMIT, 30L);
 }
 
-void http_request_release(http_request_t* request) {
+void 
+http_request_release(http_request_t* request) {
 	curl_easy_cleanup(request->ctx);
-	string_release(&request->header);
-	string_release(&request->content);
+	string_release(&request->receive_header);
+	string_release(&request->receive_content);
 }
 
-http_request_t* http_request_new() {
+http_request_t* 
+http_request_new() {
 	http_request_t* request = malloc(sizeof( *request ));
 	http_request_init(request);
 	return request;
 }
 
-void http_request_delete(http_request_t* request) {
+void 
+http_request_delete(http_request_t* request) {
 	http_request_release(request);
 	free(request);
 }
 
-int set_url(http_request_t* request, const char* url) {
-	return curl_easy_setopt(request->ctx, CURLOPT_URL, url);
+int 
+set_url(http_request_t* request, const char* url) {
+	if (CURLE_OK != curl_easy_setopt(request->ctx, CURLOPT_URL, url)) {
+		return -1;
+	}
+	return 0;
+}
+
+int 
+set_post_data(http_request_t* request, const char* data, size_t size) {
+	if (!data) {
+		return -1;
+	}
+
+	CURLcode status = CURLE_OK;
+
+	status = curl_easy_setopt(request->ctx, CURLOPT_POST, 1);
+	if (CURLE_OK != status) {
+		return status;
+	}
+
+	if (size == 0) {
+		status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDS, "");
+	} else {
+		status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDS, data);
+	}
+
+	if (CURLE_OK != status) {
+		return status;
+	}
+
+	status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDSIZE, size);
+	if (CURLE_OK != status) {
+		return status;
+	}
+	return 0;
+}
+
+int 
+set_header(http_request_t* request, const char* data, size_t size) {
+	if(request->headers) {
+		curl_slist_append(request->headers, data);
+	} else {
+		request->headers = curl_slist_append(NULL, data);
+	}
+
+	CURLcode status = curl_easy_setopt(request->ctx, CURLOPT_HTTPHEADER, request->headers);
+
+	if (CURLE_OK != status) {
+		return -1;
+	}
+	return 0;
+}
+
+int
+set_timeout(http_request_t* request, uint32_t secs) {
+	CURLcode status = curl_easy_setopt(request->ctx, CURLOPT_TIMEOUT, secs);
+	if (CURLE_OK != status) {
+		return -1;
+	}
+
+	return 0;
 }
 
 const char* get_headers(http_request_t* request) {
-	return string_str(&request->header);
+	return string_str(&request->receive_header);
 }
 
 const char* get_content(http_request_t* request) {
-	return string_str(&request->content);
+	return string_str(&request->receive_content);
 }
 
-void set_callback(http_request_t* request, request_callback callback, void* ud) {
+int 
+http_multi_perform(http_multi_t* multi, http_request_t* request, request_callback callback, void* ud) {
+	request->multi = multi;
 	request->callback = callback;
 	request->callback_ud = ud;
-}
-
-int http_multi_perform(http_multi_t* multi, http_request_t* request) {
-	request->multi = multi;
 	CURLMcode rc = curl_multi_add_handle(multi->ctx, request->ctx);
 
 	if (rc != CURLM_OK)

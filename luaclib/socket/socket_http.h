@@ -17,7 +17,7 @@ void set_callback(struct http_request* request, request_callback callback, void*
 const char* get_headers(struct http_request* request);
 const char* get_content(struct http_request* request);
 
-int http_multi_perform(struct http_multi* multi, struct http_request* request);
+int http_multi_perform(struct http_multi* multi, struct http_request* request, request_callback callback, void* ud);
 
 
 

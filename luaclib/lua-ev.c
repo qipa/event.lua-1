@@ -1054,9 +1054,8 @@ _lhttpc_get(lua_State* L) {
 
 	struct http_request* request = http_request_new();
 	set_url(request, url);
-	set_callback(request, request_done, ud);
-
-	http_multi_perform(lev->multi, request);
+	
+	http_multi_perform(lev->multi, request, request_done, ud);
 	return 0;
 }
 
