@@ -138,7 +138,7 @@ function _M.connect(addr,header,sync,channel_class)
 		return create_channel(channel_class,channel_buff,addr)
 	end
 
-	if co_running() ~= _main_co then
+	if co_running() == _main_co then
 		error("cannot async connect in main co")
 	end
 

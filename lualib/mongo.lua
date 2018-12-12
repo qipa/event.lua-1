@@ -36,7 +36,7 @@ function mongo_channel:data(data,size)
 
 		if cursor ~= nil then
 			local more_data = driver.more(session, session_ctx.name, 50000, cursor)
-			self.buffer:write(more_data,1)
+			self.channel_buff:write(more_data,1)
 		else
 			local list = {}
 			for _,doc in pairs(session_ctx.result) do
@@ -71,7 +71,7 @@ function mongo_channel:runCommand(db,cmd,cmd_v,...)
 	self.session_ctx[session] = {count = 1,name = full_name,hold = {},result = {}}
 
 	local data = driver.query(session, 0, full_name, 0,	1, bson_cmd)
-	self.buffer:write(data,1)
+	self.channel_buff:write(data,1)
 
 	local ok,result = event.wait(session)
 	if not ok then
@@ -89,7 +89,7 @@ local function find(self,db,name,query,selector,count,callback)
 	name = string.format("%s.%s",db,name)
 	self.session_ctx[session] = {count = count,name = name,hold = {},result = {},callback = callback}
 	local data = driver.query(session, 0, name, 0, count, query and bson.encode(query) or empty_bson, selector and bson.encode(selector))
-	self.buffer:write(data,1)
+	self.channel_buff:write(data,1)
 
 	if callback then
 		return
@@ -125,7 +125,7 @@ function mongo_channel:update(db,name,selector,update,upsert,multi)
 	name = string.format("%s.%s",db,name)
 	local flags	= (upsert and 1	or 0) +	(multi and 2 or	0)
 	local data = driver.update(name, flags, bson.encode(selector), bson.encode(update))
-	self.buffer:write(data,1)
+	self.channel_buff:write(data,1)
 end
 
 function mongo_channel:insert(db,name,doc)
@@ -136,7 +136,7 @@ function mongo_channel:insert(db,name,doc)
 	end
 
 	local data = driver.insert(0, name, bson.encode(doc))
-	self.buffer:write(data,1)
+	self.channel_buff:write(data,1)
 end
 
 function mongo_channel:delete(db,name,selector)

@@ -296,6 +296,13 @@ function class.instanceFrom(name,data)
 	return inst
 end
 
+function class.instance(name,data)
+	print("class.instance",name,data)
+	local cls = class.get(name)
+	assert(cls ~= nil,name)
+	return cls:instanceFrom(data)
+end
+
 function class.get(name)
 	return classCtx[name]
 end
@@ -361,4 +368,5 @@ function class.countObjectVerbose(name)
 end
 
 rawset(_G,"class",class)
+rawset(_G,"instance",class.instance)
 rawset(_G,"super",class.super)

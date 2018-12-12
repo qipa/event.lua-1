@@ -30,54 +30,61 @@ local bullet = import "module.scene.bullet"
 --
 
 local LOG = logger:create("fuck")
-local mongodb_channel = mongo:inherit()
-function mongodb_channel:disconnect()
-	os.exit(1)
-end
+-- local mongodb_channel = mongo:inherit()
+-- function mongodb_channel:disconnect()
+-- 	os.exit(1)
+-- end
 
-local db_channel,reason = event.connect(env.mongodb,4,true,mongodb_channel)
-if not db_channel then
-	LOG:ERROR_FM("%s connect db:%s faield:%s",env.name,env.mongodb,reason)
-	os.exit()
-end
+-- local db_channel,reason = event.connect(env.mongodb,4,true,mongodb_channel)
+-- if not db_channel then
+-- 	LOG:ERROR_FM("%s connect db:%s faield:%s",env.name,env.mongodb,reason)
+-- 	os.exit()
+-- end
 
 
 
 event.fork(function ()
 	env.distId = 1
+	_G.config = {}
+	local data = loadfile("./config/item.lua")()
+	_G.config["item"] = data
 	startup.run(1,env.distId,false,env.mongodb)
 	idBuilder:init(env.serverId,1)
-	local container = itemContainer.cItemContainer:load(nil,db_channel,"user",{userUid = 5})
+	local container = itemContainer.cItemContainer:load(nil,model.get_dbChannel(),"user",{userUid = 5})
 	if not container then
 		container = itemContainer.cItemContainer:new()
 	end
+	table.print(container.bagMgr.itemSlot)
+	for uid,item in pairs(container.bagMgr.itemSlot) do
+		print(item:getType())
+	end
 
-	-- container:insertItemByCid(100,1)
+	container:insertItemByCid(100,1)
 	-- container:deleteItemByCid(100,5)
-	-- container:insertItemByCid(1000,1)
+	container:insertItemByCid(101,1)
 	-- container:insertItemByCid(2000,1)
-	container:save(db_channel,"user",{userUid = 5})
+	container:save(model.get_dbChannel(),"user",{userUid = 5})
 	-- table.print(container)
 
 	-- worldServer:enter(1,1)
 	-- worldServer:leave(1)
 
-	local sceneInst = sceneStage.cSceneStage:new()
-	sceneInst:onCreate(1,1001,1)
-	sceneInst:enterArea(1)
+	-- local sceneInst = sceneStage.cSceneStage:new()
+	-- sceneInst:onCreate(1,1001,1)
+	-- sceneInst:enterArea(1)
 
-	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
-	local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
+	-- local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
+	-- local monsterObj = sceneInst:spawnMonster(1,{100,100},{1,0})
 
-	-- local fighter = fighter.cFighter:new()
-	-- fighter:onCreate(nil,{100,100})
-	-- print("fighter.uid",fighter.uid)
-	-- model.bind_fighter_with_uid(fighter.uid,fighter)
-	-- sceneInst:enter(fighter,{120,120})
+	-- -- local fighter = fighter.cFighter:new()
+	-- -- fighter:onCreate(nil,{100,100})
+	-- -- print("fighter.uid",fighter.uid)
+	-- -- model.bind_fighter_with_uid(fighter.uid,fighter)
+	-- -- sceneInst:enter(fighter,{120,120})
 
-	LOG:DEBUG_FM("%s connect db:%s ",env.name,env.mongodb)
-	LOG:INFO_FM("%s connect db:%s ",env.name,env.mongodb)
-	LOG:WARN_FM("%s connect db:%s ",env.name,env.mongodb)
-	LOG:ERROR_FM("%s connect db:%s ",env.name,env.mongodb)
+	-- LOG:DEBUG_FM("%s connect db:%s ",env.name,env.mongodb)
+	-- LOG:INFO_FM("%s connect db:%s ",env.name,env.mongodb)
+	-- LOG:WARN_FM("%s connect db:%s ",env.name,env.mongodb)
+	-- LOG:ERROR_FM("%s connect db:%s ",env.name,env.mongodb)
 end)
 
