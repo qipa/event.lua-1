@@ -145,6 +145,7 @@ multi_timer_cb(CURLM* ctx, long timeout_ms,void* ud) {
 
 void 
 http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
+	assert(curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK);
 	multi->ctx = curl_multi_init();
 	multi->ev_loop = ev_loop;
 	multi->still_running = 0;
@@ -163,6 +164,7 @@ http_multi_new(struct ev_loop_ctx* ev_loop) {
 
 void
 http_multi_release(http_multi_t* multi) {
+	curl_global_cleanup();
 	curl_multi_cleanup(multi->ctx);
 }
 
