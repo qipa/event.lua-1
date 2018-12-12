@@ -8,8 +8,8 @@
 #include "lauxlib.h"
 
 #include "ev.h"
-#include "socket/socket_event.h"
-#include "socket/socket_http.h"
+#include "socket/socket_tcp.h"
+#include "socket/socket_httpc.h"
 #include "socket/socket_util.h"
 #include "socket/pipe_message.h"
 

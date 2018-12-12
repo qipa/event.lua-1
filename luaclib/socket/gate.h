@@ -2,7 +2,7 @@
 #define GATE_H
 
 #include "ev.h"
-#include "socket/socket_event.h"
+#include "socket/socket_tcp.h"
 #include "socket/socket_util.h"
 #include "common/object_container.h"
 #include "common/common.h"
