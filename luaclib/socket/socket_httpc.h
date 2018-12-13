@@ -17,6 +17,7 @@ int set_url(struct http_request* request, const char* url);
 int set_header(struct http_request* request, const char* data, size_t size);
 int set_post_data(struct http_request* request, const char* data, size_t size);
 int set_timeout(struct http_request* request, uint32_t secs);
+int set_unix_socket_path(struct http_request* request, const char* path);
 
 const char* get_headers(struct http_request* request);
 const char* get_content(struct http_request* request);

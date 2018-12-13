@@ -206,7 +206,6 @@ http_request_init(http_request_t* request) {
 
 	curl_easy_setopt(request->ctx, CURLOPT_ERRORBUFFER, request->error);
 
-	/* abort if slower than 30 bytes/sec during 5 seconds */
 	curl_easy_setopt(request->ctx, CURLOPT_LOW_SPEED_TIME, 5L);
 	curl_easy_setopt(request->ctx, CURLOPT_LOW_SPEED_LIMIT, 30L);
 }
@@ -234,6 +233,14 @@ http_request_delete(http_request_t* request) {
 int 
 set_url(http_request_t* request, const char* url) {
 	if (CURLE_OK != curl_easy_setopt(request->ctx, CURLOPT_URL, url)) {
+		return -1;
+	}
+	return 0;
+}
+
+int 
+set_unix_socket_path(http_request_t* request, const char* path) {
+	if (CURLE_OK != curl_easy_setopt(request->ctx, CURLOPT_UNIX_SOCKET_PATH, path)) {
 		return -1;
 	}
 	return 0;

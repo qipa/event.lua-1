@@ -154,42 +154,7 @@ function httpd_channel:reply(statuscode,info)
 	self:close()
 end
 
-local httpc_channel = channel:inherit()
-
-function httpc_channel:init()
-	self.parser = http_parser.new(1)
-end
-
-function httpc_channel:disconnect()
-end
-
-function httpc_channel:dispatch(status,body)
-	-- self:close_immediately()
-	if self.callback then
-		self.callback(self,status,body)
-	else
-		event.wakeup(self.session,body)
-	end
-end
-
-function httpc_channel:data()
-	local data = self:read()
-	local ok,more,response = self.parser:execute(data)
-
-	if not ok then
-		event.error(string.format("httpd parser error:%s",more))
-		self:close_immediately()
-		return
-	end
-	
-	if not more then
-		self:dispatch(response.status,response.body)
-		return
-	end
-end
-
 local _M = {}
-
 
 function _M.listen(addr,callback)
 	return event.listen(addr,0,function (listener,channel)
@@ -197,16 +162,16 @@ function _M.listen(addr,callback)
 	end,httpd_channel,true)
 end
 
-function _M.post(host,url,header,form,callback)
+function _M.post(host,url,header,form,socket_path,callback)
 	local header_content = {}
 	for k,v in pairs(header) do
 		table.insert(header_content,k..":"..v)
 	end
 
-	event.httpc_post(string.format("http://%s%s",host,url),header_content,url_encode(form),callback)
+	event.httpc_post(string.format("http://%s%s",host,url),header_content,url_encode(form),socket_path,callback)
 end
 
-function _M.get(host,url,header,form,callback)
+function _M.get(host,url,header,form,socket_path,callback)
 	local header_content = {}
 	for k,v in pairs(header) do
 		table.insert(header_content,k..":"..v)
@@ -214,34 +179,15 @@ function _M.get(host,url,header,form,callback)
 
 	url = url..url_encode(form)
 
-	event.httpc_get(string.format("http://%s%s",host,url),header_content,callback)
+	event.httpc_get(string.format("http://%s%s",host,url),header_content,socket_path,callback)
 end
 
 function _M.post_world(method,content)
-	local url = method
-	local header = header or {}
-	header["Content-Type"] = "application/json"
-	local channel,err = event.connect(env.world_http,0,false,httpc_channel)
-	if not channel then
-		return false,err
-	end
-	channel.session = event.gen_session()
-
-	local header_content = ""
-	for k,v in pairs(header) do
-		header_content = string.format("%s%s:%s\r\n", header_content, k, v)
-	end
-
-	if content then
-		content = cjson.encode(content)
-		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:%d\r\n\r\n", "POST", url, header_content, #content)
-		channel.channel_buff:write(data)
-		channel.channel_buff:write(content)
-	else
-		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:0\r\n\r\n", "POST", url, header_content)
-		channel.channel_buff:write(data)
-	end
-
+	local header = {"Content-Type:application/json"}
+	local session = event.gen_session()
+	event.httpc_post(string.format("http://localhost%s",method),header,cjson.encode(content),"./world_http.ipc",function (_,content)
+		event.wakeup(session,content)
+	end)
 	local result = event.wait(channel.session)
 	return cjson.decode(result)
 end

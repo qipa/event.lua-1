@@ -1043,37 +1043,6 @@ request_done(struct http_request* request, void* ud) {
 static int
 _lhttpc_get(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	const char* url = luaL_checkstring(L, 2);
-	luaL_checktype(L, 4, LUA_TFUNCTION);
-	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	struct lua_httpc* ud = malloc(sizeof(*ud));
-	ud->lev = lev;
-	ud->callback = callback;
-
-	struct http_request* request = http_request_new();
-	set_url(request, url);
-
-	if (!lua_isnil(L, 3)) {
-		lua_pushnil(L);
-		while (lua_next(L, 3) != 0) {
-			size_t size;
-			const char* header = lua_tolstring(L, -1, &size);
-			set_header(request, header, size);
-			lua_pop(L, 1);
-		}
-	}
-	
-	http_multi_perform(lev->multi, request, request_done, ud);
-	return 0;
-}
-
-static int
-_lhttpc_post(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	const char* url = luaL_checkstring(L, 2);
-	size_t size;
-	const char* content = luaL_checklstring(L, 4, &size);
 
 	luaL_checktype(L, 5, LUA_TFUNCTION);
 	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -1083,7 +1052,9 @@ _lhttpc_post(lua_State* L) {
 	ud->callback = callback;
 
 	struct http_request* request = http_request_new();
+	const char* url = luaL_checkstring(L, 2);
 	set_url(request, url);
+
 	if (!lua_isnil(L, 3)) {
 		lua_pushnil(L);
 		while (lua_next(L, 3) != 0) {
@@ -1094,6 +1065,48 @@ _lhttpc_post(lua_State* L) {
 		}
 	}
 	
+	if (!lua_isnil(L, 4)) {
+		const char* socket_path = lua_tostring(L, 4);
+		set_unix_socket_path(request, socket_path);
+	}
+
+	http_multi_perform(lev->multi, request, request_done, ud);
+	return 0;
+}
+
+static int
+_lhttpc_post(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	
+	luaL_checktype(L, 6, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	struct lua_httpc* ud = malloc(sizeof(*ud));
+	ud->lev = lev;
+	ud->callback = callback;
+
+	struct http_request* request = http_request_new();
+
+	const char* url = luaL_checkstring(L, 2);
+	set_url(request, url);
+
+	if (!lua_isnil(L, 3)) {
+		lua_pushnil(L);
+		while (lua_next(L, 3) != 0) {
+			size_t size;
+			const char* header = lua_tolstring(L, -1, &size);
+			set_header(request, header, size);
+			lua_pop(L, 1);
+		}
+	}
+
+	if (!lua_isnil(L, 4)) {
+		const char* socket_path = lua_tostring(L, 4);
+		set_unix_socket_path(request, socket_path);
+	}
+
+	size_t size;
+	const char* content = luaL_checklstring(L, 5, &size);
 	set_post_data(request, content, size);
 	
 	http_multi_perform(lev->multi, request, request_done, ud);
