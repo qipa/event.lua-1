@@ -1032,11 +1032,13 @@ request_done(struct http_request* request, void* ud) {
 	struct lua_ev* lev = userdata->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, userdata->callback);
+	
 	lua_pushinteger(lev->main, get_http_code(request));
-	lua_pushstring(lev->main, get_headers(request));
-	lua_pushstring(lev->main, get_content(request));
+	lua_pushstring(lev->main, get_http_error(request));
+	lua_pushstring(lev->main, get_http_headers(request));
+	lua_pushstring(lev->main, get_http_content(request));
 
-	lua_pcall(lev->main, 3, 0, 0);
+	lua_pcall(lev->main, 4, 0, 0);
 
 	free(userdata);
 }

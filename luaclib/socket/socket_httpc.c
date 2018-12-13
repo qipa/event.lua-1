@@ -306,13 +306,18 @@ set_timeout(http_request_t* request, uint32_t secs) {
 }
 
 const char* 
-get_headers(http_request_t* request) {
+get_http_headers(http_request_t* request) {
 	return string_str(&request->receive_header);
 }
 
 const char* 
-get_content(http_request_t* request) {
+get_http_content(http_request_t* request) {
 	return string_str(&request->receive_content);
+}
+
+const char*
+get_http_error(http_request_t* request) {
+	return request->error;
 }
 
 int

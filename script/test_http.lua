@@ -32,9 +32,9 @@ event.fork(function ()
         --     end
         -- end)
 
-        http.post("127.0.0.1:1989","/mrq/a/b/c",{},{"mrq"},"./world_http.ipc",function (code, header,content)
+        http.post("127.0.0.1:1989","/mrq/a/b/c",{},{"mrq"},"./world_http.ipc",function (code, error, header,content)
              post_count = post_count + 1
-             print(code,content)
+             print(code,error,"@@@")
             if post_count == count then
                 print("post diff",event.now() - ti)
             end
