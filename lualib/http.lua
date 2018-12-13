@@ -150,7 +150,7 @@ function httpd_channel:reply(statuscode,info)
 	else
 		table.insert(content,"\r\n")
 	end
-	self.buffer:write(table.concat(content,""))
+	self.channel_buff:write(table.concat(content,""))
 	self:close()
 end
 
@@ -267,11 +267,11 @@ function _M.post_world(method,content)
 	if content then
 		content = cjson.encode(content)
 		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:%d\r\n\r\n", "POST", url, header_content, #content)
-		channel.buffer:write(data)
-		channel.buffer:write(content)
+		channel.channel_buff:write(data)
+		channel.channel_buff:write(content)
 	else
 		local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:0\r\n\r\n", "POST", url, header_content)
-		channel.buffer:write(data)
+		channel.channel_buff:write(data)
 	end
 
 	local result = event.wait(channel.session)

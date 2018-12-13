@@ -1061,7 +1061,24 @@ _lhttpc_get(lua_State* L) {
 
 static int
 _lhttpc_post(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	const char* url = luaL_checkstring(L, 2);
+	size_t size;
+	const char* content = luaL_checklstring(L, 3, &size);
+
+	luaL_checktype(L, 4, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	struct lua_httpc* ud = malloc(sizeof(*ud));
+	ud->lev = lev;
+	ud->callback = callback;
+
+	struct http_request* request = http_request_new();
+	set_url(request, url);
+	set_post_data(request, content, size);
 	
+	http_multi_perform(lev->multi, request, request_done, ud);
+	return 0;
 }
 
 static int

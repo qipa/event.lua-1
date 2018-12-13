@@ -202,8 +202,8 @@ function _M.httpc_get(url,func)
 	_event:httpc_get(url,func)
 end
 
-function _M.httpc_post(url,data)
-
+function _M.httpc_post(url,data,func)
+	_event:httpc_post(url,data,func)
 end
 
 function _M.run_process(cmd,line)

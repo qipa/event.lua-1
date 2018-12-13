@@ -14,7 +14,9 @@ struct http_request* http_request_new();
 void http_request_delete(struct http_request* request);
 
 int set_url(struct http_request* request, const char* url);
-void set_callback(struct http_request* request, request_callback callback, void* ud);
+int set_header(struct http_request* request, const char* data, size_t size);
+int set_post_data(struct http_request* request, const char* data, size_t size);
+int set_timeout(http_request_t* request, uint32_t secs);
 
 const char* get_headers(struct http_request* request);
 const char* get_content(struct http_request* request);
