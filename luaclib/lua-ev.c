@@ -1032,10 +1032,11 @@ request_done(struct http_request* request, void* ud) {
 	struct lua_ev* lev = userdata->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, userdata->callback);
+	lua_pushinteger(lev->main, get_http_code(request));
 	lua_pushstring(lev->main, get_headers(request));
 	lua_pushstring(lev->main, get_content(request));
 
-	lua_pcall(lev->main, 2, 0, 0);
+	lua_pcall(lev->main, 3, 0, 0);
 
 	free(userdata);
 }
@@ -1052,6 +1053,7 @@ _lhttpc_get(lua_State* L) {
 	ud->callback = callback;
 
 	struct http_request* request = http_request_new();
+	
 	const char* url = luaL_checkstring(L, 2);
 	set_url(request, url);
 

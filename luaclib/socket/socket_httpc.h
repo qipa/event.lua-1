@@ -21,6 +21,7 @@ int set_unix_socket_path(struct http_request* request, const char* path);
 
 const char* get_headers(struct http_request* request);
 const char* get_content(struct http_request* request);
+int get_http_code(struct http_request* request);
 
 int http_multi_perform(struct http_multi* multi, struct http_request* request, request_callback callback, void* ud);
 

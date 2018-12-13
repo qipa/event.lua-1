@@ -213,6 +213,9 @@ http_request_init(http_request_t* request) {
 void 
 http_request_release(http_request_t* request) {
 	curl_easy_cleanup(request->ctx);
+	if (request->headers) {
+		curl_slist_free_all(request->headers);
+	}
 	string_release(&request->receive_header);
 	string_release(&request->receive_content);
 }
@@ -302,12 +305,21 @@ set_timeout(http_request_t* request, uint32_t secs) {
 	return 0;
 }
 
-const char* get_headers(http_request_t* request) {
+const char* 
+get_headers(http_request_t* request) {
 	return string_str(&request->receive_header);
 }
 
-const char* get_content(http_request_t* request) {
+const char* 
+get_content(http_request_t* request) {
 	return string_str(&request->receive_content);
+}
+
+int
+get_http_code(http_request_t* request) {
+	int code;
+	curl_easy_getinfo(request->ctx, CURLINFO_RESPONSE_CODE, &code);
+	return code;
 }
 
 int 

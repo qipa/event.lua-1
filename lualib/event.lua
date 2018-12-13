@@ -203,7 +203,7 @@ function _M.httpc_get(url,headers,unix_socket_path,func)
 end
 
 function _M.httpc_post(url,headers,content,unix_socket_path,func)
-	_event:httpc_post(url,headers,content,unix_socket_path,func)
+	_event:httpc_post(url,headers,unix_socket_path,content,func)
 end
 
 function _M.run_process(cmd,line)

@@ -185,7 +185,7 @@ end
 function _M.post_world(method,content)
 	local header = {"Content-Type:application/json"}
 	local session = event.gen_session()
-	event.httpc_post(string.format("http://localhost%s",method),header,cjson.encode(content),"./world_http.ipc",function (_,content)
+	event.httpc_post(string.format("http://localhost%s",method),header,cjson.encode(content),"./world_http.ipc",function (_,_,content)
 		event.wakeup(session,content)
 	end)
 	local result = event.wait(channel.session)
