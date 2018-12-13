@@ -170,7 +170,7 @@ function _M.post(host,url,header,form,socket_path,callback)
 		request:set_header(k..":"..v)
 	end
 
-	request:set_content(url_encode(form))
+	request:set_post_data(url_encode(form))
 
 	if socket_path then
 		request:set_unix_socket(socket_path)
@@ -183,6 +183,7 @@ function _M.get(host,url,header,form,socket_path,callback)
 	url = url..url_encode(form)
 
 	local request = event.httpc_request(callback)
+
 	request:set_url(string.format("http://%s%s",host,url))
 
 	for k,v in pairs(header) do

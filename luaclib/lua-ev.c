@@ -1102,13 +1102,13 @@ _lhttpc_request(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
 
 	luaL_checktype(L, 2, LUA_TFUNCTION);
-
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
 	struct lua_httpc* httpc = lua_newuserdata(L, sizeof(*httpc));
 	memset(httpc,0,sizeof(*httpc));
 
 	httpc->lev = lev;
 	httpc->lrequest = http_request_new();
-	httpc->callback = luaL_ref(L, LUA_REGISTRYINDEX);
+	httpc->callback = callback;
 	httpc->ref = meta_init(L, META_REQUEST);
 
 	return 1;
