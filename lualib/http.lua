@@ -163,23 +163,37 @@ function _M.listen(addr,callback)
 end
 
 function _M.post(host,url,header,form,socket_path,callback)
-	local header_content = {}
+	local request = event.httpc_request(callback)
+	request:set_url(string.format("http://%s%s",host,url))
+
 	for k,v in pairs(header) do
-		table.insert(header_content,k..":"..v)
+		request:set_header(k..":"..v)
 	end
 
-	event.httpc_post(string.format("http://%s%s",host,url),header_content,url_encode(form),socket_path,callback)
+	request:set_content(url_encode(form))
+
+	if socket_path then
+		request:set_unix_socket(socket_path)
+	end
+	
+	return request:perfrom()
 end
 
 function _M.get(host,url,header,form,socket_path,callback)
-	local header_content = {}
-	for k,v in pairs(header) do
-		table.insert(header_content,k..":"..v)
-	end
-
 	url = url..url_encode(form)
 
-	event.httpc_get(string.format("http://%s%s",host,url),header_content,socket_path,callback)
+	local request = event.httpc_request(callback)
+	request:set_url(string.format("http://%s%s",host,url))
+
+	for k,v in pairs(header) do
+		request:set_header(k..":"..v)
+	end
+
+	if socket_path then
+		request:set_unix_socket(socket_path)
+	end
+
+	return request:perfrom()
 end
 
 function _M.post_world(method,content)

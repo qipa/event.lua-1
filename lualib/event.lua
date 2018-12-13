@@ -198,12 +198,8 @@ function _M.gate(max)
 	return gate
 end
 
-function _M.httpc_get(url,headers,unix_socket_path,func)
-	_event:httpc_get(url,headers,unix_socket_path,func)
-end
-
-function _M.httpc_post(url,headers,content,unix_socket_path,func)
-	_event:httpc_post(url,headers,unix_socket_path,content,func)
+function _M.httpc_request(func)
+	return _event:httpc_request(func)
 end
 
 function _M.run_process(cmd,line)

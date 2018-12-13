@@ -25,6 +25,7 @@
 #define META_LISTENER 		"meta_listener"
 #define META_UDP 			"meta_udp"
 #define META_PIPE			"meta_pipe"
+#define META_REQUEST		"meta_request"
 
 #define STATE_HEAD 0
 #define STATE_BODY 1
@@ -107,6 +108,8 @@ struct lua_pipe {
 
 struct lua_httpc {
 	struct lua_ev* lev;
+	struct http_request* lrequest;
+	int ref;
 	int callback;
 };
 
@@ -1040,81 +1043,75 @@ request_done(struct http_request* request, void* ud) {
 
 	lua_pcall(lev->main, 4, 0, 0);
 
-	free(userdata);
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, userdata->ref);
 }
 
 static int
-_lhttpc_get(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-
-	luaL_checktype(L, 5, LUA_TFUNCTION);
-	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	struct lua_httpc* ud = malloc(sizeof(*ud));
-	ud->lev = lev;
-	ud->callback = callback;
-
-	struct http_request* request = http_request_new();
-	
-	const char* url = luaL_checkstring(L, 2);
-	set_url(request, url);
-
-	if (!lua_isnil(L, 3)) {
-		lua_pushnil(L);
-		while (lua_next(L, 3) != 0) {
-			size_t size;
-			const char* header = lua_tolstring(L, -1, &size);
-			set_header(request, header, size);
-			lua_pop(L, 1);
-		}
-	}
-	
-	if (!lua_isnil(L, 4)) {
-		const char* socket_path = lua_tostring(L, 4);
-		set_unix_socket_path(request, socket_path);
-	}
-
-	http_multi_perform(lev->multi, request, request_done, ud);
+_lrequset_set_url(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	const char* url = lua_tostring(L, 2);
+	set_url(httpc->lrequest, url);
 	return 0;
 }
 
 static int
-_lhttpc_post(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	
-	luaL_checktype(L, 6, LUA_TFUNCTION);
-	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	struct lua_httpc* ud = malloc(sizeof(*ud));
-	ud->lev = lev;
-	ud->callback = callback;
-
-	struct http_request* request = http_request_new();
-
-	const char* url = luaL_checkstring(L, 2);
-	set_url(request, url);
-
-	if (!lua_isnil(L, 3)) {
-		lua_pushnil(L);
-		while (lua_next(L, 3) != 0) {
-			size_t size;
-			const char* header = lua_tolstring(L, -1, &size);
-			set_header(request, header, size);
-			lua_pop(L, 1);
-		}
-	}
-
-	if (!lua_isnil(L, 4)) {
-		const char* socket_path = lua_tostring(L, 4);
-		set_unix_socket_path(request, socket_path);
-	}
-
+_lrequset_set_header(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
 	size_t size;
-	const char* content = luaL_checklstring(L, 5, &size);
-	set_post_data(request, content, size);
-	
-	http_multi_perform(lev->multi, request, request_done, ud);
+	const char* header = luaL_checklstring(L, 2, &size);
+	set_header(httpc->lrequest, header, size);
 	return 0;
+}
+
+static int
+_lrequset_set_timeout(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	int timeout = luaL_checkinteger(L, 2);
+	set_timeout(httpc->lrequest, timeout);
+	return 0;
+}
+
+static int
+_lrequset_set_post_data(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	size_t size;
+	const char* content = luaL_checklstring(L, 2, &size);
+	set_post_data(httpc->lrequest, content, size);
+	return 0;
+}
+
+static int
+_lrequset_set_unix_socket(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	const char* socket_path = luaL_checkstring(L, 2);
+	set_unix_socket_path(httpc->lrequest, socket_path);
+	return 0;
+}
+
+static int
+_lrequset_perform(lua_State* L) {
+	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	struct lua_ev* lev = httpc->lev;
+	int status = http_multi_perform(lev->multi, httpc->lrequest, request_done, httpc);
+	lua_pushinteger(L, status);
+	return 1;
+}
+
+static int
+_lhttpc_request(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+
+	luaL_checktype(L, 2, LUA_TFUNCTION);
+
+	struct lua_httpc* httpc = lua_newuserdata(L, sizeof(*httpc));
+	memset(httpc,0,sizeof(*httpc));
+
+	httpc->lev = lev;
+	httpc->lrequest = http_request_new();
+	httpc->callback = luaL_ref(L, LUA_REGISTRYINDEX);
+	httpc->ref = meta_init(L, META_REQUEST);
+
+	return 1;
 }
 
 static int
@@ -1190,8 +1187,7 @@ luaopen_ev_core(lua_State* L) {
 		{ "udp", _udp_new },
 		{ "pipe", _lpipe_new },
 		{ "gate", _lgate_new },
-		{ "httpc_get", _lhttpc_get },
-		{ "httpc_post", _lhttpc_post },
+		{ "httpc_request", _lhttpc_request },
 		{ "breakout", _break },
 		{ "dispatch", _dispatch },
 		{ "clean", _clean },
@@ -1255,6 +1251,20 @@ luaopen_ev_core(lua_State* L) {
 		{ NULL, NULL },
 	};
 	luaL_newlib(L,meta_pipe);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L, META_REQUEST);
+	const luaL_Reg meta_request[] = {
+		{ "set_url", _lrequset_set_url },
+		{ "set_header", _lrequset_set_header },
+		{ "set_post_data", _lrequset_set_post_data },
+		{ "set_unix_socket", _lrequset_set_unix_socket },
+		{ "set_timeout", _lrequset_set_timeout },
+		{ "perfrom", _lrequset_perform },
+		{ NULL, NULL },
+	};
+	luaL_newlib(L,meta_request);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L,1);
 
