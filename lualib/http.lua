@@ -198,56 +198,24 @@ function _M.listen(addr,callback)
 end
 
 function _M.post(host,url,header,form,callback)
-	local header = header or {}
-	header["Content-Type"] = "application/x-www-form-urlencoded"
-
-	local content = url_encode(form)
-
-	local channel,err = event.connect(string.format("tcp://%s",host),0,false,httpc_channel)
-	if not channel then
-		return false,err
-	end
-	channel.callback = callback
-
-	local header_content = ""
+	local header_content = {}
 	for k,v in pairs(header) do
-		header_content = string.format("%s%s:%s\r\n", header_content, k, v)
+		table.insert(header_content,k..":"..v)
 	end
 
-	local data
-	if content ~= "" then
-		data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:%d\r\n\r\n", "POST", url, header_content, #content)
-		channel:write(data)
-		channel:write(content)
-	else
-		data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:0\r\n\r\n", "POST", url, header_content)
-		channel:write(data)
-	end
+	event.httpc_post(string.format("http://%s%s",host,url),header_content,url_encode(form),callback)
 end
 
 function _M.get(host,url,header,form,callback)
-	local header = header or {}
-	header["Content-Type"] = "application/x-www-form-urlencoded"
-
-	local content = url_encode(form)
-
-	url = url..content
-
-	local channel,err = event.connect(string.format("tcp://%s",host),0,false,httpc_channel)
-	if not channel then
-		return false,err
-	end
-	channel.callback = callback
-
-	local header_content = ""
+	local header_content = {}
 	for k,v in pairs(header) do
-		header_content = string.format("%s%s:%s\r\n", header_content, k, v)
+		table.insert(header_content,k..":"..v)
 	end
 
-	local data = string.format("%s %s HTTP/1.1\r\n%sContent-Length:0\r\n\r\n", "GET", url, header_content)
-	channel:write(data)
-end
+	url = url..url_encode(form)
 
+	event.httpc_get(string.format("http://%s%s",host,url),header_content,callback)
+end
 
 function _M.post_world(method,content)
 	local url = method
