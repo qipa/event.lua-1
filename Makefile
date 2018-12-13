@@ -17,6 +17,7 @@ LIBCURL_SHARE_LIB = 3rd/curl/lib/.libs/libcurl.so
 EFENCE_PATH ?= ./3rd/electric-fence
 EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
+
 # $(warning $(SIGAR_LUA_SRC))
 # $(shell find $(SIGAR_LUA_INC) -maxdepth 3 -type d) 
 # $(foreach dir,$(SIGAR_LUA_DIR),$(wildcard $(dir)/*.c))
@@ -26,7 +27,7 @@ EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
 LUA_CLIB_PATH ?= ./.libs
 LUA_CLIB_SRC ?= ./luaclib
-LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co snapshot
+LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co mysql snapshot 
 
 CONVERT_PATH ?= ./luaclib/convert
 
@@ -166,6 +167,9 @@ $(LUA_CLIB_PATH)/filter.so : $(LUA_CLIB_SRC)/lua-filter.c | $(LUA_CLIB_PATH)
 
 $(LUA_CLIB_PATH)/co.so : $(LUA_CLIB_SRC)/lua-co.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
+
+$(LUA_CLIB_PATH)/mysql.so : ./3rd/luasql-mysql/src/luasql.c ./3rd/luasql-mysql/src/ls_mysql.c | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC) -I/usr/include/mysql -lmysqlclient
 
 $(LUA_CLIB_PATH)/snapshot.so : $(LUA_CLIB_SRC)/lua-snapshot.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
