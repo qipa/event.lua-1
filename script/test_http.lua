@@ -5,9 +5,11 @@ local helper = require "helper"
 local count = 0
 
 event.fork(function ()
+    local count = 0
     local httpd,reason = http.listen("tcp://127.0.0.1:1989",function (channel,method,url,header,body)
         event.fork(function ()
-            print(method,url,body)
+            count = count + 1
+            print(method,url,body,count)
             -- channel:close()
             channel:reply(200,"ok")
         end)
@@ -21,7 +23,7 @@ event.fork(function ()
 
     local get_count = 0
     local post_count = 0
-    local count = 100
+    local count = 50
     local ti = event.now()
     for i = 1,count do
         -- http.get("127.0.0.1:1989","/mrq/a/b/c",{},{},nil,function (code,header,content)
@@ -33,9 +35,10 @@ event.fork(function ()
 
         http.post("127.0.0.1:1989","/mrq/a/b/c",{},{"mrq"},nil,function (code, error, header,content)
              post_count = post_count + 1
-             print(code,error)
+   
             if post_count == count then
                 print("post diff",event.now() - ti)
+                event.breakout()
             end
         end)
     end

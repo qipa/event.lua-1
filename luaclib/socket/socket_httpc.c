@@ -158,6 +158,7 @@ http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
 http_multi_t* 
 http_multi_new(struct ev_loop_ctx* ev_loop) {
 	http_multi_t* multi = malloc(sizeof( *multi ));
+	memset(multi, 0, sizeof(*multi));
 	http_multi_init(multi, ev_loop);
 	return multi;
 }
@@ -223,6 +224,7 @@ http_request_release(http_request_t* request) {
 http_request_t* 
 http_request_new() {
 	http_request_t* request = malloc(sizeof( *request ));
+	memset(request, 0, sizeof(*request));
 	http_request_init(request);
 	return request;
 }
@@ -276,6 +278,7 @@ set_post_data(http_request_t* request, const char* data, size_t size) {
 	if (CURLE_OK != status) {
 		return status;
 	}
+
 	return 0;
 }
 
