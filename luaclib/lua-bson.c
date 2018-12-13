@@ -521,7 +521,26 @@ append_table(struct bson *bs, lua_State *L, const char *key, size_t sz, int dept
 	if (depth > MAX_DEPTH) {
 		luaL_error(L, "Too depth while encoding bson");
 	}
+	
 	luaL_checkstack(L, 16, NULL);	// reserve enough stack space to pack table
+	lua_pushstring(L, "__name");
+	lua_rawget(L, -2);
+	if (lua_type(L, -1) != LUA_TNIL) {
+		lua_pop(L, 1);
+		lua_getfield(L, -1, "saveData");
+		if (lua_type(L, -1) == LUA_TFUNCTION) {
+			lua_rotate(L, -2 , 1);
+			if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+				luaL_error(L, "bson pack object error:%s",lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+		} else {
+			lua_pop(L, 1);
+		}
+	} else {
+		lua_pop(L, 1);
+	}
+
 	if (luaL_getmetafield(L, -1, "__len") != LUA_TNIL) {
 		lua_pushvalue(L, -2);
 		lua_call(L, 1, 1);
@@ -539,25 +558,6 @@ append_table(struct bson *bs, lua_State *L, const char *key, size_t sz, int dept
 		append_key(bs, L, BSON_ARRAY, key, sz);
 		pack_array(L, bs, depth, lua_rawlen(L, -1));
 	} else {
-		//BUG:FIXME
-		lua_pushstring(L, "__name");
-		lua_rawget(L, -2);
-		if (lua_type(L, -1) != LUA_TNIL) {
-			lua_pop(L, 1);
-			lua_getfield(L, -1, "saveData");
-			if (lua_type(L, -1) == LUA_TFUNCTION) {
-				lua_rotate(L, -2 , 1);
-				if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-					luaL_error(L, "bson pack object error:%s",lua_tostring(L, -1));
-					lua_pop(L, 1);
-				}
-			} else {
-				lua_pop(L, 1);
-			}
-		} else {
-			lua_pop(L, 1);
-		}
-
 		append_key(bs, L, BSON_DOCUMENT, key, sz);
 		pack_simple_dict(L, bs, depth);
 	}
