@@ -243,6 +243,22 @@ http_request_delete(http_request_t* request) {
 	free(request);
 }
 
+
+int 
+http_reqest_perform(http_multi_t* multi, http_request_t* request, request_callback callback, void* ud) {
+	request->multi = multi;
+	request->callback = callback;
+	request->callback_ud = ud;
+	CURLMcode rc = curl_multi_add_handle(multi->ctx, request->ctx);
+
+	if (rc != CURLM_OK) {
+		http_request_delete(request);
+		return -1;
+	}
+
+	return 0;
+}
+
 int 
 set_url(http_request_t* request, const char* url) {
 	if (CURLE_OK != curl_easy_setopt(request->ctx, CURLOPT_URL, url)) {
@@ -340,19 +356,4 @@ get_http_code(http_request_t* request) {
 	int code;
 	curl_easy_getinfo(request->ctx, CURLINFO_RESPONSE_CODE, &code);
 	return code;
-}
-
-int 
-http_multi_perform(http_multi_t* multi, http_request_t* request, request_callback callback, void* ud) {
-	request->multi = multi;
-	request->callback = callback;
-	request->callback_ud = ud;
-	CURLMcode rc = curl_multi_add_handle(multi->ctx, request->ctx);
-
-	if (rc != CURLM_OK) {
-		http_request_delete(request);
-		return -1;
-	}
-
-	return 0;
 }

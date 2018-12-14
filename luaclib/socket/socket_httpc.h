@@ -12,6 +12,7 @@ void http_multi_delete(struct http_multi* multi);
 
 struct http_request* http_request_new();
 void http_request_delete(struct http_request* request);
+int http_request_perform(struct http_multi* multi, struct http_request* request, request_callback callback, void* ud);
 
 int set_url(struct http_request* request, const char* url);
 int set_header(struct http_request* request, const char* data, size_t size);
@@ -24,7 +25,7 @@ const char* get_http_content(struct http_request* request, size_t* size);
 const char* get_http_error(struct http_request* request);
 int get_http_code(struct http_request* request);
 
-int http_multi_perform(struct http_multi* multi, struct http_request* request, request_callback callback, void* ud);
+
 
 
 

@@ -1098,7 +1098,7 @@ static int
 _lrequset_perform(lua_State* L) {
 	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
 	struct lua_ev* lev = httpc->lev;
-	int status = http_multi_perform(lev->multi, httpc->lrequest, request_done, httpc);
+	int status = http_request_perform(lev->multi, httpc->lrequest, request_done, httpc);
 	lua_pushinteger(L, status);
 	return 1;
 }
