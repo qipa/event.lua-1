@@ -1038,8 +1038,14 @@ request_done(struct http_request* request, void* ud) {
 	
 	lua_pushinteger(lev->main, get_http_code(request));
 	lua_pushstring(lev->main, get_http_error(request));
-	lua_pushstring(lev->main, get_http_headers(request));
-	lua_pushstring(lev->main, get_http_content(request));
+
+	size_t headers_size;
+	const char* headers = get_http_headers(request, &headers_size);
+	lua_pushlstring(lev->main, headers, headers_size);
+
+	size_t content_size;
+	const char* content = get_http_content(request, &content_size);
+	lua_pushlstring(lev->main, content, content_size);
 
 	lua_pcall(lev->main, 4, 0, 0);
 

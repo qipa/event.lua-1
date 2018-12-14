@@ -19,8 +19,8 @@ int set_post_data(struct http_request* request, const char* data, size_t size);
 int set_timeout(struct http_request* request, uint32_t secs);
 int set_unix_socket_path(struct http_request* request, const char* path);
 
-const char* get_http_headers(struct http_request* request);
-const char* get_http_content(struct http_request* request);
+const char* get_http_headers(struct http_request* request, size_t* size);
+const char* get_http_content(struct http_request* request, size_t* size);
 const char* get_http_error(struct http_request* request);
 int get_http_code(struct http_request* request);
 

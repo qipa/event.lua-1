@@ -18,6 +18,7 @@ typedef struct http_request {
 	struct ev_io rio;
 	struct ev_io wio;
 	void* headers;
+	void* content;
 	string_t receive_header;
 	string_t receive_content;
 	char error[CURL_ERROR_SIZE];
@@ -56,7 +57,6 @@ read_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
 	http_multi_t* multi = request->multi;
 	curl_multi_socket_action(multi->ctx, request->fd, CURL_POLL_IN, &multi->still_running);
 	check_multi_info(multi);
-
 	if (multi->still_running <= 0) {
 		if (ev_is_active(&multi->io)) {
 			ev_timer_stop(loop_ctx_get(multi->ev_loop),(struct ev_timer*)&multi->io);
@@ -66,7 +66,10 @@ read_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
 
 static void
 write_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
+	ev_io_stop(loop, io);//FIXME
+
 	http_request_t* request = io->data;
+	assert(io->fd == request->fd);
 	http_multi_t* multi = request->multi;
 	curl_multi_socket_action(multi->ctx, request->fd, CURL_POLL_OUT, &multi->still_running);
 	check_multi_info(multi);
@@ -149,6 +152,7 @@ http_multi_init(http_multi_t* multi, struct ev_loop_ctx* ev_loop) {
 	multi->ctx = curl_multi_init();
 	multi->ev_loop = ev_loop;
 	multi->still_running = 0;
+	ev_timer_init((struct ev_timer*)&multi->io,timeout_cb,0,0);
 	curl_multi_setopt(multi->ctx, CURLMOPT_SOCKETFUNCTION, multi_sock_cb);
 	curl_multi_setopt(multi->ctx, CURLMOPT_SOCKETDATA, multi);
 	curl_multi_setopt(multi->ctx, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
@@ -186,6 +190,7 @@ void
 http_request_init(http_request_t* request) {
 	request->error[0] = '\0';
 	request->headers = NULL;
+	request->content = NULL;
 	string_init(&request->receive_header, NULL, 64);
 	string_init(&request->receive_content, NULL, 64);
 	request->multi = NULL;
@@ -216,6 +221,9 @@ http_request_release(http_request_t* request) {
 	curl_easy_cleanup(request->ctx);
 	if (request->headers) {
 		curl_slist_free_all(request->headers);
+	}
+	if (request->content) {
+		free(request->content);
 	}
 	string_release(&request->receive_header);
 	string_release(&request->receive_content);
@@ -267,7 +275,9 @@ set_post_data(http_request_t* request, const char* data, size_t size) {
 	if (size == 0) {
 		status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDS, "");
 	} else {
-		status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDS, data);
+		request->content = malloc(size);
+		memcpy(request->content, data, size);
+		status = curl_easy_setopt(request->ctx, CURLOPT_POSTFIELDS, request->content);
 	}
 
 	if (CURLE_OK != status) {
@@ -309,12 +319,14 @@ set_timeout(http_request_t* request, uint32_t secs) {
 }
 
 const char* 
-get_http_headers(http_request_t* request) {
+get_http_headers(http_request_t* request, size_t* size) {
+	*size = string_length(&request->receive_header);
 	return string_str(&request->receive_header);
 }
 
 const char* 
-get_http_content(http_request_t* request) {
+get_http_content(http_request_t* request, size_t* size) {
+	*size = string_length(&request->receive_content);
 	return string_str(&request->receive_content);
 }
 
