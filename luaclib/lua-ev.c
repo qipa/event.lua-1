@@ -11,7 +11,7 @@
 #include "socket/socket_tcp.h"
 #include "socket/socket_httpc.h"
 #include "socket/socket_util.h"
-#include "socket/pipe_message.h"
+#include "socket/socket_pipe.h"
 
 #define LUA_EV_ERROR    0
 #define LUA_EV_TIMEOUT	1

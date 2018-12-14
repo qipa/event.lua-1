@@ -15,7 +15,7 @@
 #include "lauxlib.h"
 
 #include "common/message_queue.h"
-#include "socket/pipe_message.h"
+#include "socket/socket_pipe.h"
 
 struct startup_args {
 	int fd;
