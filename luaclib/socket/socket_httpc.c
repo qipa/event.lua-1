@@ -243,9 +243,8 @@ http_request_delete(http_request_t* request) {
 	free(request);
 }
 
-
 int 
-http_reqest_perform(http_multi_t* multi, http_request_t* request, request_callback callback, void* ud) {
+http_request_perform(http_multi_t* multi, http_request_t* request, request_callback callback, void* ud) {
 	request->multi = multi;
 	request->callback = callback;
 	request->callback_ud = ud;
