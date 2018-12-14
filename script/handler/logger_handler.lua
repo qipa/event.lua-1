@@ -22,9 +22,9 @@ end
 
 function dayTimer()
 	if env.logPath then
-		local path = env.logPath.."/"..osData("%Y-%m-%d",osTime())
-		util.mkdir(path)
-		os.execute("mv *.log "..path)
+		local dir = env.logPath.."/"..osData("%Y-%m-%d",osTime())
+		util.mkdir(dir)
+		os.execute("mv *.log "..dir)
 	end
 end
 
