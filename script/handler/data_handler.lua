@@ -1,6 +1,7 @@
 local helper = require "helper"
 local event = require "event"
 local persistence = require "persistence"
+local mysqlCore = require "luasql.mysql"
 local util = require "util"
 
 
@@ -11,6 +12,8 @@ local MD5 = util.md5
 _persistence_ctx = _persistence_ctx or {}
 _cached_data = _cached_data or {}
 _data_in_log = _data_in_log or {}
+
+_mysqlSession = _mysqlSession or nil
 
 local LOG_MAX_TO_DIST = 16 * 1024 * 1024
 local LOG_PATH = "./data"
@@ -296,9 +299,28 @@ function stop()
 	log_recover(false)
 end
 
+function loadUser(args)
+	local userUid = args.userUid
+
+	local cursor = _mysqlSession:execute("select * from test2_tbl")
+
+	local result = {}
+	local row = cursor:fetch ({}, "a")
+	table.insert(result, row)
+	while row do
+		row = cursor:fetch ({}, "a")
+		table.insert(result, row)
+	end
+	return result
+end
+
+function saveUser(...)
+	print(...)
+end
 
 function __init__(self)
 	--启动的时候先从日志文件里恢复
 	log_recover(true)
 	self.timer = event.timer(10,timeout)
+	_mysqlSession = mysqlCore.mysql():connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
 end

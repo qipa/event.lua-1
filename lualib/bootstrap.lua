@@ -56,6 +56,8 @@ env.command = string.format("%s@%07d",env.name,env.serverId)
 
 util.thread_name(env.command)
 
+event.prepare()
+
 if main then
 	local _G_protect = {}
 	function _G_protect.__newindex(self,k,v)
@@ -71,8 +73,6 @@ if main then
 	if env.cpu_profiler ~= nil then
 		helper.cpu.start(string.format("%s.%d",env.cpu_profiler,env.tid))
 	end
-
-	event.prepare()
 else
 	worker.dispatch(args[#args])
 end

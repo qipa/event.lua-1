@@ -14,18 +14,22 @@ local _worker_group = {}
 --for worker
 local _worker_userdata
 
-function _M.main_send(target,file,method,args)
+function _M.master_send(target,file,method,args)
 	worker.push(target,0,table.tostring({file = file,method = method,args = args}))
 end
 
-function _M.main_call(target,file,method,args,func)
+function _M.master_call(target,file,method,args,func)
 	local session = event.gen_session()
 	worker.push(target,session,table.tostring({file = file,method = method,args = args}))
 	if func then
 		_session_callback[session] = func
 		return
 	end
-	return event.wait(session)
+	local ok,result = event.wait(session)
+	if not ok then
+		error(result)
+	end
+	return result
 end
 
 function _M.create(args)
@@ -86,20 +90,25 @@ function _M.dispatch(worker_ud)
 			end
 		else
 			event.fork(function ()
-				local ok,result = xpcall(route.dispatch,debug.traceback,message.file,message.method,message.args)
-				if session ~= 0 then
-					if source < 0 then
-						if not ok then
-							_worker_userdata:send_pipe(session,table.tostring({ret = true,err = result}))
-						else
-							_worker_userdata:send_pipe(session,table.tostring({ret = true,args = result}))
-						end
+				local ok,result = xpcall(import.dispatch,debug.traceback,message.file,message.method,message.args)
+				if session == 0 then
+					if not ok then
+						event.error(result)
+					end
+					return
+				end
+
+				if source < 0 then
+					if not ok then
+						_worker_userdata:send_pipe(session,table.tostring({ret = true,err = result}))
 					else
-						if not ok then
-							_worker_userdata:push(source,session,table.tostring({ret = true,err = result}))
-						else
-							_worker_userdata:push(source,session,table.tostring({ret = true,args = result}))
-						end
+						_worker_userdata:send_pipe(session,table.tostring({ret = true,args = result}))
+					end
+				else
+					if not ok then
+						_worker_userdata:push(source,session,table.tostring({ret = true,err = result}))
+					else
+						_worker_userdata:push(source,session,table.tostring({ret = true,args = result}))
 					end
 				end
 			end)

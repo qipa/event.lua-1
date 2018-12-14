@@ -23,19 +23,19 @@ ALTER TABLE test2_tbl ADD COLUMN `level` int(10) DEFAULT '0' COMMENT "等级";
 local mysql,err = mysql_core:connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
 print(mysql,err)
 -- table.print(mysql:execute(CREATE_TABLE_TEST2_TBL))
-table.print(mysql:execute(ALTER_TABLE_TEST2_TBL))
+-- table.print(mysql:execute(ALTER_TABLE_TEST2_TBL))
 -- for i = 1, 1024 * 100 do
 -- 	mysql:execute("insert into test2_tbl (title,submission_date) values (\"mrq\",123456)")
 -- end
 
--- local cursor = mysql:execute("select * from test2_tbl")
+local cursor = mysql:execute("select * from test2_tbl")
 
--- local row = cursor:fetch ({}, "a")	-- the rows will be indexed by field names
--- while row do
--- 	print("1111111111111")
--- 	table.print(row)
---   row = cursor:fetch (row, "a")	-- reusing the table of results
--- end
+local row = cursor:fetch ({}, "a")	-- the rows will be indexed by field names
+while row do
+	print("1111111111111")
+	table.print(row)
+  row = cursor:fetch (row, "a")	-- reusing the table of results
+end
 
 -- -- table.print(mysql:execute("insert into test1_tbl (title) values (\"mrq\")"))
 
