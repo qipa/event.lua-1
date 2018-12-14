@@ -11,7 +11,7 @@ TC_INC ?= 3rd/gperftools/src/gperftools
 TC_STATIC_LIB= 3rd/gperftools/.libs/libtcmalloc_and_profiler.a
 
 LIBCURL_PATH ?= 3rd/curl
-LIBCURL_INC ?= 3rd/curl
+LIBCURL_INC ?= 3rd/curl/include
 LIBCURL_SHARE_LIB = 3rd/curl/lib/.libs/libcurl.so
 
 EFENCE_PATH ?= ./3rd/electric-fence
@@ -27,7 +27,7 @@ EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
 LUA_CLIB_PATH ?= ./.libs
 LUA_CLIB_SRC ?= ./luaclib
-LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co mysql snapshot 
+LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co luasql snapshot 
 
 CONVERT_PATH ?= ./luaclib/convert
 
@@ -55,6 +55,7 @@ SHARED=-fPIC --shared
 
 all : \
 	$(LIBEV_SHARE_LIB) \
+	$(LIBCURL_SHARE_LIB) \
 	$(STATIC_LIBS) \
 	$(TARGET) \
 	$(foreach v, $(LUA_CLIB), $(LUA_CLIB_PATH)/$(v).so) 
@@ -71,6 +72,9 @@ $(TC_STATIC_LIB) :
 
 $(LIBEV_SHARE_LIB) :
 	cd $(LIBEV_PATH) && ./configure && make
+
+$(LIBCURL_SHARE_LIB) :
+	cd $(LIBCURL_PATH) && ./configure && make
 
 $(LUA_CLIB_PATH):
 	mkdir $(LUA_CLIB_PATH)
@@ -168,7 +172,7 @@ $(LUA_CLIB_PATH)/filter.so : $(LUA_CLIB_SRC)/lua-filter.c | $(LUA_CLIB_PATH)
 $(LUA_CLIB_PATH)/co.so : $(LUA_CLIB_SRC)/lua-co.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
 
-$(LUA_CLIB_PATH)/mysql.so : ./3rd/luasql-mysql/src/luasql.c ./3rd/luasql-mysql/src/ls_mysql.c | $(LUA_CLIB_PATH)
+$(LUA_CLIB_PATH)/luasql.so : ./3rd/luasql-mysql/src/luasql.c ./3rd/luasql-mysql/src/ls_mysql.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC) -I/usr/include/mysql -lmysqlclient
 
 $(LUA_CLIB_PATH)/snapshot.so : $(LUA_CLIB_SRC)/lua-snapshot.c | $(LUA_CLIB_PATH)
@@ -185,6 +189,7 @@ cleanall :
 	make clean
 	cd $(LUA_PATH) && make clean
 	cd $(LIBEV_PATH) && make clean
+	cd $(LIBCURL_PATH) && make distclean
 	# cd $(TC_PATH) && make distclean
 	cd $(TC_PATH) && make clean
 	cd $(EFENCE_PATH) && make clean
