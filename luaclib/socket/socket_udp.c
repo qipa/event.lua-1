@@ -57,6 +57,8 @@ udp_sesson_new(struct ev_loop_ctx* loop_ctx, size_t recv_size) {
 		return NULL;
 	}
 
+	socket_nonblock(fd);
+
 	udp_session_t* session = malloc(sizeof(*session));
 	memset(session, 0, sizeof(*session));
 

@@ -11,6 +11,7 @@
 #include "socket/socket_tcp.h"
 #include "socket/socket_httpc.h"
 #include "socket/socket_util.h"
+#include "socket/socket_udp.h"
 #include "socket/socket_pipe.h"
 
 #define LUA_EV_ERROR    0
@@ -85,15 +86,10 @@ struct lua_ev_timer {
 
 struct lua_udp_session {
 	struct lua_ev* lev;
-	struct ev_io rio;
-	int fd;
-
+	struct udp_session* session;
 	int ref;
 	int closed;
 	int callback;
-
-	char* recv_buffer;
-	size_t recv_size;
 };
 
 struct lua_pipe {
@@ -154,12 +150,8 @@ udp_destroy(struct lua_udp_session* udp_session) {
 	struct lua_ev* lev = udp_session->lev;
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
-	if (ev_is_active(&udp_session->rio))
-		ev_io_stop(loop_ctx_get(lev->loop_ctx), &udp_session->rio);
-
 	udp_session->closed = 1;
-	free(udp_session->recv_buffer);
-	close(udp_session->fd);
+	udp_session_destroy(udp_session->session);
 }
 
 static void
@@ -336,49 +328,17 @@ timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
 }
 
 static void
-udp_recv(struct ev_loop* loop,struct ev_io* io,int revents) {
-	struct lua_udp_session* udp_session = io->data;
+udp_recv(struct udp_session* session,char* buffer,size_t size,const char* ip, ushort port,void* userdata) {
+	struct lua_udp_session* udp_session = userdata;
 	struct lua_ev* lev = udp_session->lev;
 
-	for(;;) {
-		struct sockaddr_in si;
-		socklen_t slen = sizeof(si);
-		int n = recvfrom(udp_session->fd, udp_session->recv_buffer, udp_session->recv_size, 0, (struct sockaddr*)&si, &slen);
-		if (n<0) {
-			switch(errno) {
-				case EINTR:
-					continue;
-				case EAGAIN:
-					return;
-				default: {
-					break;
-				}
-			}
 
-			lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
-			lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
-			lua_pushboolean(lev->main,0);
-			lua_pushstring(lev->main,strerror(errno));
-			lua_pcall(lev->main, 3, 0, 0);
-
-			udp_destroy(udp_session);
-			return;
-		}
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
-		
-		lua_pushlstring(lev->main,udp_session->recv_buffer,n);
-
-        char tmp[INET6_ADDRSTRLEN];
-        if (inet_ntop(si.sin_family, (void*)&si.sin_addr, tmp, sizeof(tmp))) {
-        	lua_pushstring(lev->main,tmp);
-        } else {
-        	lua_pushstring(lev->main,"unknow");
-        }
-        lua_pushinteger(lev->main,ntohs(si.sin_port));
-		
-		lua_pcall(lev->main, 4, 0, 0);
-	}
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
+	lua_pushlstring(lev->main,buffer,size);
+        lua_pushstring(lev->main,ip);
+        lua_pushinteger(lev->main,port);
+	lua_pcall(lev->main, 4, 0, 0);
 }
 
 void
@@ -659,16 +619,12 @@ static int
 _udp_send(lua_State* L) {
 	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
 	if (udp_session->closed == 1)
-		luaL_error(L,"udp session:%d already closed",udp_session->fd);
+		luaL_error(L,"udp session:0x%x already closed",udp_session);
 
 	size_t length;
 	const char* ip = luaL_checklstring(L,2,&length);
 	int port = luaL_checkinteger(L,3);
 
-	struct sockaddr_in si;
-	si.sin_family = AF_INET;
-	si.sin_addr.s_addr = inet_addr(ip);
-	si.sin_port = htons(port);
 
 	size_t size;
 	char* data = NULL;
@@ -692,7 +648,7 @@ _udp_send(lua_State* L) {
 	if (size == 0)
 		luaL_error(L,"udp session send error size");
 
-	int total = socket_udp_write(udp_session->fd,data,size,(struct sockaddr *)&si,sizeof(si));
+	int total = udp_session_write(udp_session->session,data,size,ip,port);
 
 	if (needfree)
 		free(data);
@@ -719,7 +675,7 @@ static int
 _udp_close(lua_State* L) {
 	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
 	if (udp_session->closed == 1)
-		luaL_error(L,"udp session:%d already closed",udp_session->fd);
+		luaL_error(L,"udp session:0x%x already closed",udp_session);
 	udp_destroy(udp_session);
 	return 0;
 }
@@ -927,55 +883,38 @@ _udp_new(lua_State* L) {
 	luaL_checktype(L,3,LUA_TFUNCTION);
 	
 	const char* ip = NULL;
-	size_t size;
-	int port = 0;
+	ushort port = 0;
 	if (!lua_isnil(L,4)) {
-		ip = luaL_checklstring(L, 4, &size);
+		ip = luaL_checkstring(L, 4);
 		port = luaL_checkinteger(L, 5);
 	}
-
-	int fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		lua_pushboolean(L,0);
-		lua_pushstring(L,strerror(errno));
-		return 2;
-	}
+	struct upd_session* session = NULL;
 
 	if (ip) {
-		struct sockaddr_in si;
-		si.sin_family = AF_INET;
-		si.sin_addr.s_addr = inet_addr(ip);
-		si.sin_port = htons(port);
-
-		int status = bind(fd, (struct sockaddr*)&si, sizeof(si));
-		if (status != 0) {
-			close(fd);
-			lua_pushboolean(L,0);
-			lua_pushstring(L,strerror(errno));
-			return 2;
-		}
+		session = udp_session_bind(lev->loop_ctx, ip, port, recv_size);
+	} else {
+		session = udp_session_new(lev->loop_ctx, recv_size);
+	}
+	
+	if (!session) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "udp new error");
+		return 2;
 	}
 
 	lua_pushvalue(L,3);
 	int callback = luaL_ref(L,LUA_REGISTRYINDEX);
 
-	struct lua_udp_session* udp_session = lua_newuserdata(L, sizeof(struct lua_udp_session));
-	memset(udp_session,0,sizeof(*udp_session));
+	struct lua_udp_session* ludp_session = lua_newuserdata(L, sizeof(struct lua_udp_session));
+	memset(ludp_session,0,sizeof(*ludp_session));
 
-	udp_session->fd = fd;
-	udp_session->lev = lev;
-	udp_session->closed = 0;
-	udp_session->callback = callback;
-	udp_session->recv_size = recv_size;
-	udp_session->recv_buffer = malloc(udp_session->recv_size);
-	udp_session->ref = meta_init(L,META_UDP);
-
-	socket_nonblock(udp_session->fd);
-	// socket_recv_buffer(udp_session->fd,1024 * 1024);
-
-	ev_io_init(&udp_session->rio,udp_recv,udp_session->fd,EV_READ);
-	udp_session->rio.data = udp_session;
-	ev_io_start(loop_ctx_get(lev->loop_ctx),&udp_session->rio);
+	ludp_session->lev = lev;
+	ludp_session->session = session;
+	ludp_session->closed = 0;
+	ludp_session->callback = callback;
+	ludp_session->ref = meta_init(L,META_UDP);
+	
+	ludp_session_setcb(ludp_session->session, udp_recv, NULL);
 
 	return 1;
 }

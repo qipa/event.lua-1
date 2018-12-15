@@ -215,6 +215,7 @@ create_entity(aoi_t* aoi, int uid, uint8_t mask, float x, float z, enter_func fu
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
+		(void)k;
 		if ( other->uid != entity->uid && (other->mask & entity->mask)) {
 			func(entity->uid, other->uid, ud);
 		}
@@ -237,6 +238,7 @@ remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
+		(void)k;
 		if ( other->uid != entity->uid && (other->mask & entity->mask)) {
 			func(entity->uid, other->uid, ud);
 		}
@@ -275,6 +277,7 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 	object_t* other;
 
 	hash_foreach(otower->hash, k, other, {
+		(void)k;
 		if ( other->uid != entity->uid ) {
 			if ( leave == NULL ) {
 				leave = other;
@@ -527,6 +530,7 @@ get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
 	object_t* other;
 
 	hash_foreach(tower->hash, k, other, {
+		(void)k;
 		if ( other->uid != entity->uid && (other->mask & entity->mask) ) {
 			func(other->uid, ud);
 		}
@@ -588,6 +592,7 @@ foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 			khiter_t k;
 			object_t* trigger;
 			hash_foreach(tower->hash, k, trigger, {
+				(void)k;
 				if ( !hash_has(hash, trigger->uid) ) {
 					hash_set(hash, trigger->uid, trigger);
 				}
@@ -598,6 +603,7 @@ foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 	khiter_t k;
 	object_t* trigger;
 	hash_foreach(hash, k, trigger, {
+		(void)k;
 		func(trigger->uid, trigger->local.x, trigger->local.z, trigger->param.trigger.range, ud);
 	});
 	hash_free(hash);
