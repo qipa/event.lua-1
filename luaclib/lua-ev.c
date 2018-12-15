@@ -52,7 +52,7 @@ struct lua_ev {
 	struct lua_ev_timer* freelist;
 };
 
-struct lua_ev_session {
+struct lua_tcp_session {
 	struct lua_ev* lev;
 	struct ev_session* session;
 	int ref;
@@ -117,115 +117,115 @@ meta_init(lua_State* L,const char* meta) {
 	return luaL_ref(L, LUA_REGISTRYINDEX);
 }
 
-static struct lua_ev_session*
-session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
-	struct lua_ev_session* lev_session = lua_newuserdata(L, sizeof(struct lua_ev_session));
-	memset(lev_session, 0, sizeof(*lev_session));
-	lev_session->lev = lev;
-	lev_session->closed = 0;
-	lev_session->header = header;
-	lev_session->state = STATE_HEAD;
-	lev_session->execute = 0;
-	lev_session->markdead = 0;
-	lev_session->threhold = MB;
+static struct lua_tcp_session*
+tcp_session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
+	struct lua_tcp_session* ltcp_session = lua_newuserdata(L, sizeof(struct lua_tcp_session));
+	memset(ltcp_session, 0, sizeof(*ltcp_session));
+	ltcp_session->lev = lev;
+	ltcp_session->closed = 0;
+	ltcp_session->header = header;
+	ltcp_session->state = STATE_HEAD;
+	ltcp_session->execute = 0;
+	ltcp_session->markdead = 0;
+	ltcp_session->threhold = MB;
 
 	if (fd > 0)
-		lev_session->session = ev_session_bind(lev->loop_ctx, fd);
+		ltcp_session->session = ev_session_bind(lev->loop_ctx, fd);
 
-	lev_session->ref = meta_init(L,META_SESSION);
+	ltcp_session->ref = meta_init(L,META_SESSION);
 
-	return lev_session;
+	return ltcp_session;
 }
 
 static int
-session_destroy(struct lua_ev_session* lev_session) {
-	struct lua_ev* lev = lev_session->lev;
-	luaL_unref(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
-	ev_session_free(lev_session->session);
+tcp_session_destroy(struct lua_tcp_session* ltcp_session) {
+	struct lua_ev* lev = ltcp_session->lev;
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
+	ev_session_free(ltcp_session->session);
 	return 0;
 }
 
 static inline void
-udp_destroy(struct lua_udp_session* udp_session) {
-	struct lua_ev* lev = udp_session->lev;
-	luaL_unref(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
-	luaL_unref(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
-	udp_session->closed = 1;
-	udp_session_destroy(udp_session->session);
+udp_session_destroy(struct lua_udp_session* ludp_session) {
+	struct lua_ev* lev = ludp_session->lev;
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
+	ludp_session->closed = 1;
+	udp_session_destroy(ludp_session->session);
 }
 
 static void
-error_occur(struct ev_session* ev_session,void* ud) {
-	struct lua_ev_session* lev_session = ud;
-	struct lua_ev* lev = lev_session->lev;
+tcp_session_error(struct ev_session* ev_session,void* ud) {
+	struct lua_tcp_session* ltcp_session = ud;
+	struct lua_ev* lev = ltcp_session->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_ERROR);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 	lua_pcall(lev->main, 2, 0, 0);
 
-	lev_session->closed = 1;
+	ltcp_session->closed = 1;
 
-	if (lev_session->execute) {
-		lev_session->markdead = 1;
+	if (ltcp_session->execute) {
+		ltcp_session->markdead = 1;
 	} else {
-		session_destroy(lev_session);
+		tcp_session_destroy(ltcp_session);
 	}
 }
 
 static void
 read_complete(struct ev_session* ev_session, void* ud) {
-	struct lua_ev_session* lev_session = ud;
-	lev_session->execute = 1;
+	struct lua_tcp_session* ltcp_session = ud;
+	ltcp_session->execute = 1;
 
-	struct lua_ev* lev = lev_session->lev;
+	struct lua_ev* lev = ltcp_session->lev;
 
-	if (lev_session->header == 0) {
+	if (ltcp_session->header == 0) {
 		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 		lua_pushinteger(lev->main, LUA_EV_DATA);
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
+		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 		lua_pcall(lev->main, 2, 0, 0);
 	} else {
-		while(lev_session->markdead == 0) {
-			size_t len = ev_session_input_size(lev_session->session);
-			if (lev_session->state == STATE_HEAD) {
-				if (len < lev_session->header)
+		while(ltcp_session->markdead == 0) {
+			size_t len = ev_session_input_size(ltcp_session->session);
+			if (ltcp_session->state == STATE_HEAD) {
+				if (len < ltcp_session->header)
 					break;
 
-				if (lev_session->header == HEADER_TYPE_WORD) {
+				if (ltcp_session->header == HEADER_TYPE_WORD) {
 					uint8_t header[HEADER_TYPE_WORD];
-					ev_session_read(lev_session->session,(char*)header,HEADER_TYPE_WORD);
-					lev_session->need = header[0] | header[1] << 8;
+					ev_session_read(ltcp_session->session,(char*)header,HEADER_TYPE_WORD);
+					ltcp_session->need = header[0] | header[1] << 8;
 				} else {
-					assert(lev_session->header == HEADER_TYPE_DWORD);
+					assert(ltcp_session->header == HEADER_TYPE_DWORD);
 					uint8_t header[HEADER_TYPE_DWORD];
-					ev_session_read(lev_session->session,(char*)header,HEADER_TYPE_DWORD);
-					lev_session->need = header[0] | header[1] << 8 | header[2] << 16 | header[3] << 24;
+					ev_session_read(ltcp_session->session,(char*)header,HEADER_TYPE_DWORD);
+					ltcp_session->need = header[0] | header[1] << 8 | header[2] << 16 | header[3] << 24;
 				}
-				lev_session->need -= lev_session->header;
-				lev_session->state = STATE_BODY;
-			} else if (lev_session->state == STATE_BODY) {
-				if (len < lev_session->need)
+				ltcp_session->need -= ltcp_session->header;
+				ltcp_session->state = STATE_BODY;
+			} else if (ltcp_session->state == STATE_BODY) {
+				if (len < ltcp_session->need)
 					break;
 
-				if (lev_session->need > MAX_PACKET_SIZE) {
-					error_occur(ev_session, ud);
+				if (ltcp_session->need > MAX_PACKET_SIZE) {
+					tcp_session_error(ev_session, ud);
 					break;
 				}
 				
 				char* data = THREAD_CACHED_BUFFER;
-				if (lev_session->need > THREAD_CACHED_SIZE)
-					data = malloc(lev_session->need);
+				if (ltcp_session->need > THREAD_CACHED_SIZE)
+					data = malloc(ltcp_session->need);
 
-				ev_session_read(lev_session->session,data,lev_session->need);
+				ev_session_read(ltcp_session->session,data,ltcp_session->need);
 
 				lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 				lua_pushinteger(lev->main, LUA_EV_DATA);
-				lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
+				lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 				lua_pushlightuserdata(lev->main,data);
-				lua_pushinteger(lev->main,lev_session->need);
+				lua_pushinteger(lev->main,ltcp_session->need);
 				lua_pcall(lev->main, 4, 0, 0);
-				lev_session->state = STATE_HEAD;
+				ltcp_session->state = STATE_HEAD;
 
 				if (data != THREAD_CACHED_BUFFER)
 					free(data);
@@ -233,36 +233,36 @@ read_complete(struct ev_session* ev_session, void* ud) {
 		}
 	}
 
-	lev_session->execute = 0;
+	ltcp_session->execute = 0;
 
-	if (lev_session->markdead) {
-		session_destroy(lev_session);
+	if (ltcp_session->markdead) {
+		tcp_session_destroy(ltcp_session);
 	}
 }	
 
 static void
 close_complete(struct ev_session* ev_session, void* ud) {
-	struct lua_ev_session* lev_session = ud;
-	struct lua_ev* lev = lev_session->lev;
-	assert(lev_session->closed == 1);
+	struct lua_tcp_session* ltcp_session = ud;
+	struct lua_ev* lev = ltcp_session->lev;
+	assert(ltcp_session->closed == 1);
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_ERROR);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 
-	session_destroy(lev_session);
+	tcp_session_destroy(ltcp_session);
 
 	lua_pcall(lev->main, 2, 0, 0);
 }
 
 static void
 connect_complete(struct ev_session* session,void *userdata) {
-	struct lua_ev_session* lev_session = userdata;
-	struct lua_ev* lev = lev_session->lev;
+	struct lua_tcp_session* ltcp_session = userdata;
+	struct lua_ev* lev = ltcp_session->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_CONNECT);
-	lua_pushinteger(lev->main, lev_session->wait);
+	lua_pushinteger(lev->main, ltcp_session->wait);
 
 	int fd = ev_session_fd(session);
 	int error;
@@ -277,18 +277,18 @@ connect_complete(struct ev_session* session,void *userdata) {
 		}
 		lua_pushboolean(lev->main,0);
 		lua_pushstring(lev->main,strerr);
-		session_destroy(lev_session);
+		tcp_session_destroy(ltcp_session);
 	} else {
 		socket_nonblock(fd);
 		socket_keep_alive(fd);
 		socket_closeonexec(fd);
 
 		lua_pushboolean(lev->main,1);
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_session->ref);
+		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 
-		ev_session_setcb(lev_session->session,read_complete,NULL,error_occur,lev_session);
-		ev_session_disable(lev_session->session,EV_WRITE);
-		ev_session_enable(lev_session->session,EV_READ);
+		ev_session_setcb(ltcp_session->session,read_complete,NULL,tcp_session_error,ltcp_session);
+		ev_session_disable(ltcp_session->session,EV_WRITE);
+		ev_session_enable(ltcp_session->session,EV_READ);
 	}
 	lua_pcall(lev->main, 4, 0, 0);
 }
@@ -303,10 +303,10 @@ accept_socket(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	socket_keep_alive(fd);
 	socket_closeonexec(fd);
 
-	struct lua_ev_session* lev_session = session_create(lev->main, lev, fd, lev_listener->header);
+	struct lua_tcp_session* ltcp_session = tcp_session_create(lev->main, lev, fd, lev_listener->header);
 
-	ev_session_setcb(lev_session->session,read_complete,NULL,error_occur,lev_session);
-	ev_session_enable(lev_session->session,EV_READ);
+	ev_session_setcb(ltcp_session->session,read_complete,NULL,tcp_session_error,ltcp_session);
+	ev_session_enable(ltcp_session->session,EV_READ);
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_ACCEPT);
@@ -329,12 +329,12 @@ timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
 
 static void
 udp_recv(struct udp_session* session,char* buffer,size_t size,const char* ip, ushort port,void* userdata) {
-	struct lua_udp_session* udp_session = userdata;
-	struct lua_ev* lev = udp_session->lev;
+	struct lua_udp_session* ludp_session = userdata;
+	struct lua_ev* lev = ludp_session->lev;
 
 
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->callback);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, udp_session->ref);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
 	lua_pushlstring(lev->main,buffer,size);
         lua_pushstring(lev->main,ip);
         lua_pushinteger(lev->main,port);
@@ -375,18 +375,118 @@ pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
 
 //-------------------------tcp session api---------------------------
 
-static inline struct lua_ev_session* 
+union un_sockaddr {
+	struct sockaddr_un su;
+	struct sockaddr_in si;
+};
+
+static inline struct lua_tcp_session* 
 get_session(lua_State* L, int index) {
-	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
-	if (lev_session->closed) {
+	struct lua_tcp_session* ltcp_session = (struct lua_tcp_session*)lua_touserdata(L, 1);
+	if (ltcp_session->closed) {
 		luaL_error(L,"session already closed");
 	}
-	return lev_session;
+	return ltcp_session;
+}
+
+struct sockaddr*
+get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen, int remove) {
+	luaL_checktype(L, index, LUA_TTABLE);
+	lua_getfield(L, index, "file");
+
+	struct sockaddr* addr;
+
+	if (!lua_isnil(L, -1)) {
+		const char* file = luaL_checkstring(L, -1);
+		lua_pop(L, 1);
+
+		if (remove) {
+			unlink(file);
+		}
+
+		sa->su.sun_family = AF_UNIX;  
+		strcpy(sa->su.sun_path, file);
+
+		addr = (struct sockaddr*)&sa->su;
+		*addrlen = sizeof(sa->su);
+	} else {
+		lua_pop(L, 1);
+		lua_getfield(L, index, "ip");
+		const char* ip = luaL_checkstring(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, index, "port");
+		int port = luaL_checkinteger(L, -1);
+		lua_pop(L, 1);
+
+		sa->si.sin_family = AF_INET;
+		sa->si.sin_addr.s_addr = inet_addr(ip);
+		sa->si.sin_port = htons(port);
+
+		addr = (struct sockaddr*)&sa->si;
+		*addrlen = sizeof(sa->si);
+	}
+	return addr;
 }
 
 static int
-_session_write(lua_State* L) {
-	struct lua_ev_session* lev_session = get_session(L, 1);
+_connect(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	int header = lua_tointeger(L, 2);
+	if (header != 0) {
+		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD)
+			luaL_error(L,"error header size:%d",header);
+	}
+
+	int wait = lua_tointeger(L, 3);
+	union un_sockaddr sa;
+	int addrlen = 0;
+	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 0);
+
+	int block = 1;
+	if (wait > 0) {
+		block = 0;
+	}
+
+	int status;
+	struct lua_tcp_session* ltcp_session = tcp_session_create(L,lev,-1,header);
+	ltcp_session->lev = lev;
+	ltcp_session->wait = wait;
+	ltcp_session->session = ev_session_connect(lev->loop_ctx,addr,addrlen,block,&status);
+
+	if (status == CONNECT_STATUS_CONNECT_FAIL) {
+		lua_pushboolean(L,0);
+		lua_pushstring(L,strerror(errno));
+		return 2;
+	}
+
+	if (!block) {
+		ev_session_setcb(ltcp_session->session,NULL,connect_complete,NULL,ltcp_session);
+		ev_session_enable(ltcp_session->session,EV_WRITE);
+		lua_pushboolean(L,1);
+	} else {
+		ev_session_setcb(ltcp_session->session, read_complete, NULL, tcp_session_error, ltcp_session);
+		ev_session_enable(ltcp_session->session, EV_READ);
+	}
+	
+	return 1;
+}
+
+static int
+_bind(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	int fd = lua_tointeger(L, 2);
+	
+	struct lua_tcp_session* ltcp_session = tcp_session_create(L,lev,fd,0);
+	ev_session_setcb(ltcp_session->session, read_complete, NULL, tcp_session_error, ltcp_session);
+	ev_session_enable(ltcp_session->session, EV_READ);
+	return 1;
+}
+
+
+static int
+_tcp_session_write(lua_State* L) {
+	struct lua_tcp_session* ltcp_session = get_session(L, 1);
 	
 	int noheader = 0;
 	size_t size = 0;
@@ -414,16 +514,16 @@ _session_write(lua_State* L) {
 	}
 
 	char* block = NULL;
-	if (lev_session->header != 0 && noheader == 0) {
+	if (ltcp_session->header != 0 && noheader == 0) {
 		
-	    if (lev_session->header == HEADER_TYPE_WORD) {
-	    	ushort length = size + lev_session->header;
+	    if (ltcp_session->header == HEADER_TYPE_WORD) {
+	    	ushort length = size + ltcp_session->header;
 	   	 	block = malloc(length);
 	   	 	memcpy(block, &length, sizeof(ushort));
 	   	 	memcpy(block + sizeof(ushort), data, size);
 	   	 	size = length;
 	    } else {
-	    	uint32_t length = size + lev_session->header;
+	    	uint32_t length = size + ltcp_session->header;
 	   	 	block = malloc(length);
 	   	 	memcpy(block, &length, sizeof(uint32_t));
 	   	 	memcpy(block + sizeof(uint32_t), data, size);
@@ -442,20 +542,20 @@ _session_write(lua_State* L) {
 		}
 	}
 
-	if (ev_session_write(lev_session->session, block, size) == -1) {
+	if (ev_session_write(ltcp_session->session, block, size) == -1) {
 		free(block);
 		lua_pushboolean(L,0);
 		return 1;
 	}
-	size_t total = ev_session_output_size(lev_session->session);
-	if (total >= lev_session->threhold) {
+	size_t total = ev_session_output_size(ltcp_session->session);
+	if (total >= ltcp_session->threhold) {
 		size_t howmuch = total / MB;
-		lev_session->threhold += MB;
-		fprintf(stderr,"channel:%p more than %ldmb data need to send out\n",lev_session,howmuch);
+		ltcp_session->threhold += MB;
+		fprintf(stderr,"channel:%p more than %ldmb data need to send out\n",ltcp_session,howmuch);
 	} else {
-		size_t threhold = lev_session->threhold;
+		size_t threhold = ltcp_session->threhold;
 		if ( threhold > MB && total < threhold / 2) {
-			lev_session->threhold -= MB;
+			ltcp_session->threhold -= MB;
 		}	
 	}
 	lua_pushboolean(L,1);
@@ -464,11 +564,11 @@ _session_write(lua_State* L) {
 }
 
 static int
-_session_read(lua_State* L) {
-	struct lua_ev_session* lev_session = get_session(L, 1);
+_tcp_session_read(lua_State* L) {
+	struct lua_tcp_session* ltcp_session = get_session(L, 1);
 	size_t size = luaL_optinteger(L,2,0);
 
-	size_t total = ev_session_input_size(lev_session->session);
+	size_t total = ev_session_input_size(ltcp_session->session);
 	if (total == 0) {
 		return 0;
 	}
@@ -482,7 +582,7 @@ _session_read(lua_State* L) {
 		data = malloc(size);
 	}
 			
-	ev_session_read(lev_session->session,data,size);
+	ev_session_read(ltcp_session->session,data,size);
 
 	lua_pushlstring(L, data, size);
 	
@@ -494,13 +594,13 @@ _session_read(lua_State* L) {
 }
 
 static int
-_session_read_util(lua_State* L) {
-	struct lua_ev_session* lev_session = get_session(L, 1);
+_tcp_session_read_util(lua_State* L) {
+	struct lua_tcp_session* ltcp_session = get_session(L, 1);
 	size_t size;
 	const char* sep = lua_tolstring(L,2,&size);
 
 	size_t length;
-	char* data = ev_session_read_util(lev_session->session,sep,size,THREAD_CACHED_BUFFER,THREAD_CACHED_SIZE,&length);
+	char* data = ev_session_read_util(ltcp_session->session,sep,size,THREAD_CACHED_BUFFER,THREAD_CACHED_SIZE,&length);
 	if (!data) {
 		return 0;
 	}
@@ -514,30 +614,30 @@ _session_read_util(lua_State* L) {
 }
 
 static int
-_session_alive(lua_State* L) {
-	struct lua_ev_session* lev_session = (struct lua_ev_session*)lua_touserdata(L, 1);
-	lua_pushboolean(L,lev_session->closed == 0);
+_tcp_session_alive(lua_State* L) {
+	struct lua_tcp_session* ltcp_session = (struct lua_tcp_session*)lua_touserdata(L, 1);
+	lua_pushboolean(L,ltcp_session->closed == 0);
 	return 1;
 }
 
 static int
-_session_close(lua_State* L) {
-	struct lua_ev_session* lev_session = get_session(L, 1);
+_tcp_session_close(lua_State* L) {
+	struct lua_tcp_session* ltcp_session = get_session(L, 1);
 	
 	luaL_checktype(L, 2, LUA_TBOOLEAN);
 	int immediately = lua_toboolean(L, 2);
 
-	lev_session->closed = 1;
+	ltcp_session->closed = 1;
 
 	if (!immediately) {
-		ev_session_setcb(lev_session->session, NULL, close_complete, error_occur, lev_session);
-		ev_session_disable(lev_session->session,EV_READ);
-		ev_session_enable(lev_session->session, EV_WRITE);
+		ev_session_setcb(ltcp_session->session, NULL, close_complete, tcp_session_error, ltcp_session);
+		ev_session_disable(ltcp_session->session,EV_READ);
+		ev_session_enable(ltcp_session->session, EV_WRITE);
 	} else {
-		if (lev_session->execute) {
-			lev_session->markdead = 1;
+		if (ltcp_session->execute) {
+			ltcp_session->markdead = 1;
 		} else {
-			session_destroy(lev_session);
+			tcp_session_destroy(ltcp_session);
 		}
 	}
 
@@ -547,6 +647,44 @@ _session_close(lua_State* L) {
 //-------------------------endof tcp session api---------------------------
 
 //-------------------------tcp listener api---------------------------
+static int
+_listen(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	
+	int header = lua_tointeger(L, 2);
+	if (header != 0) {
+		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD) {
+			luaL_error(L,"create listener error:error header size:%d",header);
+		}
+	}
+	
+	int multi = lua_toboolean(L, 3);
+
+	union un_sockaddr sa;
+	int addrlen = 0;
+	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 1);
+	
+	struct lua_ev_listener* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
+	lev_listener->lev = lev;
+	lev_listener->closed = 0;
+	lev_listener->header = header;
+
+	int flag = SOCKET_OPT_NOBLOCK | SOCKET_OPT_CLOSE_ON_EXEC | SOCKET_OPT_REUSEABLE_ADDR;
+	if (multi)
+		flag |= SOCKET_OPT_REUSEABLE_PORT;
+
+	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,addrlen,16,flag,accept_socket,lev_listener);
+	if (!lev_listener->listener) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, strdup(strerror(errno)));
+		return 2;
+	}
+
+	lev_listener->ref = meta_init(L,META_LISTENER);
+
+	return 1;
+}
+
 static int
 _listen_alive(lua_State* L) {
 	struct lua_ev_listener* lev_listener = (struct lua_ev_listener*)lua_touserdata(L, 1);
@@ -593,6 +731,36 @@ _listen_close(lua_State* L) {
 //-------------------------endof tcp listener api---------------------------
 
 //-------------------------timer api---------------------------
+
+static int
+_timer(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+
+	double ti = lua_tonumber(L, 2);
+	int once = lua_toboolean(L, 3);
+	double freq = 0;
+	if (!once) {
+		freq = ti;
+	}
+	
+	struct lua_ev_timer* lev_timer = NULL;
+	if (lev->freelist) {
+		lev_timer = lev->freelist;
+		lev->freelist = lev->freelist->next;
+		lua_rawgeti(L, LUA_REGISTRYINDEX, lev_timer->ref);
+	} else {
+		lev_timer = lua_newuserdata(L, sizeof(*lev_timer));
+		lev_timer->lev = lev;
+		lev_timer->ref = meta_init(L,META_TIMER);
+	}
+	
+	lev_timer->io.data = lev_timer;
+	ev_timer_init((struct ev_timer*)&lev_timer->io,timeout,ti,freq);
+	ev_timer_start(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&lev_timer->io);
+
+	return 1;
+}
+
 static int
 _timer_cancel(lua_State* L) {
 	struct lua_ev_timer* lev_timer = (struct lua_ev_timer*)lua_touserdata(L, 1);
@@ -615,282 +783,21 @@ _timer_alive(lua_State* L) {
 //-------------------------endof timer api---------------------------
 
 //-------------------------udp api---------------------------
-static int
-_udp_send(lua_State* L) {
-	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
-	if (udp_session->closed == 1) {
-		luaL_error(L,"udp session:0x%x already closed",udp_session);
-	}
-
-	const char* ip = luaL_checkstring(L,2);
-	int port = luaL_checkinteger(L,3);
-
-	size_t size;
-	char* data = NULL;
-	int needfree = 0;
-
-	switch(lua_type(L,4)) {
-		case LUA_TSTRING: {
-			data = (char*)lua_tolstring(L,4,&size);
-			break;
-		}
-		case LUA_TUSERDATA:{
-			data = (char*)lua_touserdata(L,4);
-			size = lua_tointeger(L,5);
-			needfree = 1;
-			break;
-		}
-		default:
-			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,lua_type(L,2)));
-	}
-
-	if (size == 0) {
-		luaL_error(L,"udp session send error size");
-	}
-
-	int total = udp_session_write(udp_session->session,data,size,ip,port);
-
-	if (needfree) {
-		free(data);
-	}
-	
-	if (total < 0) {
-		udp_destroy(udp_session);
-		lua_pushboolean(L,0);
-		lua_pushstring(L,strerror(errno));
-		return 2;
-	}
-	assert(total == size);
-	lua_pushboolean(L,1);
-	return 1;
-}
 
 static int
-_udp_alive(lua_State* L) {
-	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
-	lua_pushinteger(L,udp_session->closed);
-	return 1;
-}
-
-static int
-_udp_close(lua_State* L) {
-	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
-	if (udp_session->closed == 1)
-		luaL_error(L,"udp session:0x%x already closed",udp_session);
-	udp_destroy(udp_session);
-	return 0;
-}
-//-------------------------endof udp api---------------------------
-
-//-------------------------pipe api---------------------------
-static int
-_lpipe_alive(lua_State* L) {
-	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
-	lua_pushinteger(L, lpipe->closed == 1);
-	return 1;
-}
-
-static int
-_lpipe_release(lua_State* L) {
-	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
-	if (lpipe->closed)
-		luaL_error(L,"mail box already closed");
-
-	ev_io_stop(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
-	close(lpipe->recv_fd);
-	close(lpipe->send_fd);
-
-	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->ref);
-	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->callback);
-
-	lpipe->closed = 1;
-	return 1;
-}
-//-------------------------endof pipe api---------------------------
-
-//-------------------------event api---------------------------
-
-union un_sockaddr {
-	struct sockaddr_un su;
-	struct sockaddr_in si;
-};
-
-struct sockaddr*
-get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen, int remove) {
-	luaL_checktype(L, index, LUA_TTABLE);
-	lua_getfield(L, index, "file");
-
-	struct sockaddr* addr;
-
-	if (!lua_isnil(L, -1)) {
-		const char* file = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		if (remove) {
-			unlink(file);
-		}
-
-		sa->su.sun_family = AF_UNIX;  
-		strcpy(sa->su.sun_path, file);
-
-		addr = (struct sockaddr*)&sa->su;
-		*addrlen = sizeof(sa->su);
-	} else {
-		lua_pop(L, 1);
-		lua_getfield(L, index, "ip");
-		const char* ip = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, index, "port");
-		int port = luaL_checkinteger(L, -1);
-		lua_pop(L, 1);
-
-		sa->si.sin_family = AF_INET;
-		sa->si.sin_addr.s_addr = inet_addr(ip);
-		sa->si.sin_port = htons(port);
-
-		addr = (struct sockaddr*)&sa->si;
-		*addrlen = sizeof(sa->si);
-	}
-	return addr;
-}
-
-static int
-_listen(lua_State* L) {
+_udp_session_new(lua_State* L) {
 	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	
-	int header = lua_tointeger(L, 2);
-	if (header != 0) {
-		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD) {
-			luaL_error(L,"create listener error:error header size:%d",header);
-		}
-	}
-	
-	int multi = lua_toboolean(L, 3);
-
-	union un_sockaddr sa;
-	int addrlen = 0;
-	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 1);
-	
-	struct lua_ev_listener* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
-	lev_listener->lev = lev;
-	lev_listener->closed = 0;
-	lev_listener->header = header;
-
-	int flag = SOCKET_OPT_NOBLOCK | SOCKET_OPT_CLOSE_ON_EXEC | SOCKET_OPT_REUSEABLE_ADDR;
-	if (multi)
-		flag |= SOCKET_OPT_REUSEABLE_PORT;
-
-	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,addrlen,16,flag,accept_socket,lev_listener);
-	if (!lev_listener->listener) {
-		lua_pushboolean(L, 0);
-		lua_pushstring(L, strdup(strerror(errno)));
-		return 2;
-	}
-
-	lev_listener->ref = meta_init(L,META_LISTENER);
-
-	return 1;
-}
-
-static int
-_connect(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	int header = lua_tointeger(L, 2);
-	if (header != 0) {
-		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD)
-			luaL_error(L,"error header size:%d",header);
-	}
-
-	int wait = lua_tointeger(L, 3);
-	union un_sockaddr sa;
-	int addrlen = 0;
-	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 0);
-
-	int block = 1;
-	if (wait > 0) {
-		block = 0;
-	}
-
-	int status;
-	struct lua_ev_session* lev_session = session_create(L,lev,-1,header);
-	lev_session->lev = lev;
-	lev_session->wait = wait;
-	lev_session->session = ev_session_connect(lev->loop_ctx,addr,addrlen,block,&status);
-
-	if (status == CONNECT_STATUS_CONNECT_FAIL) {
-		lua_pushboolean(L,0);
-		lua_pushstring(L,strerror(errno));
-		return 2;
-	}
-
-	if (!block) {
-		ev_session_setcb(lev_session->session,NULL,connect_complete,NULL,lev_session);
-		ev_session_enable(lev_session->session,EV_WRITE);
-		lua_pushboolean(L,1);
-	} else {
-		ev_session_setcb(lev_session->session, read_complete, NULL, error_occur, lev_session);
-		ev_session_enable(lev_session->session, EV_READ);
-	}
-	
-	return 1;
-}
-
-static int
-_bind(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	int fd = lua_tointeger(L, 2);
-	
-	struct lua_ev_session* lev_session = session_create(L,lev,fd,0);
-	ev_session_setcb(lev_session->session, read_complete, NULL, error_occur, lev_session);
-	ev_session_enable(lev_session->session, EV_READ);
-	return 1;
-}
-
-static int
-_timer(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-
-	double ti = lua_tonumber(L, 2);
-	int once = lua_toboolean(L,3);
-	double freq = 0;
-	if (!once)
-		freq = ti;
-
-	struct lua_ev_timer* lev_timer = NULL;
-	if (lev->freelist) {
-		lev_timer = lev->freelist;
-		lev->freelist = lev->freelist->next;
-		lua_rawgeti(L, LUA_REGISTRYINDEX, lev_timer->ref);
-	} else {
-		lev_timer = lua_newuserdata(L, sizeof(*lev_timer));
-		lev_timer->lev = lev;
-		lev_timer->ref = meta_init(L,META_TIMER);
-	}
-	
-	lev_timer->io.data = lev_timer;
-	ev_timer_init((struct ev_timer*)&lev_timer->io,timeout,ti,freq);
-	ev_timer_start(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&lev_timer->io);
-
-	return 1;
-}
-
-
-static int
-_udp_new(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	size_t recv_size = lua_tointeger(L,2);
-
-	luaL_checktype(L,3,LUA_TFUNCTION);
+	size_t recv_size = lua_tointeger(L, 2);
+	luaL_checktype(L, 3, LUA_TFUNCTION);
 	
 	const char* ip = NULL;
 	ushort port = 0;
-	if (!lua_isnil(L,4)) {
+	if (!lua_isnil(L, 4)) {
 		ip = luaL_checkstring(L, 4);
 		port = luaL_checkinteger(L, 5);
 	}
+	
 	struct upd_session* session = NULL;
-
 	if (ip) {
 		session = udp_session_bind(lev->loop_ctx, ip, port, recv_size);
 	} else {
@@ -919,6 +826,76 @@ _udp_new(lua_State* L) {
 
 	return 1;
 }
+
+static int
+_udp_session_send(lua_State* L) {
+	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	if (ludp_session->closed == 1) {
+		luaL_error(L,"udp session:0x%x already closed",ludp_session);
+	}
+
+	const char* ip = luaL_checkstring(L,2);
+	int port = luaL_checkinteger(L,3);
+
+	size_t size;
+	char* data = NULL;
+	int needfree = 0;
+
+	switch(lua_type(L,4)) {
+		case LUA_TSTRING: {
+			data = (char*)lua_tolstring(L,4,&size);
+			break;
+		}
+		case LUA_TUSERDATA:{
+			data = (char*)lua_touserdata(L,4);
+			size = lua_tointeger(L,5);
+			needfree = 1;
+			break;
+		}
+		default:
+			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,lua_type(L,2)));
+	}
+
+	if (size == 0) {
+		luaL_error(L,"udp session send error size");
+	}
+
+	int total = udp_session_write(ludp_session->session,data,size,ip,port);
+
+	if (needfree) {
+		free(data);
+	}
+	
+	if (total < 0) {
+		udp_session_destroy(ludp_session);
+		lua_pushboolean(L,0);
+		lua_pushstring(L,strerror(errno));
+		return 2;
+	}
+	assert(total == size);
+	lua_pushboolean(L,1);
+	return 1;
+}
+
+static int
+_udp_session_alive(lua_State* L) {
+	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	lua_pushinteger(L,ludp_session->closed);
+	return 1;
+}
+
+static int
+_udp_session_close(lua_State* L) {
+	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	if (ludp_session->closed == 1) {
+		luaL_error(L,"udp session:0x%x already closed",ludp_session);
+	}
+	udp_session_destroy(ludp_session);
+	return 0;
+}
+//-------------------------endof udp api---------------------------
+
+//-------------------------pipe api---------------------------
 
 static int
 _lpipe_new(lua_State* L) {
@@ -956,19 +933,32 @@ _lpipe_new(lua_State* L) {
 	return 2;
 }
 
-extern int lgate_create(lua_State* L,struct ev_loop_ctx* loop_ctx,uint32_t max_client,uint32_t max_freq);
-
 static int
-_lgate_new(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
-	uint32_t max_client = luaL_optinteger(L, 2, 1000);
-	uint32_t max_freq = luaL_optinteger(L, 3, 1000);
-	if (max_client <= 0 || max_client >= 10000) {
-		luaL_error(L,"error create gate,size invalid:%d",max_client);
-	}
-	return lgate_create(L,lev->loop_ctx,max_client,max_freq);
+_lpipe_alive(lua_State* L) {
+	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
+	lua_pushinteger(L, lpipe->closed == 1);
+	return 1;
 }
 
+static int
+_lpipe_release(lua_State* L) {
+	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
+	if (lpipe->closed)
+		luaL_error(L,"mail box already closed");
+
+	ev_io_stop(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
+	close(lpipe->recv_fd);
+	close(lpipe->send_fd);
+
+	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->ref);
+	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->callback);
+
+	lpipe->closed = 1;
+	return 1;
+}
+//-------------------------endof pipe api---------------------------
+
+//-------------------------start http request api---------------------------
 void 
 request_done(struct http_request* request, void* ud) {
 	struct lua_httpc* userdata = ud;
@@ -1059,6 +1049,22 @@ _lhttpc_request(lua_State* L) {
 
 	return 1;
 }
+//-------------------------endof http request api---------------------------
+
+//-------------------------event api---------------------------
+
+extern int lgate_create(lua_State* L,struct ev_loop_ctx* loop_ctx,uint32_t max_client,uint32_t max_freq);
+
+static int
+_lgate_new(lua_State* L) {
+	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	uint32_t max_client = luaL_optinteger(L, 2, 1000);
+	uint32_t max_freq = luaL_optinteger(L, 3, 1000);
+	if (max_client <= 0 || max_client >= 10000) {
+		luaL_error(L,"error create gate,size invalid:%d",max_client);
+	}
+	return lgate_create(L,lev->loop_ctx,max_client,max_freq);
+}
 
 static int
 _dispatch(lua_State* L) {
@@ -1130,7 +1136,7 @@ luaopen_ev_core(lua_State* L) {
 		{ "connect", _connect },
 		{ "bind", _bind },
 		{ "timer", _timer },
-		{ "udp", _udp_new },
+		{ "udp", _udp_session_new },
 		{ "pipe", _lpipe_new },
 		{ "gate", _lgate_new },
 		{ "httpc_request", _lhttpc_request },
@@ -1147,11 +1153,11 @@ luaopen_ev_core(lua_State* L) {
 
 	luaL_newmetatable(L, META_SESSION);
 	const luaL_Reg meta_session[] = {
-		{ "write", _session_write },
-		{ "read", _session_read },
-		{ "read_util", _session_read_util },
-		{ "alive", _session_alive },
-		{ "close", _session_close },
+		{ "write", _tcp_session_write },
+		{ "read", _tcp_session_read },
+		{ "read_util", _tcp_session_read_util },
+		{ "alive", _tcp_session_alive },
+		{ "close", _tcp_session_close },
 		{ NULL, NULL },
 	};
 	luaL_newlib(L,meta_session);
@@ -1181,9 +1187,9 @@ luaopen_ev_core(lua_State* L) {
 
 	luaL_newmetatable(L, META_UDP);
 	const luaL_Reg meta_udp[] = {
-		{ "send", _udp_send },
-		{ "alive", _udp_alive },
-		{ "close", _udp_close },
+		{ "send", _udp_session_send },
+		{ "alive", _udp_session_alive },
+		{ "close", _udp_session_close },
 		{ NULL, NULL },
 	};
 	luaL_newlib(L,meta_udp);
