@@ -138,7 +138,7 @@ tcp_session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
 }
 
 static int
-tcp_session_destroy(struct lua_tcp_session* ltcp_session) {
+tcp_session_release(struct lua_tcp_session* ltcp_session) {
 	struct lua_ev* lev = ltcp_session->lev;
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 	ev_session_free(ltcp_session->session);
@@ -146,7 +146,7 @@ tcp_session_destroy(struct lua_tcp_session* ltcp_session) {
 }
 
 static inline void
-udp_session_destroy(struct lua_udp_session* ludp_session) {
+udp_session_release(struct lua_udp_session* ludp_session) {
 	struct lua_ev* lev = ludp_session->lev;
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
@@ -169,7 +169,7 @@ tcp_session_error(struct ev_session* ev_session,void* ud) {
 	if (ltcp_session->execute) {
 		ltcp_session->markdead = 1;
 	} else {
-		tcp_session_destroy(ltcp_session);
+		tcp_session_release(ltcp_session);
 	}
 }
 
@@ -236,7 +236,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 	ltcp_session->execute = 0;
 
 	if (ltcp_session->markdead) {
-		tcp_session_destroy(ltcp_session);
+		tcp_session_release(ltcp_session);
 	}
 }	
 
@@ -250,7 +250,7 @@ close_complete(struct ev_session* ev_session, void* ud) {
 	lua_pushinteger(lev->main, LUA_EV_ERROR);
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 
-	tcp_session_destroy(ltcp_session);
+	tcp_session_release(ltcp_session);
 
 	lua_pcall(lev->main, 2, 0, 0);
 }
@@ -277,7 +277,7 @@ connect_complete(struct ev_session* session,void *userdata) {
 		}
 		lua_pushboolean(lev->main,0);
 		lua_pushstring(lev->main,strerr);
-		tcp_session_destroy(ltcp_session);
+		tcp_session_release(ltcp_session);
 	} else {
 		socket_nonblock(fd);
 		socket_keep_alive(fd);
@@ -637,7 +637,7 @@ _tcp_session_close(lua_State* L) {
 		if (ltcp_session->execute) {
 			ltcp_session->markdead = 1;
 		} else {
-			tcp_session_destroy(ltcp_session);
+			tcp_session_release(ltcp_session);
 		}
 	}
 
@@ -867,7 +867,7 @@ _udp_session_send(lua_State* L) {
 	}
 	
 	if (total < 0) {
-		udp_session_destroy(ludp_session);
+		udp_session_release(ludp_session);
 		lua_pushboolean(L,0);
 		lua_pushstring(L,strerror(errno));
 		return 2;
@@ -890,7 +890,7 @@ _udp_session_close(lua_State* L) {
 	if (ludp_session->closed == 1) {
 		luaL_error(L,"udp session:0x%x already closed",ludp_session);
 	}
-	udp_session_destroy(ludp_session);
+	udp_session_release(ludp_session);
 	return 0;
 }
 //-------------------------endof udp api---------------------------
