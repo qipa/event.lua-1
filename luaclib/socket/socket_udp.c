@@ -51,7 +51,7 @@ _udp_read_cb(struct ev_loop* loop,struct ev_io* io,int revents) {
 
 
 udp_session_t*
-udp_sesson_new(struct ev_loop_ctx* loop_ctx, size_t recv_size) {
+udp_session_new(struct ev_loop_ctx* loop_ctx, size_t recv_size) {
 	int fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		return NULL;
@@ -93,7 +93,7 @@ udp_session_destroy(udp_session_t* session) {
 
 udp_session_t*
 udp_session_bind(struct ev_loop_ctx* loop_ctx, const char* ip, ushort port, size_t recv_size) {
-	udp_session_t* session = udp_sesson_new(loop_ctx, recv_size);
+	udp_session_t* session = udp_session_new(loop_ctx, recv_size);
 
 	struct sockaddr_in si;
 	si.sin_family = AF_INET;
@@ -103,7 +103,7 @@ udp_session_bind(struct ev_loop_ctx* loop_ctx, const char* ip, ushort port, size
 	int status = bind(session->fd, (struct sockaddr*)&si, sizeof(si));
 	if (status != 0) {
 		udp_session_destroy(session);
-		return -1;
+		return NULL;
 	}
 
 	return session;
@@ -125,7 +125,7 @@ udp_session_write(udp_session_t* session, char* data, size_t size, const char* i
 		return -1;
 	}
 	assert(total == size);
-	return 0;
+	return total;
 }
 
 void

@@ -915,7 +915,7 @@ _udp_new(lua_State* L) {
 	ludp_session->callback = callback;
 	ludp_session->ref = meta_init(L,META_UDP);
 	
-	udp_session_setcb(ludp_session->session, udp_recv, NULL);
+	udp_session_setcb(ludp_session->session, udp_recv, NULL, ludp_session);
 
 	return 1;
 }
