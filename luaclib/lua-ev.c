@@ -618,13 +618,12 @@ _timer_alive(lua_State* L) {
 static int
 _udp_send(lua_State* L) {
 	struct lua_udp_session* udp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
-	if (udp_session->closed == 1)
+	if (udp_session->closed == 1) {
 		luaL_error(L,"udp session:0x%x already closed",udp_session);
+	}
 
-	size_t length;
-	const char* ip = luaL_checklstring(L,2,&length);
+	const char* ip = luaL_checkstring(L,2);
 	int port = luaL_checkinteger(L,3);
-
 
 	size_t size;
 	char* data = NULL;
@@ -645,14 +644,16 @@ _udp_send(lua_State* L) {
 			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,lua_type(L,2)));
 	}
 
-	if (size == 0)
+	if (size == 0) {
 		luaL_error(L,"udp session send error size");
+	}
 
 	int total = udp_session_write(udp_session->session,data,size,ip,port);
 
-	if (needfree)
+	if (needfree) {
 		free(data);
-
+	}
+	
 	if (total < 0) {
 		udp_destroy(udp_session);
 		lua_pushboolean(L,0);
