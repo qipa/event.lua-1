@@ -20,13 +20,9 @@
 #define MAX_PACKET_SIZE		1024 * 6
 #define HEADER_SIZE			2
 
-__thread uint8_t CACHED_BUFFER[CACHED_SIZE];
+#define ERROR_SIZE 			64
 
-struct gate_callback {
-	accept_callback accept;
-	close_callback close;
-	data_callback data;
-};
+__thread uint8_t CACHED_BUFFER[CACHED_SIZE];
 
 struct gate {
 	struct ev_loop_ctx* loop_ctx;
@@ -42,7 +38,11 @@ struct gate {
 	uint32_t max_index;
 	uint32_t index;
 
-	struct gate_callback cb;
+	char error[ERROR_SIZE];
+
+	accept_callback accept;
+	close_callback close;
+	data_callback data;
 	void* ud;
 };
 
@@ -118,13 +118,16 @@ free_buffer(uint8_t* buffer) {
 }
 
 static void
+client_exit(client_t* client, const char* reason) {
+	gate_t* gate = client->gate;
+	gate->close(gate->ud, client->id, reason);
+	release_client(client);
+}
+
+static void
 client_error(struct ev_session* session,void* ud) {
 	client_t* client = ud;
-	int id = client->id;
-	gate_t* gate = client->gate;
-	gate->cb.close(gate->ud,id);
-
-	release_client(client);
+	client_exit(client, "client error");
 }
 
 static int 
@@ -141,7 +144,8 @@ read_header(client_t* client) {
 	client->need -= HEADER_SIZE;
 
 	if (client->need > MAX_PACKET_SIZE) {
-		client_error(client->session, client);
+		snprintf(client->gate->error, ERROR_SIZE, "client packet size:%d too much", client->need);
+		client_exit(client, client->gate->error);
 		return -1;
 	}
 	return 0;
@@ -160,7 +164,7 @@ read_body(client_t* client) {
 	
 	if (message_decrypt(&client->seed, data, client->need) < 0) {
 		free_buffer(data);
-	    client_error(client->session, client);
+	    client_exit(client, "client message decrypt error");
 		return -1;
 	}
 
@@ -168,7 +172,7 @@ read_body(client_t* client) {
 
     client->freq++;
     client->tick = loop_ctx_now(client->gate->loop_ctx);
-    client->gate->cb.data(client->gate->ud,client->id,id,&data[4],client->need - 4);
+    client->gate->data(client->gate->ud,client->id,id,&data[4],client->need - 4);
     client->need = 0;
 
     free_buffer(data);
@@ -208,12 +212,12 @@ client_update(struct ev_loop* loop,struct ev_timer* io,int revents) {
 	}
 
 	if (client->freq > client->gate->max_freq) {
-		fprintf(stderr,"client:%d more then %d message receive in recent 1s\n",client->id,client->freq);
-		client_error(NULL, client);
+		snprintf(client->gate->error, ERROR_SIZE, "client receive message too much:%d in last 1s", client->freq);
+		client_exit(client, client->gate->error);
 	} else {
 		client->freq = 0;
 		if (client->tick != 0 && loop_ctx_now(client->gate->loop_ctx) - client->tick > ALIVE_TIME) {
-			client_error(NULL, client);
+			client_exit(client, "client timeout");
 		}
 	}
 	release_client(client);
@@ -257,7 +261,7 @@ client_accept(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	ev_timer_init(&client->timer, client_update, 1, 1);
 	ev_timer_start(loop_ctx_get(gate->loop_ctx), &client->timer);
 
-	gate->cb.accept(gate->ud, client->id, addr);
+	gate->accept(gate->ud, client->id, addr);
 }
 
 static void
@@ -324,9 +328,9 @@ gate_start(gate_t* gate,const char* ip,int port) {
 
 void
 gate_callback(gate_t* gate,accept_callback accept,close_callback close,data_callback data) {
-	gate->cb.accept = accept;
-	gate->cb.close = close;
-	gate->cb.data = data;
+	gate->accept = accept;
+	gate->close = close;
+	gate->data = data;
 }
 
 int

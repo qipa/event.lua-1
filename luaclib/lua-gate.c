@@ -24,7 +24,7 @@ struct lgate_ctx {
 };
 
 static void 
-laccept(void* ud,uint32_t id,const char* addr) {
+laccept(void* ud, uint32_t id, const char* addr) {
 	struct lgate_ctx* lgate = ud;
 	lua_rawgeti(lgate->L, LUA_REGISTRYINDEX, lgate->accept_ref);
 	lua_pushinteger(lgate->L, id);
@@ -33,11 +33,12 @@ laccept(void* ud,uint32_t id,const char* addr) {
 }
 
 static void 
-lclose(void* ud,uint32_t id) {
+lclose(void* ud, uint32_t id, const char* reason) {
 	struct lgate_ctx* lgate = ud;
 	lua_rawgeti(lgate->L, LUA_REGISTRYINDEX, lgate->close_ref);
 	lua_pushinteger(lgate->L, id);
-	lua_pcall(lgate->L, 1, 0, 0);
+	lua_pushstring(lgate->L, reason);
+	lua_pcall(lgate->L, 2, 0, 0);
 }
 
 static void

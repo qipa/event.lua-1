@@ -10,7 +10,7 @@
 typedef struct gate gate_t;
 
 typedef void (*accept_callback)(void* ud,uint32_t client_id,const char* addr);
-typedef void (*close_callback)(void* ud,uint32_t client_id);
+typedef void (*close_callback)(void* ud,uint32_t client_id,const char* reason);
 typedef void (*data_callback)(void* ud,uint32_t client_id,int message_id,void* data,size_t size);
 
 gate_t* gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client,uint32_t max_freq,void* ud);

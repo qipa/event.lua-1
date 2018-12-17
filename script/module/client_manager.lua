@@ -31,9 +31,9 @@ local function _onClientAccept(cid,addr)
 	end
 end
 
-local function _onClientClose(cid)
+local function _onClientClose(cid,reason)
 	local cid = cid * 100 + env.distId
-	local ok,err = xpcall(_serverInst.onClientLeave,debug.traceback,_serverInst,cid)
+	local ok,err = xpcall(_serverInst.onClientLeave,debug.traceback,_serverInst,cid,reason)
 	if not ok then
 		event.error(err)
 	end
