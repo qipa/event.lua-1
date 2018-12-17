@@ -139,15 +139,15 @@ word_filter(struct word_map* map, utf8_t* utf8, const char* word, size_t size, s
 
 			if ( utf8->ptr[start] == info->first ) {
 				if ( info->length > 2 ) {
-					struct string keyword;
-					string_init(&keyword, NULL, 64);
+					struct string kw;
+					string_init(&kw, NULL, 64);
 					size_t p;
 					for ( p = 0; p < info->length; p++ ) {
-						string_append_utf8(&keyword, utf8->ptr[start + p]);
+						string_append_utf8(&kw, utf8->ptr[start + p]);
 					}
 
-					k = kh_get(word_set, map->set, string_str(&keyword));
-					string_release(&keyword);
+					k = kh_get(word_set, map->set, string_str(&kw));
+					string_release(&kw);
 
 					if ( k == kh_end(map->set) )
 						continue;
@@ -350,7 +350,7 @@ lcreate(lua_State* L) {
 	map->hash = kh_init(word);
 	map->set = kh_init(word_set);
 
-	if ( luaL_newmetatable(L, "meta_filterex") ) {
+	if ( luaL_newmetatable(L, "meta_filter") ) {
 		const luaL_Reg meta[] = {
 			{ "add", ladd },
 			{ "delete", ldelete },
