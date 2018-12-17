@@ -92,15 +92,13 @@ typedef struct lev_timer {
 	struct lev_timer* next;
 } lev_timer_t;
 
-struct lua_pipe {
+typedef struct lpipe_session {
 	lev_t* lev;
-	struct ev_io io;
-	int recv_fd;
-	int send_fd;
+	struct pipe_session* session;
 	int ref;
 	int callback;
 	int closed;
-};
+} lpipe_session_t;
 
 typedef struct lhttp_request {
 	lev_t* lev;
@@ -864,36 +862,18 @@ _udp_session_close(lua_State* L) {
 
 //-------------------------pipe api---------------------------
 
-void
-pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
-	struct lua_pipe* lpipe = io->data;
+void 
+pipe_recv(struct pipe_session* session, struct pipe_message* message, void *userdata) {
+	lpipe_session_t* lpipe = userdata;
 	lev_t* lev = lpipe->lev;
 
-	for (;;) {
-		struct pipe_message* message = NULL;
-		int n = read(io->fd, &message, sizeof(message));
-		if (n < 0) {
-			if (errno == EINTR)
-				continue;
-			else if (errno == EAGAIN) {
-				return;
-			} else {
-				assert(0);
-			}
-		}
-
-		assert(n == sizeof(message));
-
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->callback);
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->ref);
-		lua_pushinteger(lev->main, message->source);
-		lua_pushinteger(lev->main, message->session);
-		lua_pushlightuserdata(lev->main, message->data);
-		lua_pushinteger(lev->main, message->size);
-		lua_pcall(lev->main, 5, 0, 0);
-
-		free(message);
-	}
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->callback);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->ref);
+	lua_pushinteger(lev->main, message->source);
+	lua_pushinteger(lev->main, message->session);
+	lua_pushlightuserdata(lev->main, message->data);
+	lua_pushinteger(lev->main, message->size);
+	lua_pcall(lev->main, 5, 0, 0);
 }
 
 static int
@@ -903,51 +883,42 @@ _lpipe_new(lua_State* L) {
 	luaL_checktype(L, 2, LUA_TFUNCTION);
 	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
 
-	struct lua_pipe* lpipe = lua_newuserdata(L, sizeof(struct lua_pipe));
-	memset(lpipe,0,sizeof(*lpipe));
-
-	int fd[2];
-	if (pipe(fd)) {
+	struct pipe_session* session = pipe_sesson_new(lev->loop_ctx);
+	if (!session) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
 
-	socket_nonblock(fd[0]);
-	socket_nonblock(fd[1]);
+	lpipe_session_t* lpipe = lua_newuserdata(L, sizeof(lpipe_session_t));
+	memset(lpipe,0,sizeof(*lpipe));
 
-	lpipe->lev = lev;
-	lpipe->recv_fd = fd[0];
-	lpipe->send_fd = fd[1];
+	lpipe->session = session;
 	lpipe->callback = callback;
 	lpipe->closed = 0;
-
-	lpipe->io.data = lpipe;
-	ev_io_init(&lpipe->io, pipe_recv, lpipe->recv_fd, EV_READ);
-	ev_io_start(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
-
 	lpipe->ref = meta_init(L, META_PIPE);
-	lua_pushinteger(L, lpipe->send_fd);
+	pipe_session_setcb(session, pipe_recv, lpipe);
+
+	lua_pushinteger(L, pipe_write_fd(session));
 
 	return 2;
 }
 
 static int
 _lpipe_alive(lua_State* L) {
-	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
+	lpipe_session_t* lpipe = (lpipe_session_t*)lua_touserdata(L, 1);
 	lua_pushinteger(L, lpipe->closed == 1);
 	return 1;
 }
 
 static int
 _lpipe_release(lua_State* L) {
-	struct lua_pipe* lpipe = (struct lua_pipe*)lua_touserdata(L, 1);
-	if (lpipe->closed)
-		luaL_error(L,"mail box already closed");
+	lpipe_session_t* lpipe = (lpipe_session_t*)lua_touserdata(L, 1);
+	if (lpipe->closed) {
+		luaL_error(L,"pipe already closed");
+	}
 
-	ev_io_stop(loop_ctx_get(lpipe->lev->loop_ctx), &lpipe->io);
-	close(lpipe->recv_fd);
-	close(lpipe->send_fd);
+	pipe_session_destroy(lpipe->session);
 
 	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->ref);
 	luaL_unref(L, LUA_REGISTRYINDEX, lpipe->callback);
