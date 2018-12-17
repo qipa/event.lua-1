@@ -181,7 +181,7 @@ read_body(client_t* client) {
 }
 
 static void
-read_message(struct ev_session* ev_session, void* ud) {
+client_read(struct ev_session* ev_session, void* ud) {
 	client_t* client = ud;
 
 	grab_client(client);
@@ -254,7 +254,7 @@ client_accept(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 
 	grab_client(client);
 
-	ev_session_setcb(client->session, read_message, NULL, client_error, client);
+	ev_session_setcb(client->session, client_read, NULL, client_error, client);
 	ev_session_enable(client->session, EV_READ);
 
 	client->timer.data = client;
