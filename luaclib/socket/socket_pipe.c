@@ -1,3 +1,4 @@
+#include "socket_tcp.h"
 #include "socket_util.h"
 #include "socket_pipe.h"
 

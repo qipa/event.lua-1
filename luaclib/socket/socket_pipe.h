@@ -1,6 +1,6 @@
 #ifndef SOCKET_PIPE_H
 #define SOCKET_PIPE_H
-#include "socket_tcp.h"
+
 
 struct pipe_message {
 	struct pipe_message* next;
@@ -10,6 +10,7 @@ struct pipe_message {
 	size_t size;
 };
 
+struct ev_loop_ctx;
 struct pipe_session;
 
 typedef void (*pipe_session_callback)(struct pipe_session*,struct pipe_message* message,void *userdata);

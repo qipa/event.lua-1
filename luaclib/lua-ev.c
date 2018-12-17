@@ -893,6 +893,7 @@ _lpipe_new(lua_State* L) {
 	lpipe_session_t* lpipe = lua_newuserdata(L, sizeof(lpipe_session_t));
 	memset(lpipe,0,sizeof(*lpipe));
 
+	lpipe->lev = lev;
 	lpipe->session = session;
 	lpipe->callback = callback;
 	lpipe->closed = 0;
