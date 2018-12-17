@@ -198,8 +198,8 @@ function _M.gate(max)
 	return gate
 end
 
-function _M.httpc_request(func)
-	return _event:httpc_request(func)
+function _M.http_request(func)
+	return _event:http_request(func)
 end
 
 function _M.run_process(cmd,line)

@@ -41,19 +41,19 @@
 
 __thread char THREAD_CACHED_BUFFER[THREAD_CACHED_SIZE];
 
-struct lua_ev_timer;
+struct lev_timer;
 
-struct lua_ev {
+typedef struct lev {
 	struct ev_loop_ctx* loop_ctx;
 	struct http_multi* multi;
 	lua_State* main;
 	int ref;
 	int callback;
-	struct lua_ev_timer* freelist;
-};
+	struct lev_timer* freelist;
+} lev_t;
 
-struct lua_tcp_session {
-	struct lua_ev* lev;
+typedef struct ltcp_session {
+	lev_t* lev;
 	struct ev_session* session;
 	int ref;
 	int closed;
@@ -67,33 +67,33 @@ struct lua_tcp_session {
 	int need;
 		
 	int threhold;
-};
+} ltcp_session_t;
 
-struct lua_ev_listener {
-	struct lua_ev* lev;
-	struct ev_listener* listener;
-	int ref;
-	int closed;
-	int header;
-};
-
-struct lua_ev_timer {
-	struct lua_ev* lev;
-	struct ev_timer io;
-	int ref;
-	struct lua_ev_timer* next;
-};
-
-struct lua_udp_session {
-	struct lua_ev* lev;
+typedef struct ludp_session {
+	lev_t* lev;
 	struct udp_session* session;
 	int ref;
 	int closed;
 	int callback;
-};
+} ludp_session_t;
+
+typedef struct ltcp_listener {
+	lev_t* lev;
+	struct ev_listener* listener;
+	int ref;
+	int closed;
+	int header;
+} ltcp_listener_t;
+
+typedef struct lev_timer {
+	lev_t* lev;
+	struct ev_timer io;
+	int ref;
+	struct lev_timer* next;
+} lev_timer_t;
 
 struct lua_pipe {
-	struct lua_ev* lev;
+	lev_t* lev;
 	struct ev_io io;
 	int recv_fd;
 	int send_fd;
@@ -102,11 +102,16 @@ struct lua_pipe {
 	int closed;
 };
 
-struct lua_httpc {
-	struct lua_ev* lev;
+typedef struct lhttp_request {
+	lev_t* lev;
 	struct http_request* lrequest;
 	int ref;
 	int callback;
+} lhttp_request_t;
+
+union un_sockaddr {
+	struct sockaddr_un su;
+	struct sockaddr_in si;
 };
 
 static int
@@ -117,9 +122,11 @@ meta_init(lua_State* L,const char* meta) {
 	return luaL_ref(L, LUA_REGISTRYINDEX);
 }
 
-static struct lua_tcp_session*
-tcp_session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
-	struct lua_tcp_session* ltcp_session = lua_newuserdata(L, sizeof(struct lua_tcp_session));
+//-------------------------tcp session api---------------------------
+
+static ltcp_session_t*
+tcp_session_create(lua_State* L, lev_t* lev,int fd,int header) {
+	ltcp_session_t* ltcp_session = lua_newuserdata(L, sizeof(ltcp_session_t));
 	memset(ltcp_session, 0, sizeof(*ltcp_session));
 	ltcp_session->lev = lev;
 	ltcp_session->closed = 0;
@@ -138,26 +145,17 @@ tcp_session_create(lua_State* L, struct lua_ev* lev,int fd,int header) {
 }
 
 static int
-tcp_session_release(struct lua_tcp_session* ltcp_session) {
-	struct lua_ev* lev = ltcp_session->lev;
+tcp_session_release(ltcp_session_t* ltcp_session) {
+	lev_t* lev = ltcp_session->lev;
 	luaL_unref(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
 	ev_session_free(ltcp_session->session);
 	return 0;
 }
 
-static inline void
-udp_session_release(struct lua_udp_session* ludp_session) {
-	struct lua_ev* lev = ludp_session->lev;
-	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
-	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
-	ludp_session->closed = 1;
-	udp_session_destroy(ludp_session->session);
-}
-
 static void
 tcp_session_error(struct ev_session* ev_session,void* ud) {
-	struct lua_tcp_session* ltcp_session = ud;
-	struct lua_ev* lev = ltcp_session->lev;
+	ltcp_session_t* ltcp_session = ud;
+	lev_t* lev = ltcp_session->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_ERROR);
@@ -175,10 +173,10 @@ tcp_session_error(struct ev_session* ev_session,void* ud) {
 
 static void
 read_complete(struct ev_session* ev_session, void* ud) {
-	struct lua_tcp_session* ltcp_session = ud;
+	ltcp_session_t* ltcp_session = ud;
 	ltcp_session->execute = 1;
 
-	struct lua_ev* lev = ltcp_session->lev;
+	lev_t* lev = ltcp_session->lev;
 
 	if (ltcp_session->header == 0) {
 		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
@@ -242,8 +240,8 @@ read_complete(struct ev_session* ev_session, void* ud) {
 
 static void
 close_complete(struct ev_session* ev_session, void* ud) {
-	struct lua_tcp_session* ltcp_session = ud;
-	struct lua_ev* lev = ltcp_session->lev;
+	ltcp_session_t* ltcp_session = ud;
+	lev_t* lev = ltcp_session->lev;
 	assert(ltcp_session->closed == 1);
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
@@ -257,8 +255,8 @@ close_complete(struct ev_session* ev_session, void* ud) {
 
 static void
 connect_complete(struct ev_session* session,void *userdata) {
-	struct lua_tcp_session* ltcp_session = userdata;
-	struct lua_ev* lev = ltcp_session->lev;
+	ltcp_session_t* ltcp_session = userdata;
+	lev_t* lev = ltcp_session->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_CONNECT);
@@ -294,16 +292,16 @@ connect_complete(struct ev_session* session,void *userdata) {
 }
 
 static void 
-accept_socket(struct ev_listener *listener, int fd, const char* addr, void *ud) {
-	struct lua_ev_listener* lev_listener = ud;
-	struct lua_ev* lev = lev_listener->lev;
+accept_complete(struct ev_listener *listener, int fd, const char* addr, void *ud) {
+	ltcp_listener_t* lev_listener = ud;
+	lev_t* lev = lev_listener->lev;
 
 	socket_nonblock(fd);
 	socket_no_delay(fd);
 	socket_keep_alive(fd);
 	socket_closeonexec(fd);
 
-	struct lua_tcp_session* ltcp_session = tcp_session_create(lev->main, lev, fd, lev_listener->header);
+	ltcp_session_t* ltcp_session = tcp_session_create(lev->main, lev, fd, lev_listener->header);
 
 	ev_session_setcb(ltcp_session->session,read_complete,NULL,tcp_session_error,ltcp_session);
 	ev_session_enable(ltcp_session->session,EV_READ);
@@ -317,72 +315,9 @@ accept_socket(struct ev_listener *listener, int fd, const char* addr, void *ud) 
 	lua_pcall(lev->main, 4, 0, 0);
 }
 
-static void
-timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
-	struct lua_ev_timer* lev_timer = io->data;
-	struct lua_ev* lev = lev_timer->lev;
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
-	lua_pushinteger(lev->main, LUA_EV_TIMEOUT);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_timer->ref);
-	lua_pcall(lev->main, 2, 0, 0);
-}
-
-static void
-udp_recv(struct udp_session* session,char* buffer,size_t size,const char* ip, ushort port,void* userdata) {
-	struct lua_udp_session* ludp_session = userdata;
-	struct lua_ev* lev = ludp_session->lev;
-
-
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
-	lua_pushlstring(lev->main,buffer,size);
-        lua_pushstring(lev->main,ip);
-        lua_pushinteger(lev->main,port);
-	lua_pcall(lev->main, 4, 0, 0);
-}
-
-void
-pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
-	struct lua_pipe* lpipe = io->data;
-	struct lua_ev* lev = lpipe->lev;
-
-	for (;;) {
-		struct pipe_message* message = NULL;
-		int n = read(io->fd, &message, sizeof(message));
-		if (n < 0) {
-			if (errno == EINTR)
-				continue;
-			else if (errno == EAGAIN) {
-				return;
-			} else {
-				assert(0);
-			}
-		}
-
-		assert(n == sizeof(message));
-
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->callback);
-		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->ref);
-		lua_pushinteger(lev->main, message->source);
-		lua_pushinteger(lev->main, message->session);
-		lua_pushlightuserdata(lev->main, message->data);
-		lua_pushinteger(lev->main, message->size);
-		lua_pcall(lev->main, 5, 0, 0);
-
-		free(message);
-	}
-}
-
-//-------------------------tcp session api---------------------------
-
-union un_sockaddr {
-	struct sockaddr_un su;
-	struct sockaddr_in si;
-};
-
-static inline struct lua_tcp_session* 
-get_session(lua_State* L, int index) {
-	struct lua_tcp_session* ltcp_session = (struct lua_tcp_session*)lua_touserdata(L, 1);
+static inline ltcp_session_t* 
+get_tcp_session(lua_State* L, int index) {
+	ltcp_session_t* ltcp_session = (ltcp_session_t*)lua_touserdata(L, 1);
 	if (ltcp_session->closed) {
 		luaL_error(L,"session already closed");
 	}
@@ -431,7 +366,7 @@ get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen, int remov
 
 static int
 _connect(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	int header = lua_tointeger(L, 2);
 	if (header != 0) {
 		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD)
@@ -449,7 +384,7 @@ _connect(lua_State* L) {
 	}
 
 	int status;
-	struct lua_tcp_session* ltcp_session = tcp_session_create(L,lev,-1,header);
+	ltcp_session_t* ltcp_session = tcp_session_create(L,lev,-1,header);
 	ltcp_session->lev = lev;
 	ltcp_session->wait = wait;
 	ltcp_session->session = ev_session_connect(lev->loop_ctx,addr,addrlen,block,&status);
@@ -474,10 +409,10 @@ _connect(lua_State* L) {
 
 static int
 _bind(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	int fd = lua_tointeger(L, 2);
 	
-	struct lua_tcp_session* ltcp_session = tcp_session_create(L,lev,fd,0);
+	ltcp_session_t* ltcp_session = tcp_session_create(L,lev,fd,0);
 	ev_session_setcb(ltcp_session->session, read_complete, NULL, tcp_session_error, ltcp_session);
 	ev_session_enable(ltcp_session->session, EV_READ);
 	return 1;
@@ -486,7 +421,7 @@ _bind(lua_State* L) {
 
 static int
 _tcp_session_write(lua_State* L) {
-	struct lua_tcp_session* ltcp_session = get_session(L, 1);
+	ltcp_session_t* ltcp_session = get_tcp_session(L, 1);
 	
 	int noheader = 0;
 	size_t size = 0;
@@ -565,7 +500,7 @@ _tcp_session_write(lua_State* L) {
 
 static int
 _tcp_session_read(lua_State* L) {
-	struct lua_tcp_session* ltcp_session = get_session(L, 1);
+	ltcp_session_t* ltcp_session = get_tcp_session(L, 1);
 	size_t size = luaL_optinteger(L,2,0);
 
 	size_t total = ev_session_input_size(ltcp_session->session);
@@ -595,7 +530,7 @@ _tcp_session_read(lua_State* L) {
 
 static int
 _tcp_session_read_util(lua_State* L) {
-	struct lua_tcp_session* ltcp_session = get_session(L, 1);
+	ltcp_session_t* ltcp_session = get_tcp_session(L, 1);
 	size_t size;
 	const char* sep = lua_tolstring(L,2,&size);
 
@@ -615,14 +550,14 @@ _tcp_session_read_util(lua_State* L) {
 
 static int
 _tcp_session_alive(lua_State* L) {
-	struct lua_tcp_session* ltcp_session = (struct lua_tcp_session*)lua_touserdata(L, 1);
+	ltcp_session_t* ltcp_session = (ltcp_session_t*)lua_touserdata(L, 1);
 	lua_pushboolean(L,ltcp_session->closed == 0);
 	return 1;
 }
 
 static int
 _tcp_session_close(lua_State* L) {
-	struct lua_tcp_session* ltcp_session = get_session(L, 1);
+	ltcp_session_t* ltcp_session = get_tcp_session(L, 1);
 	
 	luaL_checktype(L, 2, LUA_TBOOLEAN);
 	int immediately = lua_toboolean(L, 2);
@@ -649,7 +584,7 @@ _tcp_session_close(lua_State* L) {
 //-------------------------tcp listener api---------------------------
 static int
 _listen(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	
 	int header = lua_tointeger(L, 2);
 	if (header != 0) {
@@ -664,7 +599,7 @@ _listen(lua_State* L) {
 	int addrlen = 0;
 	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 1);
 	
-	struct lua_ev_listener* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
+	ltcp_listener_t* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
 	lev_listener->lev = lev;
 	lev_listener->closed = 0;
 	lev_listener->header = header;
@@ -673,7 +608,7 @@ _listen(lua_State* L) {
 	if (multi)
 		flag |= SOCKET_OPT_REUSEABLE_PORT;
 
-	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,addrlen,16,flag,accept_socket,lev_listener);
+	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,addrlen,16,flag,accept_complete,lev_listener);
 	if (!lev_listener->listener) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, strdup(strerror(errno)));
@@ -687,14 +622,14 @@ _listen(lua_State* L) {
 
 static int
 _listen_alive(lua_State* L) {
-	struct lua_ev_listener* lev_listener = (struct lua_ev_listener*)lua_touserdata(L, 1);
+	ltcp_listener_t* lev_listener = (ltcp_listener_t*)lua_touserdata(L, 1);
 	lua_pushboolean(L,lev_listener->closed == 0);
 	return 1;
 }
 
 static int
 _listen_addr(lua_State* L) {
-	struct lua_ev_listener* lev_listener = (struct lua_ev_listener*)lua_touserdata(L, 1);
+	ltcp_listener_t* lev_listener = (ltcp_listener_t*)lua_touserdata(L, 1);
 	if (!lev_listener->listener) {
 		return 0;
 	}
@@ -719,7 +654,7 @@ _listen_addr(lua_State* L) {
 
 static int
 _listen_close(lua_State* L) {
-	struct lua_ev_listener* lev_listener = (struct lua_ev_listener*)lua_touserdata(L, 1);
+	ltcp_listener_t* lev_listener = (ltcp_listener_t*)lua_touserdata(L, 1);
 	if (lev_listener->closed)
 		luaL_error(L, "listener alreay closed");
 
@@ -732,9 +667,19 @@ _listen_close(lua_State* L) {
 
 //-------------------------timer api---------------------------
 
+static void
+timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
+	lev_timer_t* lev_timer = io->data;
+	lev_t* lev = lev_timer->lev;
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
+	lua_pushinteger(lev->main, LUA_EV_TIMEOUT);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_timer->ref);
+	lua_pcall(lev->main, 2, 0, 0);
+}
+
 static int
 _timer(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 
 	double ti = lua_tonumber(L, 2);
 	int once = lua_toboolean(L, 3);
@@ -743,7 +688,7 @@ _timer(lua_State* L) {
 		freq = ti;
 	}
 	
-	struct lua_ev_timer* lev_timer = NULL;
+	lev_timer_t* lev_timer = NULL;
 	if (lev->freelist) {
 		lev_timer = lev->freelist;
 		lev->freelist = lev->freelist->next;
@@ -763,11 +708,11 @@ _timer(lua_State* L) {
 
 static int
 _timer_cancel(lua_State* L) {
-	struct lua_ev_timer* lev_timer = (struct lua_ev_timer*)lua_touserdata(L, 1);
+	lev_timer_t* lev_timer = (lev_timer_t*)lua_touserdata(L, 1);
 	if (ev_is_active(&lev_timer->io) == 0) {
 		luaL_error(L, "timer already cancel");
 	}
-	struct lua_ev* lev = lev_timer->lev;
+	lev_t* lev = lev_timer->lev;
 	ev_timer_stop(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&lev_timer->io);
 	lev_timer->next = lev->freelist;
 	lev->freelist = lev_timer;
@@ -776,7 +721,7 @@ _timer_cancel(lua_State* L) {
 
 static int
 _timer_alive(lua_State* L) {
-	struct lua_ev_timer* lev_timer = (struct lua_ev_timer*)lua_touserdata(L, 1);
+	lev_timer_t* lev_timer = (lev_timer_t*)lua_touserdata(L, 1);
 	lua_pushboolean(L,ev_is_active(&lev_timer->io));
 	return 1;
 }
@@ -784,9 +729,31 @@ _timer_alive(lua_State* L) {
 
 //-------------------------udp api---------------------------
 
+static void
+udp_recv(struct udp_session* session,char* buffer,size_t size,const char* ip, ushort port,void* userdata) {
+	ludp_session_t* ludp_session = userdata;
+	lev_t* lev = ludp_session->lev;
+
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
+	lua_pushlstring(lev->main,buffer,size);
+    lua_pushstring(lev->main,ip);
+    lua_pushinteger(lev->main,port);
+	lua_pcall(lev->main, 4, 0, 0);
+}
+
+static inline void
+udp_session_release(ludp_session_t* ludp_session) {
+	lev_t* lev = ludp_session->lev;
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->ref);
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, ludp_session->callback);
+	ludp_session->closed = 1;
+	udp_session_destroy(ludp_session->session);
+}
+
 static int
 _udp_session_new(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	size_t recv_size = lua_tointeger(L, 2);
 	luaL_checktype(L, 3, LUA_TFUNCTION);
 	
@@ -797,7 +764,7 @@ _udp_session_new(lua_State* L) {
 		port = luaL_checkinteger(L, 5);
 	}
 	
-	struct upd_session* session = NULL;
+	struct udp_session* session = NULL;
 	if (ip) {
 		session = udp_session_bind(lev->loop_ctx, ip, port, recv_size);
 	} else {
@@ -813,7 +780,7 @@ _udp_session_new(lua_State* L) {
 	lua_pushvalue(L,3);
 	int callback = luaL_ref(L,LUA_REGISTRYINDEX);
 
-	struct lua_udp_session* ludp_session = lua_newuserdata(L, sizeof(struct lua_udp_session));
+	ludp_session_t* ludp_session = lua_newuserdata(L, sizeof(ludp_session_t));
 	memset(ludp_session,0,sizeof(*ludp_session));
 
 	ludp_session->lev = lev;
@@ -829,7 +796,7 @@ _udp_session_new(lua_State* L) {
 
 static int
 _udp_session_send(lua_State* L) {
-	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	ludp_session_t* ludp_session = (ludp_session_t*)lua_touserdata(L, 1);
 	if (ludp_session->closed == 1) {
 		luaL_error(L,"udp session:0x%x already closed",ludp_session);
 	}
@@ -879,14 +846,14 @@ _udp_session_send(lua_State* L) {
 
 static int
 _udp_session_alive(lua_State* L) {
-	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	ludp_session_t* ludp_session = (ludp_session_t*)lua_touserdata(L, 1);
 	lua_pushinteger(L,ludp_session->closed);
 	return 1;
 }
 
 static int
 _udp_session_close(lua_State* L) {
-	struct lua_udp_session* ludp_session = (struct lua_udp_session*)lua_touserdata(L, 1);
+	ludp_session_t* ludp_session = (ludp_session_t*)lua_touserdata(L, 1);
 	if (ludp_session->closed == 1) {
 		luaL_error(L,"udp session:0x%x already closed",ludp_session);
 	}
@@ -897,9 +864,41 @@ _udp_session_close(lua_State* L) {
 
 //-------------------------pipe api---------------------------
 
+void
+pipe_recv(struct ev_loop* loop,ev_io* io,int revents) {
+	struct lua_pipe* lpipe = io->data;
+	lev_t* lev = lpipe->lev;
+
+	for (;;) {
+		struct pipe_message* message = NULL;
+		int n = read(io->fd, &message, sizeof(message));
+		if (n < 0) {
+			if (errno == EINTR)
+				continue;
+			else if (errno == EAGAIN) {
+				return;
+			} else {
+				assert(0);
+			}
+		}
+
+		assert(n == sizeof(message));
+
+		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->callback);
+		lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lpipe->ref);
+		lua_pushinteger(lev->main, message->source);
+		lua_pushinteger(lev->main, message->session);
+		lua_pushlightuserdata(lev->main, message->data);
+		lua_pushinteger(lev->main, message->size);
+		lua_pcall(lev->main, 5, 0, 0);
+
+		free(message);
+	}
+}
+
 static int
 _lpipe_new(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 
 	luaL_checktype(L, 2, LUA_TFUNCTION);
 	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -961,8 +960,8 @@ _lpipe_release(lua_State* L) {
 //-------------------------start http request api---------------------------
 void 
 request_done(struct http_request* request, void* ud) {
-	struct lua_httpc* userdata = ud;
-	struct lua_ev* lev = userdata->lev;
+	lhttp_request_t* userdata = ud;
+	lev_t* lev = userdata->lev;
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, userdata->callback);
 	
@@ -984,7 +983,7 @@ request_done(struct http_request* request, void* ud) {
 
 static int
 _lrequset_set_url(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
 	const char* url = lua_tostring(L, 2);
 	set_url(httpc->lrequest, url);
 	return 0;
@@ -992,7 +991,7 @@ _lrequset_set_url(lua_State* L) {
 
 static int
 _lrequset_set_header(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
 	size_t size;
 	const char* header = luaL_checklstring(L, 2, &size);
 	set_header(httpc->lrequest, header, size);
@@ -1001,7 +1000,7 @@ _lrequset_set_header(lua_State* L) {
 
 static int
 _lrequset_set_timeout(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
 	int timeout = luaL_checkinteger(L, 2);
 	set_timeout(httpc->lrequest, timeout);
 	return 0;
@@ -1009,7 +1008,7 @@ _lrequset_set_timeout(lua_State* L) {
 
 static int
 _lrequset_set_post_data(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
 	size_t size;
 	const char* content = luaL_checklstring(L, 2, &size);
 	set_post_data(httpc->lrequest, content, size);
@@ -1018,7 +1017,7 @@ _lrequset_set_post_data(lua_State* L) {
 
 static int
 _lrequset_set_unix_socket(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
 	const char* socket_path = luaL_checkstring(L, 2);
 	set_unix_socket_path(httpc->lrequest, socket_path);
 	return 0;
@@ -1026,20 +1025,20 @@ _lrequset_set_unix_socket(lua_State* L) {
 
 static int
 _lrequset_perform(lua_State* L) {
-	struct lua_httpc* httpc = (struct lua_httpc*)lua_touserdata(L, 1);
-	struct lua_ev* lev = httpc->lev;
+	lhttp_request_t* httpc = (lhttp_request_t*)lua_touserdata(L, 1);
+	lev_t* lev = httpc->lev;
 	int status = http_request_perform(lev->multi, httpc->lrequest, request_done, httpc);
 	lua_pushinteger(L, status);
 	return 1;
 }
 
 static int
-_lhttpc_request(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+_lhttp_request_new(lua_State* L) {
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 
 	luaL_checktype(L, 2, LUA_TFUNCTION);
 	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-	struct lua_httpc* httpc = lua_newuserdata(L, sizeof(*httpc));
+	lhttp_request_t* httpc = lua_newuserdata(L, sizeof(*httpc));
 	memset(httpc,0,sizeof(*httpc));
 
 	httpc->lev = lev;
@@ -1057,7 +1056,7 @@ extern int lgate_create(lua_State* L,struct ev_loop_ctx* loop_ctx,uint32_t max_c
 
 static int
 _lgate_new(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	uint32_t max_client = luaL_optinteger(L, 2, 1000);
 	uint32_t max_freq = luaL_optinteger(L, 3, 1000);
 	if (max_client <= 0 || max_client >= 10000) {
@@ -1068,14 +1067,14 @@ _lgate_new(lua_State* L) {
 
 static int
 _dispatch(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	loop_ctx_dispatch(lev->loop_ctx);
 	return 0;
 }
 
 static int
 _release(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	http_multi_delete(lev->multi);
 	loop_ctx_release(lev->loop_ctx);
 	luaL_unref(L, LUA_REGISTRYINDEX, lev->ref);
@@ -1084,17 +1083,17 @@ _release(lua_State* L) {
 
 static int
 _break(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	loop_ctx_break(lev->loop_ctx);
 	return 0;
 }
 
 static int
 _clean(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	loop_ctx_clean(lev->loop_ctx);
 	while(lev->freelist) {
-		struct lua_ev_timer* timer = lev->freelist;
+		lev_timer_t* timer = lev->freelist;
 		lev->freelist = lev->freelist->next;
 		luaL_unref(L, LUA_REGISTRYINDEX, timer->ref);
 	}
@@ -1103,7 +1102,7 @@ _clean(lua_State* L) {
 
 static int
 _now(lua_State* L) {
-	struct lua_ev* lev = (struct lua_ev*)lua_touserdata(L, 1);
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	double now = loop_ctx_now(lev->loop_ctx) * 1000;
 	lua_pushinteger(L, now);
 	return 1;
@@ -1115,7 +1114,7 @@ _event_new(lua_State* L) {
 	luaL_checktype(L,1,LUA_TFUNCTION);
 	int callback = luaL_ref(L,LUA_REGISTRYINDEX);
 
-	struct lua_ev* lev = lua_newuserdata(L, sizeof(*lev));
+	lev_t* lev = lua_newuserdata(L, sizeof(*lev));
 	lev->loop_ctx = loop_ctx_create();
 	lev->multi = http_multi_new(lev->loop_ctx);
 	lev->main = L;
@@ -1139,7 +1138,7 @@ luaopen_ev_core(lua_State* L) {
 		{ "udp", _udp_session_new },
 		{ "pipe", _lpipe_new },
 		{ "gate", _lgate_new },
-		{ "httpc_request", _lhttpc_request },
+		{ "http_request", _lhttp_request_new },
 		{ "breakout", _break },
 		{ "dispatch", _dispatch },
 		{ "clean", _clean },
