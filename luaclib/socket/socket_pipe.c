@@ -1,5 +1,4 @@
 #include "socket_util.h"
-#include "socket_tcp.h"
 #include "socket_pipe.h"
 
 typedef struct pipe_session {
@@ -75,7 +74,7 @@ pipe_session_destroy(pipe_session_t* session) {
 int
 pipe_session_write_fd(int fd, void* data, size_t size) {
 	for (;;) {
-		int n = write(ctx->fd, data, size);
+		int n = write(fd, data, size);
 		if (n < 0) {
 			if (errno == EINTR) {
 				continue;
@@ -89,6 +88,7 @@ pipe_session_write_fd(int fd, void* data, size_t size) {
 		assert(n == size);
 		break;
 	}
+	return 0;
 }
 
 int
@@ -102,7 +102,7 @@ pipe_write_fd(pipe_session_t* session) {
 }
 
 void
-pipe_session_setcb(udp_session_t* session, pipe_session_callback read_cb, void* userdata) {
+pipe_session_setcb(pipe_session_t* session, pipe_session_callback read_cb, void* userdata) {
 	session->read_cb = read_cb;
 	session->userdata = userdata;
 }
