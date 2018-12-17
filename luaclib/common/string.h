@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "kstring.h"
+#include "utf8.h"
+
 
 #define DEFAULT_SIZE	64
 
@@ -27,6 +29,8 @@ int string_append_word(struct string* string, int c);
 
 int string_append_uword(struct string* string, unsigned c);
 int string_append_long(struct string* string, long c);
+
+int string_append_utf8(string_t* string, utf8_int32_t code);
 
 char* string_concat(struct string** list, int size, int* outsize);
 

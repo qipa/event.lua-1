@@ -2,7 +2,6 @@
 #include "string.h"
 
 
-
 #define roundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
 string_t*
@@ -17,6 +16,7 @@ void
 string_init(string_t* string, char* str, size_t size) {
 	size_t rsize = roundup32(size);
 	char* raw = malloc(rsize);
+	memset(raw, 0, rsize);
 
 	if (str) {
 		string->kstr.l = size;
@@ -77,6 +77,13 @@ string_append_uword(string_t* string, unsigned c) {
 int
 string_append_long(string_t* string, long c) {
 	return kputl(c, &string->kstr);
+}
+
+int
+string_append_utf8(string_t* string, utf8_int32_t code) {
+	char word[8] = {0};
+	char* over = utf8catcodepoint(word, code, 8);
+	return kputsn(word, over - word, &string->kstr);
 }
 
 char*

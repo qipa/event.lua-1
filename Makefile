@@ -166,7 +166,7 @@ $(LUA_CLIB_PATH)/protocolcore.so : $(LUA_CLIB_SRC)/lua-protocol.c | $(LUA_CLIB_P
 $(LUA_CLIB_PATH)/trie.so : $(LUA_CLIB_SRC)/lua-trie.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)	-I./3rd/klib
 
-$(LUA_CLIB_PATH)/filter.so : $(LUA_CLIB_SRC)/lua-filter.c | $(LUA_CLIB_PATH)
+$(LUA_CLIB_PATH)/filter.so : $(LUA_CLIB_SRC)/lua-filter.c $(LUA_CLIB_SRC)/common/string.c ./3rd/klib/kstring.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)	-I./3rd/klib
 
 $(LUA_CLIB_PATH)/co.so : $(LUA_CLIB_SRC)/lua-co.c | $(LUA_CLIB_PATH)

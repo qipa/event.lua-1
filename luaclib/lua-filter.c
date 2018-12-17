@@ -11,6 +11,7 @@
 
 #include "khash.h"
 #include "common/utf8.h"
+#include "common/string.h"
 
 #define STACK_SIZE 64
 
@@ -18,13 +19,6 @@ struct length_list;
 
 KHASH_MAP_INIT_INT(word, struct length_list*);
 KHASH_SET_INIT_STR(word_set);
-
-struct string {
-	char* data;
-	char init[STACK_SIZE];
-	size_t size;
-	size_t offset;
-};
 
 typedef struct utf8 {
 	uint32_t size;
@@ -48,59 +42,6 @@ struct word_map {
 	khash_t(word)* hash;
 	khash_t(word_set)* set;
 };
-
-static inline void
-string_init(struct string* str) {
-	str->size = STACK_SIZE;
-	str->offset = 0;
-	str->data = str->init;
-	memset(str->data, 0, str->size);
-}
-
-static inline void
-string_release(struct string* str) {
-	if ( str->data != str->init )
-		free(str->data);
-}
-
-static inline size_t
-string_length(struct string* str) {
-	return str->offset;
-}
-
-static inline void
-string_push(struct string* str, char* data, size_t size) {
-	if ( str->offset + size + 1 >= str->size ) {
-		str->size = str->size * 2;
-		if ( str->size <= str->offset + size + 1 )
-			str->size = str->offset + size + 1;
-		char* odata = str->data;
-		str->data = malloc(str->size);
-		memset(str->data, 0, str->size);
-		memcpy(str->data, odata, str->offset);
-		if ( str->init != odata )
-			free(odata);
-	}
-	memcpy(str->data + str->offset, data, size);
-	str->offset += size;
-}
-
-static inline void
-string_append_utf8(struct string* str, utf8_int32_t code) {
-	char word[8] = {0};
-	char* over = utf8catcodepoint(word, code, 8);
-	string_push(str, word, over - word);
-}
-
-static inline void
-string_append_str(struct string* str, char* data, size_t size) {
-	string_push(str, data, size);
-}
-
-static inline void
-string_append_one(struct string* str, const char ch) {
-	string_push(str, (char*)&ch, 1);
-}
 
 static inline void
 utf8_init(utf8_t* utf8) {
@@ -199,13 +140,13 @@ word_filter(struct word_map* map, utf8_t* utf8, const char* word, size_t size, s
 			if ( utf8->ptr[start] == info->first ) {
 				if ( info->length > 2 ) {
 					struct string keyword;
-					string_init(&keyword);
+					string_init(&keyword, NULL, 64);
 					size_t p;
 					for ( p = 0; p < info->length; p++ ) {
 						string_append_utf8(&keyword, utf8->ptr[start + p]);
 					}
 
-					k = kh_get(word_set, map->set, keyword.data);
+					k = kh_get(word_set, map->set, string_str(&keyword));
 					string_release(&keyword);
 
 					if ( k == kh_end(map->set) )
@@ -219,7 +160,7 @@ word_filter(struct word_map* map, utf8_t* utf8, const char* word, size_t size, s
 				size_t j;
 				for ( j = tIndex; j <= index; j++ ) {
 					if ( j >= start ) {
-						string_append_one(result, '*');
+						string_append_char(result, '*');
 					}
 					else {
 						string_append_utf8(result, utf8->ptr[j]);
@@ -243,7 +184,7 @@ word_filter(struct word_map* map, utf8_t* utf8, const char* word, size_t size, s
 	}
 	else {
 		if ( result )
-			string_append_str(result, (char*)word, size);
+			string_append_lstr(result, (char*)word, size);
 	}
 
 	if ( tIndex == 0 )
@@ -361,7 +302,7 @@ lfilter(lua_State* L) {
 	}
 
 	struct string result;
-	string_init(&result);
+	string_init(&result, NULL, 64);
 
 	int ok = word_filter(map, &utf8, word, size, &result);
 	if ( ok == 0 ) {
@@ -370,7 +311,7 @@ lfilter(lua_State* L) {
 	}
 	else {
 		lua_pushboolean(L, 0);
-		lua_pushstring(L, result.data);
+		lua_pushstring(L, string_str(&result));
 	}
 
 	string_release(&result);
