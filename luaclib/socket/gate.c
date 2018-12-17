@@ -19,24 +19,24 @@
 #define WARN_OUTPUT_FLOW 	10 * 1024
 #define MAX_PACKET_SIZE		1024 * 6
 #define HEADER_SIZE			2
-
 #define ERROR_SIZE 			64
 
-__thread uint8_t CACHED_BUFFER[CACHED_SIZE];
+#define SLOT(id,max) (id - (id / max) * max)
+
 
 struct gate {
 	struct ev_loop_ctx* loop_ctx;
-
 	struct ev_listener* listener;
 
 	struct object_container* container;
-	uint32_t client_count;
-
-	uint32_t max_freq;
 	uint32_t max_client;
+	uint32_t count;
+	
 	uint32_t max_offset;
 	uint32_t max_index;
 	uint32_t index;
+
+	uint32_t max_freq;
 
 	char error[ERROR_SIZE];
 
@@ -59,7 +59,7 @@ typedef struct client {
 	int markdead;
 } client_t;
 
-#define SLOT(id,max) (id - (id / max) * max)
+__thread uint8_t CACHED_BUFFER[CACHED_SIZE];
 
 static void 
 close_client(int id,void* data) {
@@ -68,7 +68,7 @@ close_client(int id,void* data) {
 	ev_timer_stop(loop_ctx_get(client->gate->loop_ctx),(struct ev_timer*)&client->timer);
 	uint32_t slot = SLOT(client->id,client->gate->max_offset);
 	container_remove(client->gate->container,slot);
-	client->gate->client_count--;
+	client->gate->count--;
 	free(client);
 }
 
@@ -226,12 +226,12 @@ static void
 client_accept(struct ev_listener *listener, int fd, const char* addr, void *ud) {
 	gate_t* gate = ud;
 
-	if (gate->client_count >= gate->max_client) {
+	if (gate->count >= gate->max_client) {
 		close(fd);
 		return;
 	}
 
-	gate->client_count++;
+	gate->count++;
 
 	socket_nonblock(fd);
 	socket_keep_alive(fd);
@@ -289,7 +289,7 @@ gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq,
 	gate->loop_ctx = loop_ctx;
 	gate->ud = ud;
 	gate->max_freq = max_freq;
-	gate->client_count = 0;
+	gate->count = 0;
 	
 	gate->max_client = max_client;
 	gate->max_offset = 1;
