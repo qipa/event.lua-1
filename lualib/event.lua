@@ -163,13 +163,13 @@ end
 
 function _M.sleep(ti)
 	local session = _M.gen_session()
-	local timer = _event:timer(ti,true)
+	local timer = _event:timer(ti)
 	_timer_ctx[timer]= session
 	_M.wait(session)
 end
 
 function _M.timer(ti,callback)
-	local timer = _event:timer(ti,false)
+	local timer = _event:timer(ti,ti)
 	_timer_ctx[timer]= callback
 	return timer
 end

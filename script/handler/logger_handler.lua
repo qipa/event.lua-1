@@ -57,7 +57,7 @@ function log(_,args)
 		if not FILE then
 			local path = string.format("%s/%s.log",env.logPath,logName)
 			local attr = util.attributes(path)
-			if not util.same_week(attr.modification,_now) then
+			if not util.same_day(attr.modification,_now) then
 				local dir = env.logPath.."/"..osData("%Y-%m-%d",osTime())
 				if not util.attributes(dir) then
 					util.mkdir(dir)

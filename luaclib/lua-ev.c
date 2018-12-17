@@ -667,11 +667,11 @@ _listen_close(lua_State* L) {
 
 static void
 timeout(struct ev_loop* loop,struct ev_timer* io,int revents) {
-	lev_timer_t* lev_timer = io->data;
-	lev_t* lev = lev_timer->lev;
+	lev_timer_t* timer = io->data;
+	lev_t* lev = timer->lev;
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_TIMEOUT);
-	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev_timer->ref);
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, timer->ref);
 	lua_pcall(lev->main, 2, 0, 0);
 }
 
@@ -679,48 +679,51 @@ static int
 _timer(lua_State* L) {
 	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 
-	double ti = lua_tonumber(L, 2);
-	int once = lua_toboolean(L, 3);
+	double ti = luaL_checknumber(L, 2);
 	double freq = 0;
-	if (!once) {
-		freq = ti;
+	if (!lua_isnil(L, 3)) {
+		freq = luaL_checknumber(L, 3);
 	}
 	
-	lev_timer_t* lev_timer = NULL;
+	lev_timer_t* timer = NULL;
 	if (lev->freelist) {
-		lev_timer = lev->freelist;
+		timer = lev->freelist;
 		lev->freelist = lev->freelist->next;
-		lua_rawgeti(L, LUA_REGISTRYINDEX, lev_timer->ref);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, timer->ref);
 	} else {
-		lev_timer = lua_newuserdata(L, sizeof(*lev_timer));
-		lev_timer->lev = lev;
-		lev_timer->ref = meta_init(L,META_TIMER);
+		timer = lua_newuserdata(L, sizeof(*timer));
+		timer->lev = lev;
+		timer->ref = meta_init(L,META_TIMER);
 	}
 	
-	lev_timer->io.data = lev_timer;
-	ev_timer_init((struct ev_timer*)&lev_timer->io,timeout,ti,freq);
-	ev_timer_start(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&lev_timer->io);
+	timer->io.data = timer;
+	ev_timer_init((struct ev_timer*)&timer->io,timeout,ti,freq);
+	ev_timer_start(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&timer->io);
 
 	return 1;
 }
 
 static int
 _timer_cancel(lua_State* L) {
-	lev_timer_t* lev_timer = (lev_timer_t*)lua_touserdata(L, 1);
-	if (ev_is_active(&lev_timer->io) == 0) {
-		luaL_error(L, "timer already cancel");
+	lev_timer_t* timer = (lev_timer_t*)lua_touserdata(L, 1);
+	if (ev_is_active(&timer->io) == 0) {
+		lua_pushboolean(L, 0);
+		lua_pushliteral(L, "timer already cancel");
+		return 2;
 	}
-	lev_t* lev = lev_timer->lev;
-	ev_timer_stop(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&lev_timer->io);
-	lev_timer->next = lev->freelist;
-	lev->freelist = lev_timer;
-	return 0;
+	lev_t* lev = timer->lev;
+	ev_timer_stop(loop_ctx_get(lev->loop_ctx),(struct ev_timer*)&timer->io);
+	timer->next = lev->freelist;
+	lev->freelist = timer;
+
+	lua_pushboolean(L, 1);
+	return 1;
 }
 
 static int
 _timer_alive(lua_State* L) {
-	lev_timer_t* lev_timer = (lev_timer_t*)lua_touserdata(L, 1);
-	lua_pushboolean(L,ev_is_active(&lev_timer->io));
+	lev_timer_t* timer = (lev_timer_t*)lua_touserdata(L, 1);
+	lua_pushboolean(L,ev_is_active(&timer->io));
 	return 1;
 }
 //-------------------------endof timer api---------------------------
