@@ -117,6 +117,7 @@ free_buffer(uint8_t* buffer) {
 
 static void
 client_exit(client_t* client, const char* reason) {
+	client->markdead = 1;
 	gate_t* gate = client->gate;
 	gate->close(gate->ud, client->id, reason);
 	release_client(client);
@@ -349,7 +350,7 @@ gate_close(gate_t* gate,uint32_t client_id,int grace) {
 		return -1;
 	}
 	grab_client(client);
-	
+
 	if (!grace) {
 		release_client(client);
 	}
