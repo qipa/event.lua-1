@@ -14,7 +14,7 @@
 #include "socket/gate.h"
 
 struct lgate_ctx {
-	struct gate_ctx* gate;
+	gate_t* gate;
 	int alive;
 	lua_State* L;
 	int ref;
