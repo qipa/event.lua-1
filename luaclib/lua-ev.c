@@ -1027,17 +1027,18 @@ _lhttp_request_new(lua_State* L) {
 
 //-------------------------event api---------------------------
 
-extern int lgate_create(lua_State* L,struct ev_loop_ctx* loop_ctx,uint32_t max_client,uint32_t max_freq);
+extern int lgate_create(lua_State* L, struct ev_loop_ctx* loop_ctx, uint32_t max_client, uint32_t max_freq, uint32_t timeout);
 
 static int
 _lgate_new(lua_State* L) {
 	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	uint32_t max_client = luaL_optinteger(L, 2, 1000);
 	uint32_t max_freq = luaL_optinteger(L, 3, 1000);
+	uint32_t timeout = luaL_optinteger(L, 4, 60);
 	if (max_client <= 0 || max_client >= 10000) {
 		luaL_error(L,"error create gate,size invalid:%d",max_client);
 	}
-	return lgate_create(L,lev->loop_ctx,max_client,max_freq);
+	return lgate_create(L,lev->loop_ctx,max_client,max_freq,timeout);
 }
 
 static int

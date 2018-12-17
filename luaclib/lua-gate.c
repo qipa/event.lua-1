@@ -175,11 +175,11 @@ lgate_release(lua_State* L) {
 }
 
 int
-lgate_create(lua_State* L,struct ev_loop_ctx* loop_ctx,uint32_t max_client,uint32_t max_freq) {
+lgate_create(lua_State* L, struct ev_loop_ctx* loop_ctx, uint32_t max_client, uint32_t max_freq, uint32_t timeout) {
 	struct lgate_ctx* lgate = lua_newuserdata(L, sizeof(*lgate));
 	memset(lgate, 0, sizeof(*lgate));
 
-	lgate->gate = gate_create(loop_ctx,max_client,max_freq,lgate);
+	lgate->gate = gate_create(loop_ctx, max_client, max_freq, timeout, lgate);
 	lgate->alive = 1;    
 	lgate->L = G(L)->mainthread;
 

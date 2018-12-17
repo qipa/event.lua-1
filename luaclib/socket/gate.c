@@ -14,8 +14,6 @@
 #include "socket/gate.h"
 
 #define CACHED_SIZE 		1024 * 1024
-#define MAX_FREQ 			500
-#define ALIVE_TIME 			60
 #define WARN_OUTPUT_FLOW 	10 * 1024
 #define MAX_PACKET_SIZE		1024 * 6
 #define HEADER_SIZE			2
@@ -37,6 +35,7 @@ struct gate {
 	uint32_t index;
 
 	uint32_t max_freq;
+	uint32_t timeout;
 
 	char error[ERROR_SIZE];
 
@@ -215,7 +214,7 @@ client_update(struct ev_loop* loop,struct ev_timer* io,int revents) {
 		client_exit(client, client->gate->error);
 	} else {
 		client->freq = 0;
-		if (client->tick != 0 && loop_ctx_now(client->gate->loop_ctx) - client->tick > ALIVE_TIME) {
+		if (client->tick != 0 && loop_ctx_now(client->gate->loop_ctx) - client->tick > client->gate->timeout) {
 			client_exit(client, "client timeout");
 		}
 	}
@@ -277,8 +276,8 @@ close_error(struct ev_session* session, void* ud) {
 }
 
 gate_t*
-gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq,void* ud) {
-	if (max_client <= 0 || max_freq <= 0) {
+gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq, uint32_t timeout,void* ud) {
+	if (max_client < 1 || max_freq < 1 || timeout < 1) {
 		return NULL;
 	}
 
@@ -289,9 +288,11 @@ gate_create(struct ev_loop_ctx* loop_ctx,uint32_t max_client, uint32_t max_freq,
 	gate->loop_ctx = loop_ctx;
 	gate->ud = ud;
 	gate->max_freq = max_freq;
+	gate->timeout = timeout;
+
 	gate->count = 0;
-	
 	gate->max_client = max_client;
+
 	gate->max_offset = 1;
 	while(max_client > 0) {
 		max_client /= 10;
