@@ -127,7 +127,7 @@ client_error(struct ev_session* session,void* ud) {
 	release_client(client);
 }
 
-static inline int 
+static int 
 read_header(client_t* client) {
 	size_t total = ev_session_input_size(client->session);
 	if (total < HEADER_SIZE) {
@@ -135,7 +135,7 @@ read_header(client_t* client) {
 	}
 
 	uint8_t header[HEADER_SIZE];
-	ev_session_read(client->session,(char*)header,HEADER_SIZE);
+	ev_session_read(client->session,(char*)header, HEADER_SIZE);
 
 	client->need = header[0] | header[1] << 8;
 	client->need -= HEADER_SIZE;
@@ -147,7 +147,7 @@ read_header(client_t* client) {
 	return 0;
 }
 
-static inline int 
+static int 
 read_body(client_t* client) {
 	size_t total = ev_session_input_size(client->session);
 	if (total < client->need) {
@@ -220,7 +220,7 @@ client_update(struct ev_loop* loop,struct ev_timer* io,int revents) {
 }
 
 static void 
-accept_client(struct ev_listener *listener, int fd, const char* addr, void *ud) {
+client_accept(struct ev_listener *listener, int fd, const char* addr, void *ud) {
 	gate_t* gate = ud;
 
 	if (gate->client_count >= gate->max_client) {
@@ -308,7 +308,7 @@ gate_start(gate_t* gate,const char* ip,int port) {
 	si.sin_port = htons(port);
 
 	int flag = SOCKET_OPT_NOBLOCK | SOCKET_OPT_CLOSE_ON_EXEC | SOCKET_OPT_REUSEABLE_ADDR;
-	gate->listener = ev_listener_bind(gate->loop_ctx,(struct sockaddr*)&si,sizeof(si),16,flag,accept_client,gate);
+	gate->listener = ev_listener_bind(gate->loop_ctx,(struct sockaddr*)&si,sizeof(si),16,flag,client_accept,gate);
 	if (!gate->listener) {
 		return -1;
 	}
