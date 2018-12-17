@@ -96,8 +96,6 @@ get_client(gate_t* gate,uint32_t id) {
 	if (client->markdead == 1) {
 		return NULL;
 	}
-
-	grab_client(client);
 	return client;
 }
 
@@ -350,6 +348,8 @@ gate_close(gate_t* gate,uint32_t client_id,int grace) {
 	if (!client) {
 		return -1;
 	}
+	grab_client(client);
+	
 	if (!grace) {
 		release_client(client);
 	}
@@ -369,6 +369,7 @@ gate_send(gate_t* gate,uint32_t client_id,ushort message_id,void* data,size_t si
 	if (!client) {
 		return -1;
 	}
+	grab_client(client);
 
 	ushort total = size + sizeof(short) * 2;
 
