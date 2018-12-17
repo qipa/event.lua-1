@@ -78,7 +78,6 @@ length_sort(const void * left, const void * right) {
 	return l->length < r->length;
 }
 
-
 void
 word_add(struct word_map* map, utf8_t* utf8) {
 	utf8_int32_t last = utf8->ptr[utf8->offset - 1];
