@@ -53,10 +53,10 @@ typedef struct client {
 	uint32_t id;
 	uint32_t countor;
 	uint32_t need;
-	int freq;
-	int markdead;
+	uint32_t freq;
 	uint16_t seed;
 	double tick;
+	int markdead;
 } client_t;
 
 #define SLOT(id,max) (id - (id / max) * max)
