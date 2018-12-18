@@ -35,16 +35,25 @@ function querySql(sql)
 	return result
 end
 
+function updateSql(sql)
+	print("updateSql",sql)
+	local ok,err = mysqlSession:execute(sql)
+	if not ok then
+		error(err)
+	end
+	return true
+end
+
 function loadUser(uid)
 	local dbUser = {}
 	local userInfo = querySql("select * from user where userUid = "..uid)
 	if userInfo then
-		dbUser.userInfo = userInfo[1]
+		dbUser.user = userInfo[1]
 	end
 
 	local itemInfo = querySql("select * from item where userUid = "..uid)
 	if itemInfo then
-		dbUser.itemInfo = itemInfo
+		dbUser.item = itemInfo
 	end
 
 	return dbUser

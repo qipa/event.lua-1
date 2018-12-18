@@ -9,19 +9,21 @@ event.fork(function ()
 
 	dataServer:start(8)
 
-	util.time_diff("load",function ()
-		for i = 1,1024 * 100 do
-			dataServer:loadUser({userUid = i})
-		end
-	end)
+	-- util.time_diff("load",function ()
+	-- 	for i = 1,1024 * 100 do
+	-- 		dataServer:loadUser({userUid = i})
+	-- 	end
+	-- end)
 
-	local now = util.time()
-	for i = 1,1024 * 100 do
-		event.fork(function ()
-			dataServer:loadUser({userUid = i})
-			if i == 1024 * 100 then
-				print(util.time() - now)
-			end
-		end)
-	end
+	-- local now = util.time()
+	-- for i = 1,1024 * 100 do
+	-- 	event.fork(function ()
+	-- 		dataServer:loadUser({userUid = i})
+	-- 		if i == 1024 * 100 then
+	-- 			print(util.time() - now)
+	-- 		end
+	-- 	end)
+	-- end
+	dataServer:loadUser({userUid = 1})
+	dataServer:updateUser({userUid = 1,tbName = "user",updater = {level = 10,name = "mrq"}})
 end)
