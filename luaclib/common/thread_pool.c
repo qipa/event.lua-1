@@ -9,7 +9,6 @@ struct task;
 struct thread_pool;
 
 typedef void (*task_consumer)(struct task*,void*);
-typedef void (*thread_init)(void*);
 
 typedef struct task {
 	struct task* next;
@@ -28,8 +27,6 @@ typedef struct thread_pool {
 
 	pthread_t* pids;
 
-	thread_init init_func;
-	void* init_ud;
 } thread_pool_t;
 
 typedef struct task_queue {
@@ -158,15 +155,13 @@ thread_pool_consumer(void* ud) {
 
 
 thread_pool_t*
-thread_pool_create(thread_init init_func, void* init_ud) {
+thread_pool_create() {
 	thread_pool_t* pool = malloc(sizeof(*pool));
 	memset(pool, 0, sizeof(*pool));
 
 	pool->queue = create_queue();
 	pool->closed = 0;
 	pool->watting = 0;
-	pool->init_func = init_func;
-	pool->init_ud = init_ud;
 
 	return pool;
 }
