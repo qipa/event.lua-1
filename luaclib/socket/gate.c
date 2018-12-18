@@ -14,7 +14,7 @@
 #include "socket/gate.h"
 
 #define CACHED_SIZE 		1024 * 1024
-#define WARN_OUTPUT_FLOW 	10 * 1024
+#define WARN_OUTPUT_FLOW 	1024 * 10
 #define MAX_PACKET_SIZE		1024 * 6
 #define HEADER_SIZE			2
 #define ERROR_SIZE 			64

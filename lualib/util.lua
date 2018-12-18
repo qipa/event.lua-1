@@ -266,7 +266,7 @@ end
 function _M.time_diff(desc,func)
     local now = _M.time()
     func()
-    print(string.format("%s:%f",desc,(_M.time() - now) * 10))
+    print(string.format("%s:%f",desc,_M.time() - now))
 end
 
 --vector2
