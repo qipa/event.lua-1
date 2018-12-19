@@ -8,6 +8,7 @@ typedef struct thread_ctx {
 	int fd;
 	struct pipe_message* first;
 	struct pipe_message* last;
+	int callback;
 	lua_State* L;
 } thread_ctx_t;
 
@@ -21,18 +22,26 @@ typedef lthread_pool {
 	thread_ctx_t* thr_mgr;
 } lthread_pool_t;
 
-void task_consumer(int index, int session, void* data, size_t size) {
-	
+void 
+tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t size, void* ud) {
+	lthread_pool_t* ltp = ud;
+
+	thread_ctx_t* ctx = &ltp->thr_mgr[index];
 }
 
 void 
 tp_init(struct thread_pool* pool, int index, pthread_t pid, void* ud) {
 	lthread_pool_t* ltp = ud;
+
 	sem_post(&ltp->sem);
 
 	thread_ctx_t* ctx = &ltp->thr_mgr[index];
 	ctx->pid = pid;
 	ctx->index = index;
+
+	lua_State* L = luaL_newstate();
+	luaL_openlibs(L);
+	luaL_requiref(L,"helper",load_helper,0);
 }
 
 void 

@@ -53,7 +53,7 @@ thread_main(void* args) {
 		exit(1);
 	}
 
-	lua_pushboolean(L, 1);
+	lua_pushinteger(L, 1);
 
 	int argc = 1;
 	int from = 0;

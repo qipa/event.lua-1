@@ -365,7 +365,7 @@ _worker(void* ud) {
 		exit(1);
 	}
 
-	lua_pushboolean(L, 0);
+	lua_pushinteger(L, 2);
 	int argc = 1;
 	int from = 0;
 	int i = 0;

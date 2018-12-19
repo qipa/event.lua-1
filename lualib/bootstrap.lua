@@ -40,7 +40,7 @@ assert(load(FILE:read("*a"),"env","text",_G.env))()
 
 local args = {...}
 
-local main = args[1]
+local boot_type = args[1]
 local name = args[2]
 
 local func,err = loadfile(string.format("./script/%s.lua",name),"text",_G)
@@ -58,7 +58,7 @@ util.thread_name(env.command)
 
 event.prepare()
 
-if main then
+if boot_type == 1 then
 	local _G_protect = {}
 	function _G_protect.__newindex(self,k,v)
 		rawset(_G,k,v)
@@ -73,8 +73,10 @@ if main then
 	if env.cpu_profiler ~= nil then
 		helper.cpu.start(string.format("%s.%d",env.cpu_profiler,env.tid))
 	end
-else
+elseif boot_type == 2 then
 	worker.dispatch(args[#args])
+elseif boot_type == 3 then
+	
 end
 
 
@@ -87,7 +89,7 @@ collectgarbage("collect")
 local lua_mem = collectgarbage("count")
 event.error(string.format("thread:%d start,command:%s,lua mem:%fkb,c mem:%fkb",env.tid,env.command,lua_mem,helper.allocated()/1024))
 
-if main then
+if boot_type == 1 then
 	event.dispatch()
 
 	worker.join()
