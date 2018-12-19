@@ -33,14 +33,14 @@ typedef struct thread_ctx {
 
 typedef struct lthread_pool {
 	struct thread_pool* core;
-	int count;
 	int fd;
-	char* boot;
+	char* boot_param;
 	sem_t sem;
+	int count;
 	thread_ctx_t** slots;
 } lthread_pool_t;
 
-static int lsend_pipe(lua_State* L);
+static int ltp_send_pipe(lua_State* L);
 int ltp_dispatch(lua_State* L);
 int load_helper(lua_State *L);
 
@@ -97,7 +97,7 @@ tp_init(struct thread_pool* pool, int index, void* ud) {
 	
 	luaL_newmetatable(L, "meta_tp");
 	const luaL_Reg meta_tp[] = {
-		{ "send", lsend_pipe },
+		{ "send", ltp_send_pipe },
 		{ "dispatch", ltp_dispatch },
 		{ NULL, NULL },
 	};
@@ -114,13 +114,13 @@ tp_init(struct thread_pool* pool, int index, void* ud) {
 
 	lua_pushinteger(L, 3);
 	
-	char* boot = strdup(ltp->boot);
-	char* boot_ptr = boot;
+	char* boot = strdup(ltp->boot_param);
+	char* boot_begin = boot;
 	char *token;
 	for(token = strsep(&boot, "@"); token != NULL; token = strsep(&boot, "@")) {
 		lua_pushstring(L, token);
 	}
-	free(boot_ptr);
+	free(boot_begin);
 
 	thread_ctx_t* ctx = lua_newuserdata(L,sizeof(*ctx));
 	memset(ctx,0,sizeof(*ctx));
@@ -197,7 +197,7 @@ ltp_release(lua_State* L) {
 	thread_pool_release(ltp->core);
 	sem_destroy(&ltp->sem);
 	free(ltp->slots);
-	free(ltp->boot);
+	free(ltp->boot_param);
 
 	return 0;
 }
@@ -205,8 +205,8 @@ ltp_release(lua_State* L) {
 static int
 lcreate(lua_State* L) {
 	int fd = luaL_checkinteger(L, 1);
-	const char* boot = luaL_checkstring(L, 2);
-	int count = luaL_checkinteger(L, 3);
+	int count = luaL_checkinteger(L, 2);
+	const char* boot_param = luaL_checkstring(L, 3);
 
 	lthread_pool_t* ltp = lua_newuserdata(L,sizeof(*ltp));
 
@@ -215,7 +215,7 @@ lcreate(lua_State* L) {
             { "push", ltp_push },
 			{ NULL, NULL },
         };
-        luaL_newlib(L,meta);
+        luaL_newlib(L, meta);
         lua_setfield(L, -2, "__index");
 
         lua_pushcfunction(L, ltp_release);
@@ -225,14 +225,14 @@ lcreate(lua_State* L) {
 
 	ltp->core = thread_pool_create(tp_init, tp_fina, tp_wakeup, ltp);
 	ltp->fd = fd;
+	ltp->boot_param = strdup(boot_param);
 	ltp->count = count;
-	ltp->boot = strdup(boot);
-	ltp->slots = malloc(count * sizeof(*ltp->slots));
-	memset(ltp->slots, 0, count * sizeof(*ltp->slots));
+	ltp->slots = malloc(ltp->count * sizeof(*ltp->slots));
+	memset(ltp->slots, 0, ltp->count * sizeof(*ltp->slots));
 
-	sem_init(&ltp->sem, 0, -count);
+	sem_init(&ltp->sem, 0, -ltp->count);
 
-	thread_pool_start(ltp->core, count);
+	thread_pool_start(ltp->core, ltp->count);
 
 	sem_wait(&ltp->sem);
 
@@ -241,7 +241,7 @@ lcreate(lua_State* L) {
 
 
 static int
-lsend_pipe(lua_State* L) {
+ltp_send_pipe(lua_State* L) {
 	thread_ctx_t* ctx = lua_touserdata(L, 1);
 
 	int session = lua_tointeger(L, 2);

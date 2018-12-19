@@ -13,7 +13,7 @@ MODEL_BINDER("dbUser","uid")
 
 function start(self,workerCount)
 	
-	tp.create("server/tp_data_worker", workerCount)
+	tp.create(workerCount,"server/tp_data_worker")
 
 	timer.callout(1,self,"saveUser")
 end

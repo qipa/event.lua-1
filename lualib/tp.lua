@@ -30,7 +30,7 @@ function _M.call(file,method,args,func)
 	return result
 end
 
-function _M.create(boot,count)
+function _M.create(count,boot_param)
 	if not _pipe then
 		_pipe,_pipe_fd = event.pipe(function (pipe,source,session,data,size)
 			local message = table.decode(data,size)
@@ -49,8 +49,7 @@ function _M.create(boot,count)
 			end
 		end)
 	end
-	print("!!!!^^^^^^^^^^^^^",_pipe_fd)
-	_tp_main = tp_core.create(_pipe_fd,boot,count)
+	_tp_main = tp_core.create(_pipe_fd,count,boot_param)
 	return _tp_main
 end
 
