@@ -102,6 +102,8 @@ if boot_type == 1 then
 	if env.cpu_profiler ~= nil then
 		helper.cpu.stop()
 	end
+else
+	event.release()
 end
 
 

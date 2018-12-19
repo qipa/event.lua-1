@@ -205,7 +205,7 @@ lcreate(lua_State* L) {
 
 int
 lsend_pipe(lua_State* L) {
-
+	thread_ctx_t* ctx = lua_touserdata(L, 1);
 }
 
 int

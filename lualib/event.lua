@@ -329,7 +329,7 @@ function _M.dispatch()
 		gate:release()
 	end
 	
-	_event:release()
+	_M.release()
 	return code
 end
 
@@ -393,6 +393,10 @@ end
 
 function _M.prepare()
 	_event = event_core.new(event_dispatch)
+end
+
+function _M.release()
+	_event:release()
 end
 
 return _M

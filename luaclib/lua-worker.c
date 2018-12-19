@@ -212,6 +212,7 @@ worker_callback(worker_ctx_t* ctx,int source,int session,void* data,int size) {
 		lua_pushlightuserdata(ctx->L,data);
 		lua_pushinteger(ctx->L,size);
 		lua_pcall(ctx->L,4,0,0);
+		free(data);
 	} else {
 		lua_pcall(ctx->L,2,0,0);
 	}
@@ -368,7 +369,8 @@ _worker(void* ud) {
 	lua_pushinteger(L, 2);
 	int argc = 1;
 	char *token;
-	for(token = strsep(&args->args, "@"); token != NULL; token = strsep(&args->args, "@")) {
+	char* boot = args->args;
+	for(token = strsep(&boot, "@"); token != NULL; token = strsep(&boot, "@")) {
 		lua_pushstring(L, token);
 		argc++;
 	}
@@ -421,8 +423,9 @@ create(lua_State* L) {
 	sem_init(&args->sem, 0, -1);
 
 	pthread_t pid;
-	if (pthread_create(&pid, NULL, _worker, args))
+	if (pthread_create(&pid, NULL, _worker, args)) {
 		exit(1);
+	}
 	sem_wait(&args->sem);
 	lua_pushinteger(L, pid);
 	return 1;

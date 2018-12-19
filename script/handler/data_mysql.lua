@@ -1,11 +1,12 @@
 local event = require "event"
+local worker = require "worker"
 local mysqlEnv = require "luasql.mysql"
-
+local mysqlCore = mysqlEnv.mysql()
 
 mysqlSession = mysqlSession or nil
 
 function init(self)
-	local mysqlCore = mysqlEnv.mysql()
+	
 	local mysql,err = mysqlCore:connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
 	if not mysql then
 		event.error(err)
@@ -31,7 +32,7 @@ function querySql(sql)
 		table.insert(result,sub)
 		row = cursor:fetch (row, "a")
 	end
-
+	cursor:close()
 	return result
 end
 
@@ -44,7 +45,10 @@ function updateSql(sql)
 	return true
 end
 
+local count = 0
 function loadUser(uid)
+	count = count + 1
+
 	local dbUser = {}
 	local userInfo = querySql("select * from user where userUid = "..uid)
 	if userInfo then
@@ -54,6 +58,13 @@ function loadUser(uid)
 	local itemInfo = querySql("select * from item where userUid = "..uid)
 	if itemInfo then
 		dbUser.item = itemInfo
+	end
+
+	if count == 102 then
+		worker.quit()
+		mysqlSession:close()
+		mysqlCore:close()
+		
 	end
 
 	return dbUser

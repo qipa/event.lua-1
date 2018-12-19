@@ -877,6 +877,8 @@ pipe_recv(struct pipe_session* session, struct pipe_message* message, void *user
 	lua_pushlightuserdata(lev->main, message->data);
 	lua_pushinteger(lev->main, message->size);
 	lua_pcall(lev->main, 5, 0, 0);
+
+	free(message->data);
 }
 
 static int

@@ -43,8 +43,9 @@ int dlclose(void* handle) {
 
 void*
 thread_main(void* args) {
-	char* startup_args = strdup((char*)args);
-	
+	char* boot = strdup((char*)args);
+	char* boot_ptr = boot;
+
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaL_requiref(L,"helper",load_helper,0);
@@ -57,11 +58,11 @@ thread_main(void* args) {
 
 	lua_pushinteger(L, 1);
 	char *token;
-	for(token = strsep(&startup_args, "@"); token != NULL; token = strsep(&startup_args, "@")) {
+	for(token = strsep(&boot, "@"); token != NULL; token = strsep(&boot, "@")) {
 		lua_pushstring(L, token);
 	}
 
-	free(startup_args);
+	free(boot_ptr);
 	
 	if (lua_pcall(L,lua_gettop(L)-1,0,0) != LUA_OK)  {
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
