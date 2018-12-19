@@ -389,8 +389,6 @@ _worker(void* ud) {
 
 	luaL_newmetatable(L,"meta_worker");
  	lua_setmetatable(L, -2);
-	lua_pushvalue(L, -1);
-	ctx->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	add_worker(ctx);
 

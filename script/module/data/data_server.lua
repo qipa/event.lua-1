@@ -33,14 +33,14 @@ function doRequest(self,method,args)
 end
 
 function loadUser(_,args)
-	local user = model.fetch_dbUser_with_uid(args.userUid)
-	if user then
-		return user
-	end
+	-- local user = model.fetch_dbUser_with_uid(args.userUid)
+	-- if user then
+	-- 	return user
+	-- end
 
 	local dbUserInfo = doRequest(nil,"loadUser",args.userUid)
 
-	model.bind_dbUser_with_uid(args.userUid,dbUserInfo)
+	-- model.bind_dbUser_with_uid(args.userUid,dbUserInfo)
 
 	return dbUserInfo
 end

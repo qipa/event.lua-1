@@ -39,7 +39,6 @@ local FILE = assert(io.open("./.env","r"))
 assert(load(FILE:read("*a"),"env","text",_G.env))()
 
 local args = {...}
-table.print(args)
 local boot_type = args[1]
 local name = args[2]
 

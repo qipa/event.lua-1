@@ -1,5 +1,6 @@
 local event = require "event"
 local util = require "util"
+local helper = require "helper"
 local dataServer = import "module.data.data_server"
 
 event.fork(function ()
@@ -25,6 +26,15 @@ event.fork(function ()
 			end
 		end)
 	end
+
+	event.fork(function ()
+		while true do
+			event.sleep(1)
+			collectgarbage("collect")
+			event.clean()
+			print(collectgarbage("count"),helper.allocated()/1024)
+		end
+	end)
 	-- dataServer:loadUser({userUid = 1})
 	-- dataServer:updateUser({userUid = 1,tbName = "user",updater = {level = 10,name = "mrq"}})
 end)

@@ -329,7 +329,7 @@ get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen, int remov
 
 	struct sockaddr* addr;
 
-	if (!lua_isnil(L, -1)) {
+	if (!lua_isnoneornil(L, -1)) {
 		const char* file = luaL_checkstring(L, -1);
 		lua_pop(L, 1);
 
@@ -681,7 +681,7 @@ _timer(lua_State* L) {
 
 	double ti = luaL_checknumber(L, 2);
 	double freq = 0;
-	if (!lua_isnil(L, 3)) {
+	if (!lua_isnoneornil(L, 3)) {
 		freq = luaL_checknumber(L, 3);
 	}
 	
@@ -760,7 +760,7 @@ _udp_session_new(lua_State* L) {
 	
 	const char* ip = NULL;
 	ushort port = 0;
-	if (!lua_isnil(L, 4)) {
+	if (!lua_isnoneornil(L, 4)) {
 		ip = luaL_checkstring(L, 4);
 		port = luaL_checkinteger(L, 5);
 	}
