@@ -27,7 +27,7 @@ EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
 LUA_CLIB_PATH ?= ./.libs
 LUA_CLIB_SRC ?= ./luaclib
-LUA_CLIB = ev worker dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co luasql snapshot 
+LUA_CLIB = ev worker tp dump serialize redis bson mongo util lfs cjson http ikcp simpleaoi toweraoi linkaoi pathfinder nav protocolparser protocolcore trie filter co luasql snapshot 
 
 CONVERT_PATH ?= ./luaclib/convert
 
@@ -110,6 +110,9 @@ $(LUA_CLIB_PATH)/ev.so : $(LUA_CLIB_SRC)/lua-ev.c $(LUA_CLIB_SRC)/lua-gate.c $(L
 	$(CC) $(CFLAGS) -Wno-strict-aliasing $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LIBEV_INC) -I$(LUA_CLIB_SRC) -I$(LIBCURL_INC) -I./3rd/klib
 
 $(LUA_CLIB_PATH)/worker.so : $(LUA_CLIB_SRC)/lua-worker.c $(LUA_CLIB_SRC)/common/message_queue.c | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
+
+$(LUA_CLIB_PATH)/tp.so : $(LUA_CLIB_SRC)/lua-tp.c $(LUA_CLIB_SRC)/common/thread_pool.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
 
 $(LUA_CLIB_PATH)/dump.so : $(LUA_CLIB_SRC)/lua-dump.c ./3rd/lua-cjson/dtoa.c $(CONVERT_OBJ) | $(LUA_CLIB_PATH)

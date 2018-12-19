@@ -1,3 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <assert.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/time.h> 
+#include <errno.h>
+#include <semaphore.h>
+
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 
 #include "common/thread_pool.h"
 
@@ -9,24 +24,28 @@ typedef struct thread_ctx {
 	struct pipe_message* first;
 	struct pipe_message* last;
 	int callback;
+	int ref;
 	lua_State* L;
 } thread_ctx_t;
 
-typedef lthread_pool {
+typedef struct lthread_pool {
 	struct thread_pool* core;
-
-	const char* boot;
-
+	int count;
+	int fd;
+	char* boot;
 	sem_t sem;
-
-	thread_ctx_t* thr_mgr;
+	thread_ctx_t** slots;
 } lthread_pool_t;
 
-void 
+int lsend_pipe(lua_State* L);
+int ltp_dispatch(lua_State* L);
+int load_helper(lua_State *L);
+
+void
 tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t size, void* ud) {
 	lthread_pool_t* ltp = ud;
 
-	thread_ctx_t* ctx = &ltp->thr_mgr[index];
+	thread_ctx_t* ctx = ltp->slots[index];
 }
 
 void 
@@ -35,13 +54,21 @@ tp_init(struct thread_pool* pool, int index, pthread_t pid, void* ud) {
 
 	sem_post(&ltp->sem);
 
-	thread_ctx_t* ctx = &ltp->thr_mgr[index];
-	ctx->pid = pid;
-	ctx->index = index;
-
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaL_requiref(L,"helper",load_helper,0);
+	
+	luaL_newmetatable(L, "meta_tp");
+	const luaL_Reg meta_tp[] = {
+		{ "send", lsend_pipe },
+		{ "dispatch", ltp_dispatch },
+		{ NULL, NULL },
+	};
+	luaL_newlib(L,meta_tp);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L,1);
+
+	lua_settop(L, 0);
 
 	if (luaL_loadfile(L,"lualib/bootstrap.lua") != LUA_OK)  {
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
@@ -49,72 +76,56 @@ tp_init(struct thread_pool* pool, int index, pthread_t pid, void* ud) {
 	}
 
 	lua_pushinteger(L, 3);
-	int argc = 1;
-	int from = 0;
-	int i = 0;
-	for(;i < strlen(ltp->boot);i++) {
-		if (ltp->boot[i] == '@') {
-			lua_pushlstring(L,&ltp->boot[from],i - from);
-			from = i+1;
-			++argc;
-		}
-	}
-	++argc;
-	lua_pushlstring(L,&args->args[from],i - from);
-
-	++argc;
-	lua_pushinteger(L, ltp->fd);
 	
-	if (lua_pcall(L,argc,0,0) != LUA_OK)  {
+	char* boot = strdup(ltp->boot);
+	char *token;
+	for(token = strsep(&boot, "@"); token != NULL; token = strsep(&boot, "@")) {
+		lua_pushstring(L, token);
+	}
+	free(boot);
+
+	thread_ctx_t* ctx = lua_newuserdata(L,sizeof(*ctx));
+	memset(ctx,0,sizeof(*ctx));
+
+	ctx->index = index;
+	ctx->pid = pid;
+	ctx->fd = ltp->fd;
+	ctx->L = L;
+	ctx->callback = 0;
+
+	luaL_newmetatable(L,"meta_tp");
+ 	lua_setmetatable(L, -2);
+	lua_pushvalue(L, -1);
+
+	ctx->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	
+	if (lua_pcall(L,lua_gettop(L)-1,0,0) != LUA_OK)  {
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
 		exit(1);
 	}
+
+	assert(ctx->callback != 0);
+
+
 }
 
 void 
 tp_fina(struct thread_pool* pool, int index, pthread_t pid, void* ud) {
-
+	lthread_pool_t* ltp = ud;
+	thread_ctx_t* ctx = ltp->slots[index];
+	lua_close(ctx->L);
 }
 
-
-static int
-lcreate(lua_State* L) {
-	int fd = lua_tointeger(L, 1);
-	const char* boot = lua_tostring(L, 2);
-	int count = lua_tointeger(L, 3);
-
-	lthread_pool_t* ltp = malloc(sizeof(*ltp));
-	
-	ltp->core = thread_pool_create(tp_init, tp_fina, ltp);
-	ltp->boot = strdup(boot);
-	ltp->thr_mgr = malloc(count * sizeof(thread_ctx_t));
-	pthread_mutex_init(&ltp->mutex, NULL);
-
-	sem_init(&ltp->sem, 0, -count);
-
-	thread_pool_start(ltp->core, count);
-
-	sem_wait(&ltp->sem);
-
-	lua_createtable(L, 0, 0);
-
-	int i;
-	for(i = 0;i < count;++i) {
-		thread_ctx_t* ctx = &ltp->thr_mgr[i];
-		lua_pushinteger(L, ctx->pid);
-		lua_seti(L, -2, i+1);
-	}
-	return 1;
-}
 
 int
-lpush(lua_State* L) {
-	int session = lua_tointeger(L, 1);
+ltp_push(lua_State* L) {
+	lthread_pool_t* ltp = lua_touserdata(L, 1);
+	int session = lua_tointeger(L, 2);
 
 	void* data = NULL;
 	size_t size = 0;
 
-	switch(lua_type(L,3)) {
+	switch(lua_type(L, 3)) {
 		case LUA_TSTRING: {
 			const char* str = lua_tolstring(L, 3, &size);
 			data = malloc(size);
@@ -127,14 +138,90 @@ lpush(lua_State* L) {
 			break;
 		}
 		default: {
-			luaL_error(L,"unkown type:%s",lua_typename(L,lua_type(L,3)));
+			luaL_error(L, "unkown type:%s", lua_typename(L, lua_type(L, 3)));
 		}
 	}
 
-	if (worker_push(target,-1,session,data,size) < 0) {
-		lua_pushboolean(L,0);
-		return 1;
+	thread_pool_push_task(ltp->core, tp_consumer, session, data, size);
+	return 0;
+}
+
+int
+ltp_release(lua_State* L) {
+	lthread_pool_t* ltp = lua_touserdata(L, 1);
+	thread_pool_close(ltp->core);
+	
+	int i;
+	for(i = 0;i < ltp->count;i++) {
+		thread_ctx_t* ctx = ltp->slots[i];
+		pthread_join(ctx->pid, NULL);
 	}
-	lua_pushboolean(L,1);
+
+	thread_pool_release(ltp->core);
+	sem_destroy(&ltp->sem);
+	free(ltp->slots);
+	free(ltp->boot);
+
+	return 0;
+}
+
+static int
+lcreate(lua_State* L) {
+	int fd = luaL_checkinteger(L, 1);
+	const char* boot = luaL_checkstring(L, 2);
+	int count = luaL_checkinteger(L, 3);
+
+	lthread_pool_t* ltp = lua_newuserdata(L,sizeof(*ltp));
+
+	if (luaL_newmetatable(L, "meta_tp")) {
+        const luaL_Reg meta[] = {
+            { "push", ltp_push },
+			{ NULL, NULL },
+        };
+        luaL_newlib(L,meta);
+        lua_setfield(L, -2, "__index");
+
+        lua_pushcfunction(L, ltp_release);
+        lua_setfield(L, -2, "__gc");
+    }
+    lua_setmetatable(L, -2);
+
+	ltp->core = thread_pool_create(tp_init, tp_fina, ltp);
+	ltp->fd = fd;
+	ltp->count = count;
+	ltp->boot = strdup(boot);
+	ltp->slots = malloc(count * sizeof(*ltp->slots));
+	memset(ltp->slots, 0, count * sizeof(*ltp->slots));
+
+	sem_init(&ltp->sem, 0, -count);
+
+	thread_pool_start(ltp->core, count);
+
+	sem_wait(&ltp->sem);
+
+	return 1;
+}
+
+
+int
+lsend_pipe(lua_State* L) {
+
+}
+
+int
+ltp_dispatch(lua_State* L) {
+	thread_ctx_t* ctx = lua_touserdata(L, 1);
+	luaL_checktype(L,2,LUA_TFUNCTION);
+	ctx->callback = luaL_ref(L,LUA_REGISTRYINDEX);
+	return 0;
+}
+
+int
+luaopen_tp_core(lua_State* L) {
+	const luaL_Reg l[] = {
+		{ "create", lcreate },
+		{ NULL, NULL },
+	};
+	luaL_newlib(L, l);
 	return 1;
 }

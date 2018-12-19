@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <string.h>
 
 
 typedef struct task {
@@ -12,6 +14,15 @@ typedef struct task {
 	void* data;
 	size_t size;
 } task_t;
+
+typedef struct task_queue {
+	task_t* head;
+	task_t* tail;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	struct thread_pool* pool;
+} task_queue_t;
+
 
 typedef struct thread_pool {
 	task_queue_t* queue;
@@ -29,13 +40,6 @@ typedef struct thread_pool {
 	void* ud;
 } thread_pool_t;
 
-typedef struct task_queue {
-	task_t* head;
-	task_t* tail;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond
-	thread_pool_t* pool;
-} task_queue_t;
 
 typedef struct consumer_ctx {
 	int index;
@@ -71,8 +75,14 @@ create_queue() {
 
 static inline void
 delete_queue(task_queue_t* queue) {
+	assert(queue->head = NULL);
+	assert(queue->tail = NULL);
+
+	pthread_mutex_destroy(&queue->mutex);
+	pthread_cond_destroy(&queue->cond);
+
 	free(queue);
-}
+} 
 
 static inline int
 queue_empty(task_queue_t* queue) {
@@ -117,7 +127,7 @@ task_pop(task_queue_t* queue) {
 			} else {
 				task_t* task = queue->head;
 				if (queue->head == queue->tail) {
-					queue->head == queue->tail = NULL;
+					queue->head = queue->tail = NULL;
 				} else {
 					queue->head = task->next;
 				}
@@ -131,7 +141,7 @@ task_pop(task_queue_t* queue) {
 			} else {
 				task_t* task = queue->head;
 				if (queue->head == queue->tail) {
-					queue->head == queue->tail = NULL;
+					queue->head = queue->tail = NULL;
 				} else {
 					queue->head = task->next;
 				}
@@ -183,6 +193,12 @@ thread_pool_create(thread_init init_func, thread_fina fina_func, void* ud) {
 	return pool;
 }
 
+void 
+thread_pool_release(struct thread_pool* pool) {
+	delete_queue(pool->queue);
+	free(pool);
+}
+
 void
 thread_pool_start(thread_pool_t* pool, int thread_count) {
 	pool->thread_count = thread_count;
@@ -205,5 +221,10 @@ thread_pool_push_task(thread_pool_t* pool, thread_consumer consumer, int session
 	task->session = session;
 	task->data = data;
 	task->size = size;
-	task_push(pool->queue, ttask);
+	task_push(pool->queue, task);
+}
+
+void
+thread_pool_close(struct thread_pool* pool) {
+	pool->closed = 1;
 }
