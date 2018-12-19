@@ -367,17 +367,11 @@ _worker(void* ud) {
 
 	lua_pushinteger(L, 2);
 	int argc = 1;
-	int from = 0;
-	int i = 0;
-	for(;i < strlen(args->args);i++) {
-		if (args->args[i] == '@') {
-			lua_pushlstring(L,&args->args[from],i - from);
-			from = i+1;
-			++argc;
-		}
+	char *token;
+	for(token = strsep(&args->args, "@"); token != NULL; token = strsep(&args->args, "@")) {
+		lua_pushstring(L, token);
+		argc++;
 	}
-	++argc;
-	lua_pushlstring(L,&args->args[from],i - from);
 
 	worker_ctx_t* ctx = lua_newuserdata(L,sizeof(*ctx));
 	memset(ctx,0,sizeof(*ctx));
@@ -408,6 +402,7 @@ _worker(void* ud) {
 	sem_post(&args->sem);
 	worker_dispatch(ctx);
 	sem_destroy(&args->sem);
+	free(args->args);
 	free(args);
 	return NULL;
 }

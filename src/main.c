@@ -43,32 +43,27 @@ int dlclose(void* handle) {
 
 void*
 thread_main(void* args) {
-	char* startup_args = (char*)args;
+	char* startup_args = strdup((char*)args);
+	
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaL_requiref(L,"helper",load_helper,0);
 
+	lua_settop(L, 0);
 	if (luaL_loadfile(L,"lualib/bootstrap.lua") != LUA_OK)  {
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
 		exit(1);
 	}
 
 	lua_pushinteger(L, 1);
-
-	int argc = 1;
-	int from = 0;
-	int i;
-	for(i = 0;i < strlen(startup_args);i++) {
-		if (startup_args[i] == '@') {
-			lua_pushlstring(L,&startup_args[from],i - from);
-			from = i+1;
-			++argc;
-		}
+	char *token;
+	for(token = strsep(&startup_args, "@"); token != NULL; token = strsep(&startup_args, "@")) {
+		lua_pushstring(L, token);
 	}
-	++argc;
-	lua_pushlstring(L,&startup_args[from],i - from);
 
-	if (lua_pcall(L,argc,0,0) != LUA_OK)  {
+	free(startup_args);
+	
+	if (lua_pcall(L,lua_gettop(L)-1,0,0) != LUA_OK)  {
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
 		exit(1);
 	}

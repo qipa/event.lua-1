@@ -163,7 +163,7 @@ function _M.listen(addr,callback)
 end
 
 function _M.post(host,url,header,form,socket_path,callback)
-	local request = event.httpc_request(callback)
+	local request = event.http_request(callback)
 	request:set_url(string.format("http://%s%s",host,url))
 
 	for k,v in pairs(header) do
@@ -182,7 +182,7 @@ end
 function _M.get(host,url,header,form,socket_path,callback)
 	url = url..url_encode(form)
 
-	local request = event.httpc_request(callback)
+	local request = event.http_request(callback)
 
 	request:set_url(string.format("http://%s%s",host,url))
 

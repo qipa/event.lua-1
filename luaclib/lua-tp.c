@@ -42,6 +42,33 @@ tp_init(struct thread_pool* pool, int index, pthread_t pid, void* ud) {
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaL_requiref(L,"helper",load_helper,0);
+
+	if (luaL_loadfile(L,"lualib/bootstrap.lua") != LUA_OK)  {
+		fprintf(stderr,"%s\n",lua_tostring(L,-1));
+		exit(1);
+	}
+
+	lua_pushinteger(L, 3);
+	int argc = 1;
+	int from = 0;
+	int i = 0;
+	for(;i < strlen(ltp->boot);i++) {
+		if (ltp->boot[i] == '@') {
+			lua_pushlstring(L,&ltp->boot[from],i - from);
+			from = i+1;
+			++argc;
+		}
+	}
+	++argc;
+	lua_pushlstring(L,&args->args[from],i - from);
+
+	++argc;
+	lua_pushinteger(L, ltp->fd);
+	
+	if (lua_pcall(L,argc,0,0) != LUA_OK)  {
+		fprintf(stderr,"%s\n",lua_tostring(L,-1));
+		exit(1);
+	}
 }
 
 void 
@@ -57,6 +84,7 @@ lcreate(lua_State* L) {
 	int count = lua_tointeger(L, 3);
 
 	lthread_pool_t* ltp = malloc(sizeof(*ltp));
+	
 	ltp->core = thread_pool_create(tp_init, tp_fina, ltp);
 	ltp->boot = strdup(boot);
 	ltp->thr_mgr = malloc(count * sizeof(thread_ctx_t));

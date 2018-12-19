@@ -39,7 +39,7 @@ local FILE = assert(io.open("./.env","r"))
 assert(load(FILE:read("*a"),"env","text",_G.env))()
 
 local args = {...}
-
+table.print(args)
 local boot_type = args[1]
 local name = args[2]
 
@@ -76,7 +76,7 @@ if boot_type == 1 then
 elseif boot_type == 2 then
 	worker.dispatch(args[#args])
 elseif boot_type == 3 then
-	
+
 end
 
 
