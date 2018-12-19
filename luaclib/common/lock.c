@@ -20,6 +20,11 @@ mutex_unlock(mutex_t* mutex) {
 	pthread_mutex_unlock(&mutex->lock);
 }
 
+int 
+mutex_trylock(mutex_t* mutex) {
+	return pthread_mutex_trylock(&mutex->lock);
+}
+
 void 
 cond_init(cond_t* cond) {
 	pthread_cond_init(&cond->cond,NULL);

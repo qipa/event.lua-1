@@ -14,6 +14,7 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#include "common/lock.h"
 #include "common/message_queue.h"
 #include "socket/socket_pipe.h"
 #include "socket/socket_util.h"
@@ -25,8 +26,8 @@ struct startup_args {
 };
 
 typedef struct workder_ctx {
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
+	mutex_t mutex;
+	cond_t cond;
 	struct message_queue* queue;
 	int id;
 	int quit;
@@ -41,7 +42,7 @@ typedef struct workder_ctx {
 } worker_ctx_t;
 
 typedef struct worker_manager {
-	pthread_mutex_t mutex;
+	mutex_t mutex;
 	int size;
 	struct workder_ctx** slot;
 } worker_manager_t;
@@ -57,21 +58,21 @@ create_manager() {
 	wm->size = 8;
 	wm->slot = malloc(sizeof(*wm->slot) * wm->size);
 	memset(wm->slot,0,sizeof(*wm->slot) * wm->size);
-	pthread_mutex_init(&wm->mutex, NULL);
+	mutex_init(&wm->mutex);
 
 	_MANAGER = wm;
 }
 
 void
 add_worker(worker_ctx_t* ctx) {
-	pthread_mutex_lock(&_MANAGER->mutex);
+	mutex_lock(&_MANAGER->mutex);
 	int i;
 	for(i = 0;i < _MANAGER->size;i++) {
 		worker_ctx_t* node = _MANAGER->slot[i];
 		if (node == NULL) {
 			_MANAGER->slot[i] = ctx;
 			ctx->id = i;
-			pthread_mutex_unlock(&_MANAGER->mutex);
+			mutex_unlock(&_MANAGER->mutex);
 			return;
 		}
 	}
@@ -91,24 +92,24 @@ add_worker(worker_ctx_t* ctx) {
 	free(_MANAGER->slot);
 	_MANAGER->slot = nslot;
 	_MANAGER->size = nsize;
-	pthread_mutex_unlock(&_MANAGER->mutex);
+	mutex_unlock(&_MANAGER->mutex);
 }
 
 void
 delete_worker(int id) {
-	pthread_mutex_lock(&_MANAGER->mutex);
+	mutex_lock(&_MANAGER->mutex);
 	_MANAGER->slot[id] = NULL;
-	pthread_mutex_unlock(&_MANAGER->mutex);
+	mutex_unlock(&_MANAGER->mutex);
 }
 
 worker_ctx_t*
 worker_ref(int id) {
-	pthread_mutex_lock(&_MANAGER->mutex);
+	mutex_lock(&_MANAGER->mutex);
 	worker_ctx_t* ctx = _MANAGER->slot[id];
 	if (ctx) {
 		__sync_add_and_fetch(&ctx->ref,1);
 	}
-	pthread_mutex_unlock(&_MANAGER->mutex);
+	mutex_unlock(&_MANAGER->mutex);
 	return ctx;
 }
 
@@ -127,8 +128,8 @@ worker_create() {
 	worker_ctx_t* worker_ctx = malloc(sizeof(*worker_ctx));
 	memset(worker_ctx,0,sizeof(*worker_ctx));
 	
-	pthread_mutex_init(&worker_ctx->mutex, NULL);
-	pthread_cond_init(&worker_ctx->cond,NULL);
+	mutex_init(&worker_ctx->mutex);
+	cond_init(&worker_ctx->cond);
 
 	worker_ctx->id = -1;
 	worker_ctx->quit = 0;
@@ -148,8 +149,8 @@ workder_quit(worker_ctx_t* ctx) {
 void
 worker_release(worker_ctx_t* ctx) {
 	queue_free(ctx->queue);
-	pthread_mutex_destroy(&ctx->mutex);
-	pthread_cond_destroy(&ctx->cond);
+	mutex_destroy(&ctx->mutex);
+	cond_destroy(&ctx->cond);
 	while(ctx->first) {
 		struct pipe_message* message = ctx->first;
 		ctx->first = ctx->first->next;
@@ -182,9 +183,9 @@ worker_push(int target,int source,int session,void* data,size_t size) {
 	}
 
 	queue_push(target_ctx->queue,source,session,data,size);
-	if (!pthread_mutex_trylock(&target_ctx->mutex)) {
-		pthread_cond_signal(&target_ctx->cond);
-		pthread_mutex_unlock(&target_ctx->mutex);
+	if (!mutex_trylock(&target_ctx->mutex)) {
+		cond_notify_one(&target_ctx->cond);
+		mutex_unlock(&target_ctx->mutex);
 	}
 
 	worker_unref(target_ctx);
@@ -213,18 +214,11 @@ worker_dispatch(worker_ctx_t* ctx) {
 	for(;;) {
 		struct queue_message* message = queue_pop(queue_ctx,ctx->id);
 		if (message == NULL) {
-			pthread_mutex_lock(&ctx->mutex);
+			mutex_lock(&ctx->mutex);
 			
-			struct timespec timeout;
-			clock_gettime(CLOCK_REALTIME, &timeout);
-			timeout.tv_nsec = timeout.tv_nsec + 1000 * 1000 * 10;
-			if (timeout.tv_nsec >= 1000 * 1000 * 1000) {
-				timeout.tv_sec++;
-				timeout.tv_nsec = timeout.tv_nsec % 1000 * 1000 * 1000;
-			}
-			pthread_cond_timedwait(&ctx->cond,&ctx->mutex,&timeout);
+			cond_timed_wait(&ctx->cond,&ctx->mutex,10);
 
-			pthread_mutex_unlock(&ctx->mutex);
+			mutex_unlock(&ctx->mutex);
 
 			worker_send_pipe(ctx);
 		} else {
@@ -367,8 +361,8 @@ _worker(void* ud) {
 	worker_ctx_t* ctx = lua_newuserdata(L,sizeof(*ctx));
 	memset(ctx,0,sizeof(*ctx));
 	
-	pthread_mutex_init(&ctx->mutex, NULL);
-	pthread_cond_init(&ctx->cond,NULL);
+	mutex_init(&ctx->mutex);
+	cond_init(&ctx->cond);
 
 	ctx->id = -1;
 	ctx->quit = 0;

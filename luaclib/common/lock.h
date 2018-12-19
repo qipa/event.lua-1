@@ -13,8 +13,11 @@ typedef struct cond {
 
 void mutex_init(mutex_t* mutex);
 void mutex_destroy(mutex_t* mutex);
+
 void mutex_lock(mutex_t* mutex);
 void mutex_unlock(mutex_t* mutex);
+
+int mutex_trylock(mutex_t* mutex);
 
 void cond_init(cond_t* cond);
 void cond_destroy(cond_t* cond);
