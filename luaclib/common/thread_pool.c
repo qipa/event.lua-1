@@ -1,20 +1,19 @@
+#include "thread_pool.h"
 
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
 
-struct task;
-
-struct thread_pool;
-
-typedef void (*task_consumer)(struct task*,void*);
-
 typedef struct task {
 	struct task* next;
 	void* ud;
 	task_consumer consumer;
 } task_t;
+
+typedef struct thread_worker {
+
+} thread_worker_t;
 
 typedef struct thread_pool {
 	task_queue_t* queue;
@@ -27,6 +26,9 @@ typedef struct thread_pool {
 
 	pthread_t* pids;
 
+	thread_init init_func;
+	thread_fina fina_func;
+	void* ud;
 } thread_pool_t;
 
 typedef struct task_queue {
@@ -37,7 +39,10 @@ typedef struct task_queue {
 	thread_pool_t* pool;
 } task_queue_t;
 
-
+typedef struct consumer_ctx {
+	int index;
+	task_queue_t* queue;
+} consumer_ctx_t;
 
 
 task_t*
@@ -141,21 +146,32 @@ task_pop(task_queue_t* queue) {
 
 void*
 thread_pool_consumer(void* ud) {
-	task_queue_t* queue = ud;
+	consumer_ctx_t* ctx = ud;
+
+	task_queue_t* queue = ctx->queue;
+	if (queue->pool->init_func) {
+		queue->pool->init_func(queue->pool, ctx->index, queue->pool->ud);
+	}
+
 	for(;;) {
 		task_t* task = task_pop(queue);
 		if (!task) {
-			return NULL;
+			break;
 		}
 		task->consumer(task, task->ud);
 		delete_task(task);
 	}
+	if (queue->pool->fina_func) {
+		queue->pool->fina_func(queue->pool, ctx->index, queue->pool->ud);
+	}
+
+	free(ctx);
 	return NULL;
 }
 
 
 thread_pool_t*
-thread_pool_create() {
+thread_pool_create(thread_init init_func, thread_fina fina_func, void* ud) {
 	thread_pool_t* pool = malloc(sizeof(*pool));
 	memset(pool, 0, sizeof(*pool));
 
@@ -163,6 +179,9 @@ thread_pool_create() {
 	pool->closed = 0;
 	pool->watting = 0;
 
+	pool->init_func = init_func;
+	pool->fina_func = fina_func;
+	pool->ud = ud;
 	return pool;
 }
 
@@ -174,7 +193,16 @@ thread_pool_start(thread_pool_t* pool, int thread_count) {
 	int i;
 	for(i = 0;i<thread_count;i++) {
 		pthread_t pid;
-		pthread_create(&pid, NULL, thread_pool_consumer, pool->queue);
+		consumer_ctx_t* ctx = malloc(sizeof(*ctx));
+		ctx->index = i;
+		ctx->queue = pool->queue;
+		pthread_create(&pid, NULL, thread_pool_consumer, ctx);
 		pool->pids[i] = pid;
 	}
+}
+
+void
+thread_pool_push_task(thread_pool_t* pool, task_consumer consumer, void* ud) {
+	task_t* task = create_task(consumer, ud);
+	task_push(pool->queue, ttask);
 }
