@@ -91,10 +91,7 @@ queue_empty(task_queue_t* queue) {
 
 void
 task_push(task_queue_t* queue, task_t* task) {
-	pthread_mutex_lock(&queue->mutex);
-
 	if (queue->pool->closed == 1) {
-		pthread_mutex_unlock(&queue->mutex);
 		return;
 	}
 
@@ -107,58 +104,17 @@ task_push(task_queue_t* queue, task_t* task) {
 		queue->tail->next = task;
 		queue->tail = task;
 	}
-
-	if (queue->pool->watting > 0) {
-		pthread_cond_signal(&queue->cond);
-	}
-
-	pthread_mutex_unlock(&queue->mutex);
 }
 
 task_t*
 task_pop(task_queue_t* queue) {
-	pthread_mutex_lock(&queue->mutex);
-	for(;;) {
-		if (queue->pool->closed == 1) {
-			if (queue_empty(queue) == 1) {
-				pthread_mutex_unlock(&queue->mutex);
-				return NULL;
-			} else {
-				task_t* task = queue->head;
-				if (queue->head == queue->tail) {
-					queue->head = queue->tail = NULL;
-				} else {
-					queue->head = task->next;
-				}
-				pthread_mutex_unlock(&queue->mutex);
-				return task;
-			}
-		} else {
-			if (queue_empty(queue) == 1) {
-				++queue->pool->watting;
-
-				struct timespec timeout;
-				clock_gettime(CLOCK_REALTIME, &timeout);
-				timeout.tv_nsec = timeout.tv_nsec + 1000 * 1000 * 10;
-				if (timeout.tv_nsec >= 1000 * 1000 * 1000) {
-					timeout.tv_sec++;
-					timeout.tv_nsec = timeout.tv_nsec % 1000 * 1000 * 1000;
-				}
-				pthread_cond_timedwait(&queue->cond,&queue->mutex,&timeout);
-
-				--queue->pool->watting;
-			} else {
-				task_t* task = queue->head;
-				if (queue->head == queue->tail) {
-					queue->head = queue->tail = NULL;
-				} else {
-					queue->head = task->next;
-				}
-				pthread_mutex_unlock(&queue->mutex);
-				return task;
-			}
-		}
+	task_t* task = queue->head;
+	if (queue->head == queue->tail) {
+		queue->head = queue->tail = NULL;
+	} else {
+		queue->head = task->next;
 	}
+	return task;
 }
 
 void*
@@ -171,12 +127,38 @@ thread_pool_consumer(void* ud) {
 	}
 
 	for(;;) {
+		pthread_mutex_lock(&queue->mutex);
 		task_t* task = task_pop(queue);
 		if (!task) {
-			break;
+			if (queue->pool->closed == 1) {
+				pthread_mutex_unlock(&queue->mutex);
+				break;
+			} else {
+				++queue->pool->watting;
+
+				struct timespec timeout;
+				clock_gettime(CLOCK_REALTIME, &timeout);
+				timeout.tv_nsec = timeout.tv_nsec + 1000 * 1000 * 10;
+				if (timeout.tv_nsec >= 1000 * 1000 * 1000) {
+					timeout.tv_sec++;
+					timeout.tv_nsec = timeout.tv_nsec % 1000 * 1000 * 1000;
+				}
+				pthread_cond_timedwait(&queue->cond,&queue->mutex,&timeout);
+
+				--queue->pool->watting;
+
+				pthread_mutex_unlock(&queue->mutex);
+
+				if (queue->pool->wakeup_func) {
+					queue->pool->wakeup_func(queue->pool, ctx->index, queue->pool->ud);
+				}
+			}
+			
+		} else {
+			pthread_mutex_unlock(&queue->mutex);
+			task->consumer(queue->pool, ctx->index, task->session, task->data, task->size, queue->pool->ud);
+			delete_task(task);
 		}
-		task->consumer(queue->pool, ctx->index, task->session, task->data, task->size, queue->pool->ud);
-		delete_task(task);
 	}
 	if (queue->pool->fina_func) {
 		queue->pool->fina_func(queue->pool, ctx->index, queue->pool->ud);
@@ -238,7 +220,16 @@ thread_pool_push_task(thread_pool_t* pool, thread_consumer consumer, int session
 	task->session = session;
 	task->data = data;
 	task->size = size;
+
+	pthread_mutex_lock(&pool->queue->mutex);
+
 	task_push(pool->queue, task);
+
+	if (pool->watting > 0) {
+		pthread_cond_signal(&pool->queue->cond);
+	}
+
+	pthread_mutex_unlock(&pool->queue->mutex);
 }
 
 void

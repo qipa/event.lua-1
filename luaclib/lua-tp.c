@@ -40,11 +40,24 @@ typedef struct lthread_pool {
 	thread_ctx_t** slots;
 } lthread_pool_t;
 
-int lsend_pipe(lua_State* L);
+static int lsend_pipe(lua_State* L);
 int ltp_dispatch(lua_State* L);
 int load_helper(lua_State *L);
 
-void
+static inline void
+tp_send_pipe(thread_ctx_t* ctx) {
+	while(ctx->first) {
+		struct pipe_message* message = ctx->first;
+		struct pipe_message* next_message = message->next;
+		if (socket_pipe_write(ctx->fd, (void*)&message, sizeof(void*)) < 0) {
+			return;
+		}
+		ctx->first = next_message;
+	}
+	ctx->first = ctx->last = NULL;
+}
+
+static void
 tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t size, void* ud) {
 	lthread_pool_t* ltp = ud;
 
@@ -62,35 +75,19 @@ tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t
 		lua_pcall(ctx->L, 1, 0, 0);
 	}
 
-	while(ctx->first) {
-		struct pipe_message* message = ctx->first;
-		struct pipe_message* next_message = message->next;
-		if (socket_pipe_write(ctx->fd, (void*)&message, sizeof(void*)) < 0) {
-			return;
-		}
-		ctx->first = next_message;
-	}
-	ctx->first = ctx->last = NULL;
+	tp_send_pipe(ctx);
 }
 
-void 
+static void 
 tp_wakeup(struct thread_pool* pool, int index, void* ud) {
 	lthread_pool_t* ltp = ud;
 
 	thread_ctx_t* ctx = ltp->slots[index];
 
-	while(ctx->first) {
-		struct pipe_message* message = ctx->first;
-		struct pipe_message* next_message = message->next;
-		if (socket_pipe_write(ctx->fd, (void*)&message, sizeof(void*)) < 0) {
-			return;
-		}
-		ctx->first = next_message;
-	}
-	ctx->first = ctx->last = NULL;
+	tp_send_pipe(ctx);
 }
 
-void 
+static void 
 tp_init(struct thread_pool* pool, int index, void* ud) {
 	lthread_pool_t* ltp = ud;
 
@@ -151,14 +148,14 @@ tp_init(struct thread_pool* pool, int index, void* ud) {
 	sem_post(&ltp->sem);
 }
 
-void 
+static void 
 tp_fina(struct thread_pool* pool, int index, void* ud) {
 	lthread_pool_t* ltp = ud;
 	thread_ctx_t* ctx = ltp->slots[index];
 	lua_close(ctx->L);
 }
 
-int
+static int
 ltp_push(lua_State* L) {
 	lthread_pool_t* ltp = lua_touserdata(L, 1);
 	int session = lua_tointeger(L, 2);
@@ -187,7 +184,7 @@ ltp_push(lua_State* L) {
 	return 0;
 }
 
-int
+static int
 ltp_release(lua_State* L) {
 	lthread_pool_t* ltp = lua_touserdata(L, 1);
 	thread_pool_close(ltp->core);
@@ -243,7 +240,7 @@ lcreate(lua_State* L) {
 }
 
 
-int
+static int
 lsend_pipe(lua_State* L) {
 	thread_ctx_t* ctx = lua_touserdata(L, 1);
 
