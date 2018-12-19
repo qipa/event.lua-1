@@ -3,17 +3,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <pthread.h>
+
 
 typedef struct task {
 	struct task* next;
 	void* ud;
 	task_consumer consumer;
 } task_t;
-
-typedef struct thread_worker {
-
-} thread_worker_t;
 
 typedef struct thread_pool {
 	task_queue_t* queue;
@@ -41,6 +37,7 @@ typedef struct task_queue {
 
 typedef struct consumer_ctx {
 	int index;
+	pthread_t pid;
 	task_queue_t* queue;
 } consumer_ctx_t;
 
@@ -150,7 +147,7 @@ thread_pool_consumer(void* ud) {
 
 	task_queue_t* queue = ctx->queue;
 	if (queue->pool->init_func) {
-		queue->pool->init_func(queue->pool, ctx->index, queue->pool->ud);
+		queue->pool->init_func(queue->pool, ctx->index, ctx->pid, queue->pool->ud);
 	}
 
 	for(;;) {
@@ -162,7 +159,7 @@ thread_pool_consumer(void* ud) {
 		delete_task(task);
 	}
 	if (queue->pool->fina_func) {
-		queue->pool->fina_func(queue->pool, ctx->index, queue->pool->ud);
+		queue->pool->fina_func(queue->pool, ctx->index, ctx->pid, queue->pool->ud);
 	}
 
 	free(ctx);
