@@ -6,7 +6,7 @@
 struct thread_pool;
 struct task;
 
-typedef void (*task_consumer)(struct task*,void*);
+typedef void (*task_consumer)(int index, int session, void* data, size_t size);
 
 typedef void (*thread_init)(struct thread_pool* pool, int index, pthread_t pid, void* ud);
 typedef void (*thread_fina)(struct thread_pool* pool, int index, pthread_t pid, void* ud);

@@ -31,8 +31,7 @@ typedef struct workder_ctx {
 	int quit;
 	int ref;
 	int callback;
-	uint32_t oversion;
-	uint32_t nversion;
+
 	lua_State* L;
 
 	int fd;
@@ -237,7 +236,6 @@ worker_dispatch(worker_ctx_t* ctx) {
 
 			pthread_mutex_unlock(&ctx->mutex);
 
-			ctx->nversion++;
 			worker_send_pipe(ctx);
 		} else {
 			worker_callback(ctx,message->source,message->session,message->data,message->size);

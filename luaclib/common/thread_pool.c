@@ -7,8 +7,10 @@
 
 typedef struct task {
 	struct task* next;
-	void* ud;
 	task_consumer consumer;
+	int session;
+	void* data;
+	size_t size;
 } task_t;
 
 typedef struct thread_pool {
@@ -43,11 +45,10 @@ typedef struct consumer_ctx {
 
 
 task_t*
-create_task(task_consumer consumer, void* ud) {
+create_task(task_consumer consumer) {
 	task_t* task = malloc(sizeof(*task));
 	task->next = NULL;
 	task->consumer = consumer;
-	task->ud = ud;
 	return task;
 }
 
@@ -155,7 +156,7 @@ thread_pool_consumer(void* ud) {
 		if (!task) {
 			break;
 		}
-		task->consumer(task, task->ud);
+		task->consumer(ctx->index, task->session, task->data, task->size);
 		delete_task(task);
 	}
 	if (queue->pool->fina_func) {
@@ -199,7 +200,10 @@ thread_pool_start(thread_pool_t* pool, int thread_count) {
 }
 
 void
-thread_pool_push_task(thread_pool_t* pool, task_consumer consumer, void* ud) {
-	task_t* task = create_task(consumer, ud);
+thread_pool_push_task(thread_pool_t* pool, task_consumer consumer, int session, void* data, size_t size) {
+	task_t* task = create_task(consumer);
+	task->session = session;
+	task->data = data;
+	task->size = size;
 	task_push(pool->queue, ttask);
 }
