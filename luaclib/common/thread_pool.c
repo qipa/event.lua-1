@@ -37,6 +37,7 @@ typedef struct thread_pool {
 
 	thread_init init_func;
 	thread_fina fina_func;
+	thread_wakeup wakeup_func;
 	void* ud;
 } thread_pool_t;
 
@@ -108,7 +109,6 @@ task_push(task_queue_t* queue, task_t* task) {
 	}
 
 	if (queue->pool->watting > 0) {
-		--queue->pool->watting;
 		pthread_cond_signal(&queue->cond);
 	}
 
@@ -136,7 +136,17 @@ task_pop(task_queue_t* queue) {
 		} else {
 			if (queue_empty(queue) == 1) {
 				++queue->pool->watting;
-				pthread_cond_wait(&queue->cond,&queue->mutex);
+
+				struct timespec timeout;
+				clock_gettime(CLOCK_REALTIME, &timeout);
+				timeout.tv_nsec = timeout.tv_nsec + 1000 * 1000 * 10;
+				if (timeout.tv_nsec >= 1000 * 1000 * 1000) {
+					timeout.tv_sec++;
+					timeout.tv_nsec = timeout.tv_nsec % 1000 * 1000 * 1000;
+				}
+				pthread_cond_timedwait(&queue->cond,&queue->mutex,&timeout);
+
+				--queue->pool->watting;
 			} else {
 				task_t* task = queue->head;
 				if (queue->head == queue->tail) {
@@ -178,7 +188,7 @@ thread_pool_consumer(void* ud) {
 
 
 thread_pool_t*
-thread_pool_create(thread_init init_func, thread_fina fina_func, void* ud) {
+thread_pool_create(thread_init init_func, thread_fina fina_func, thread_wakeup wakeup_func, void* ud) {
 	thread_pool_t* pool = malloc(sizeof(*pool));
 	memset(pool, 0, sizeof(*pool));
 
@@ -188,6 +198,7 @@ thread_pool_create(thread_init init_func, thread_fina fina_func, void* ud) {
 
 	pool->init_func = init_func;
 	pool->fina_func = fina_func;
+	pool->wakeup_func = wakeup_func;
 	pool->ud = ud;
 
 	pool->queue->pool = pool;

@@ -20,6 +20,9 @@ event.fork(function ()
 	for i = 1,1024*100 do
 		event.fork(function ()
 			tpDataServer:loadUser({userUid = i})
+			if i % 1000 == 0 then
+				print(i)
+			end
 			if i == 1024*100 then
 				print(util.time() - now)
 				-- event.breakout()

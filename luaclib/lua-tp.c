@@ -22,11 +22,13 @@
 typedef struct thread_ctx {
 	int index;
 	int fd;
+	
+	int ref;
+	int callback;
+	lua_State* L;
+
 	struct pipe_message* first;
 	struct pipe_message* last;
-	int callback;
-	int ref;
-	lua_State* L;
 } thread_ctx_t;
 
 typedef struct lthread_pool {
@@ -59,6 +61,23 @@ tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t
 	} else {
 		lua_pcall(ctx->L, 1, 0, 0);
 	}
+
+	while(ctx->first) {
+		struct pipe_message* message = ctx->first;
+		struct pipe_message* next_message = message->next;
+		if (socket_pipe_write(ctx->fd, (void*)&message, sizeof(void*)) < 0) {
+			return;
+		}
+		ctx->first = next_message;
+	}
+	ctx->first = ctx->last = NULL;
+}
+
+void 
+tp_wakeup(struct thread_pool* pool, int index, void* ud) {
+	lthread_pool_t* ltp = ud;
+
+	thread_ctx_t* ctx = ltp->slots[index];
 
 	while(ctx->first) {
 		struct pipe_message* message = ctx->first;
@@ -207,7 +226,7 @@ lcreate(lua_State* L) {
     }
     lua_setmetatable(L, -2);
 
-	ltp->core = thread_pool_create(tp_init, tp_fina, ltp);
+	ltp->core = thread_pool_create(tp_init, tp_fina, tp_wakeup, ltp);
 	ltp->fd = fd;
 	ltp->count = count;
 	ltp->boot = strdup(boot);
