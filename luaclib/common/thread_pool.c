@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "lock.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -18,8 +19,8 @@ typedef struct task {
 typedef struct task_queue {
 	task_t* head;
 	task_t* tail;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
+	mutex_t mutex;
+	cond_t cond;
 	struct thread_pool* pool;
 } task_queue_t;
 
@@ -67,8 +68,8 @@ create_queue() {
 	queue->head = NULL;
 	queue->tail = NULL;
 
-	pthread_mutex_init(&queue->mutex, NULL);
-	pthread_cond_init(&queue->cond,NULL);
+	mutex_init(&queue->mutex);
+	cond_init(&queue->cond);
 
 	return queue;
 }
@@ -78,8 +79,8 @@ delete_queue(task_queue_t* queue) {
 	assert(queue->head = NULL);
 	assert(queue->tail = NULL);
 
-	pthread_mutex_destroy(&queue->mutex);
-	pthread_cond_destroy(&queue->cond);
+	mutex_destroy(&queue->mutex);
+	cond_destroy(&queue->cond);
 
 	free(queue);
 } 
@@ -127,27 +128,20 @@ thread_pool_consumer(void* ud) {
 	}
 
 	for(;;) {
-		pthread_mutex_lock(&queue->mutex);
+		mutex_lock(&queue->mutex);
 		task_t* task = task_pop(queue);
 		if (!task) {
 			if (queue->pool->closed == 1) {
-				pthread_mutex_unlock(&queue->mutex);
+				mutex_unlock(&queue->mutex);
 				break;
 			} else {
 				++queue->pool->watting;
 
-				struct timespec timeout;
-				clock_gettime(CLOCK_REALTIME, &timeout);
-				timeout.tv_nsec = timeout.tv_nsec + 1000 * 1000 * 10;
-				if (timeout.tv_nsec >= 1000 * 1000 * 1000) {
-					timeout.tv_sec++;
-					timeout.tv_nsec = timeout.tv_nsec % 1000 * 1000 * 1000;
-				}
-				pthread_cond_timedwait(&queue->cond,&queue->mutex,&timeout);
+				cond_timed_wait(&queue->cond, &queue->mutex, 10);
 
 				--queue->pool->watting;
 
-				pthread_mutex_unlock(&queue->mutex);
+				mutex_unlock(&queue->mutex);
 
 				if (queue->pool->wakeup_func) {
 					queue->pool->wakeup_func(queue->pool, ctx->index, queue->pool->ud);
@@ -155,7 +149,7 @@ thread_pool_consumer(void* ud) {
 			}
 			
 		} else {
-			pthread_mutex_unlock(&queue->mutex);
+			mutex_unlock(&queue->mutex);
 			task->consumer(queue->pool, ctx->index, task->session, task->data, task->size, queue->pool->ud);
 			delete_task(task);
 		}
@@ -221,15 +215,15 @@ thread_pool_push_task(thread_pool_t* pool, thread_consumer consumer, int session
 	task->data = data;
 	task->size = size;
 
-	pthread_mutex_lock(&pool->queue->mutex);
+	mutex_lock(&pool->queue->mutex);
 
 	task_push(pool->queue, task);
 
 	if (pool->watting > 0) {
-		pthread_cond_signal(&pool->queue->cond);
+		cond_notify_one(&pool->queue->cond);
 	}
 
-	pthread_mutex_unlock(&pool->queue->mutex);
+	mutex_unlock(&pool->queue->mutex);
 }
 
 void
