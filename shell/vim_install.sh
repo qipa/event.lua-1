@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CURPATH=`pwd`
-VIMRC=${CURPATH}/vimrc
+VIMRC=${CURPATH}/.vimrc
 
 cd ~
 if [ ! -d ./vim_asset ];then
