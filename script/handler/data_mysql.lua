@@ -6,10 +6,11 @@ local mysqlCore = mysqlEnv.mysql()
 mysqlSession = mysqlSession or nil
 
 function init(self)
-	
 	local mysql,err = mysqlCore:connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
+	print(env.tid,mysql,err)
 	if not mysql then
 		event.error(err)
+		os.exit(1)
 		return
 	else
 		event.error(string.format("connect mysql:%s@%s:%d success","root","127.0.0.1",3306))
@@ -60,12 +61,12 @@ function loadUser(uid)
 		dbUser.item = itemInfo
 	end
 
-	if count == 102 then
-		worker.quit()
-		mysqlSession:close()
-		mysqlCore:close()
+	-- if count == 102 then
+	-- 	worker.quit()
+	-- 	mysqlSession:close()
+	-- 	mysqlCore:close()
 		
-	end
+	-- end
 
 	return dbUser
 end

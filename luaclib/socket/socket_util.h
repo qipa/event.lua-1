@@ -50,7 +50,7 @@ int socket_accept(int fd,char* info,size_t length);
 int socket_read(int fd,char* data,size_t size);
 int socket_write(int fd,char* data,size_t size);
 int socket_udp_write(int fd,char* data,size_t size,struct sockaddr* addr,size_t addrlen);
-
+int socket_pipe_write(int fd, void* data, size_t size);
 int get_peername(int fd,char* out,size_t out_len,int* port);
 int get_sockname(int fd,char* out,size_t out_len,int* port);
 

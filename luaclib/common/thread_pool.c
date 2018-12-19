@@ -43,7 +43,6 @@ typedef struct thread_pool {
 
 typedef struct consumer_ctx {
 	int index;
-	pthread_t pid;
 	task_queue_t* queue;
 } consumer_ctx_t;
 
@@ -158,7 +157,7 @@ thread_pool_consumer(void* ud) {
 
 	task_queue_t* queue = ctx->queue;
 	if (queue->pool->init_func) {
-		queue->pool->init_func(queue->pool, ctx->index, ctx->pid, queue->pool->ud);
+		queue->pool->init_func(queue->pool, ctx->index, queue->pool->ud);
 	}
 
 	for(;;) {
@@ -170,7 +169,7 @@ thread_pool_consumer(void* ud) {
 		delete_task(task);
 	}
 	if (queue->pool->fina_func) {
-		queue->pool->fina_func(queue->pool, ctx->index, ctx->pid, queue->pool->ud);
+		queue->pool->fina_func(queue->pool, ctx->index, queue->pool->ud);
 	}
 
 	free(ctx);
@@ -190,6 +189,8 @@ thread_pool_create(thread_init init_func, thread_fina fina_func, void* ud) {
 	pool->init_func = init_func;
 	pool->fina_func = fina_func;
 	pool->ud = ud;
+
+	pool->queue->pool = pool;
 	return pool;
 }
 
@@ -213,6 +214,11 @@ thread_pool_start(thread_pool_t* pool, int thread_count) {
 		pthread_create(&pid, NULL, thread_pool_consumer, ctx);
 		pool->pids[i] = pid;
 	}
+}
+
+pthread_t
+thread_pool_pid(thread_pool_t* pool, int index) {
+	return pool->pids[index];
 }
 
 void

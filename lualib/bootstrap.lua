@@ -12,6 +12,7 @@ local model = require "model"
 local debugger = require "debugger"
 local helper = require "helper"
 local worker = require "worker"
+local tp = require "tp"
 local protocol = require "protocol"
 
 table.print = util.dump
@@ -75,7 +76,7 @@ if boot_type == 1 then
 elseif boot_type == 2 then
 	worker.dispatch(args[#args])
 elseif boot_type == 3 then
-
+	tp.dispatch(args[#args])
 end
 
 

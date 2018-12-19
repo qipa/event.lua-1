@@ -16,6 +16,7 @@
 
 #include "common/message_queue.h"
 #include "socket/socket_pipe.h"
+#include "socket/socket_util.h"
 
 struct startup_args {
 	int fd;
@@ -164,20 +165,8 @@ worker_send_pipe(worker_ctx_t* ctx) {
 	while(ctx->first) {
 		struct pipe_message* message = ctx->first;
 		struct pipe_message* next_message = message->next;
-		for (;;) {
-			int n = write(ctx->fd, &message, sizeof(message));
-			if (n < 0) {
-				if (errno == EINTR) {
-					continue;
-				} else if (errno == EAGAIN ) {
-					return -1;
-				} else {
-					fprintf(stderr,"worker send message error %s.\n", strerror(errno));
-					assert(0);
-				}
-			}
-			assert(n == sizeof(message));
-			break;
+		if (socket_pipe_write(ctx->fd, (void*)&message, sizeof(void*)) < 0) {
+			return -1;
 		}
 		ctx->first = next_message;
 	}

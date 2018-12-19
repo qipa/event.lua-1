@@ -272,6 +272,26 @@ socket_accept(int listen_fd,char* info,size_t length) {
     return client_fd;
 }
 
+int
+socket_pipe_write(int fd, void* data, size_t size) {
+    for (;;) {
+        int n = write(fd, data, size);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno == EAGAIN ) {
+                return -1;
+            } else {
+                fprintf(stderr,"pipe_session_write_fd error %s.\n", strerror(errno));
+                assert(0);
+            }
+        }
+        assert(n == size);
+        break;
+    }
+    return 0;
+}
+
 int 
 get_peername(int fd,char* out,size_t out_len,int* port) {
     union sockaddr_all u;

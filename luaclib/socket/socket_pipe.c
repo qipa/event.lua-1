@@ -73,32 +73,12 @@ pipe_session_destroy(pipe_session_t* session) {
 }
 
 int
-pipe_session_write_fd(int fd, void* data, size_t size) {
-	for (;;) {
-		int n = write(fd, data, size);
-		if (n < 0) {
-			if (errno == EINTR) {
-				continue;
-			} else if (errno == EAGAIN ) {
-				return -1;
-			} else {
-				fprintf(stderr,"pipe_session_write_fd error %s.\n", strerror(errno));
-				assert(0);
-			}
-		}
-		assert(n == size);
-		break;
-	}
-	return 0;
-}
-
-int
 pipe_session_write(pipe_session_t* session, void* data, size_t size) {
-	return pipe_session_write_fd(session->send_fd, data, size);
+	return socket_pipe_write(session->send_fd, data, size);
 }
 
 int
-pipe_write_fd(pipe_session_t* session) {
+pipe_session_write_fd(pipe_session_t* session) {
 	return session->send_fd;
 }
 

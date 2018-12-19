@@ -905,7 +905,7 @@ _lpipe_new(lua_State* L) {
 	lpipe->ref = meta_init(L, META_PIPE);
 	pipe_session_setcb(session, pipe_recv, lpipe);
 
-	lua_pushinteger(L, pipe_write_fd(session));
+	lua_pushinteger(L, pipe_session_write_fd(session));
 
 	return 2;
 }
