@@ -45,7 +45,7 @@ int ltp_dispatch(lua_State* L);
 int load_helper(lua_State *L);
 
 static inline void
-tp_send_pipe(thread_ctx_t* ctx) {
+tp_do_send_pipe(thread_ctx_t* ctx) {
 	while(ctx->first) {
 		struct pipe_message* message = ctx->first;
 		struct pipe_message* next_message = message->next;
@@ -75,7 +75,7 @@ tp_consumer(struct thread_pool* pool, int index, int session, void* data, size_t
 		lua_pcall(ctx->L, 1, 0, 0);
 	}
 
-	tp_send_pipe(ctx);
+	tp_do_send_pipe(ctx);
 }
 
 static void 
@@ -84,7 +84,7 @@ tp_wakeup(struct thread_pool* pool, int index, void* ud) {
 
 	thread_ctx_t* ctx = ltp->slots[index];
 
-	tp_send_pipe(ctx);
+	tp_do_send_pipe(ctx);
 }
 
 static void 
