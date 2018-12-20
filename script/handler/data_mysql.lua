@@ -7,10 +7,8 @@ mysqlSession = mysqlSession or nil
 
 function init(self)
 	local mysql,err = mysqlCore:connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
-	print(env.tid,mysql,err)
 	if not mysql then
 		event.error(err)
-		os.exit(1)
 		return
 	else
 		event.error(string.format("connect mysql:%s@%s:%d success","root","127.0.0.1",3306))
@@ -38,7 +36,6 @@ function querySql(sql)
 end
 
 function updateSql(sql)
-	print("updateSql",sql)
 	local ok,err = mysqlSession:execute(sql)
 	if not ok then
 		error(err)
@@ -46,10 +43,8 @@ function updateSql(sql)
 	return true
 end
 
-local count = 0
-function loadUser(uid)
-	count = count + 1
 
+function loadUser(uid)
 	local dbUser = {}
 	local userInfo = querySql("select * from user where userUid = "..uid)
 	if userInfo then
@@ -60,13 +55,6 @@ function loadUser(uid)
 	if itemInfo then
 		dbUser.item = itemInfo
 	end
-
-	-- if count == 102 then
-	-- 	worker.quit()
-	-- 	mysqlSession:close()
-	-- 	mysqlCore:close()
-		
-	-- end
 
 	return dbUser
 end
