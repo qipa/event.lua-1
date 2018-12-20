@@ -40,7 +40,7 @@ function executeSql(sql)
 	if not ok then
 		error(err)
 	end
-	return true
+	return ok
 end
 
 
