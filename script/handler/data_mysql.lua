@@ -35,7 +35,7 @@ function querySql(sql)
 	return result
 end
 
-function updateSql(sql)
+function executeSql(sql)
 	local ok,err = mysqlSession:execute(sql)
 	if not ok then
 		error(err)
