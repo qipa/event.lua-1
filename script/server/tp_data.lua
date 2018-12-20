@@ -41,5 +41,5 @@ event.fork(function ()
 	-- tpDataServer:loadUser({userUid = 1})
 	-- tpDataServer:updateUser({userUid = 1,tbName = "user",updater = {level = 10,name = "mrq"}})
 
-	table.print(tpDataServer:doRequest("querySql","select * from user"))
+	table.print(tpDataServer:doRequest("querySql","select count(*) from user"))
 end)
