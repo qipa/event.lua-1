@@ -120,6 +120,21 @@ meta_init(lua_State* L,const char* meta) {
 	return luaL_ref(L, LUA_REGISTRYINDEX);
 }
 
+static inline void*
+get_buffer(size_t size) {
+	char* buffer = THREAD_CACHED_BUFFER;
+	if (size > THREAD_CACHED_SIZE) {
+		buffer = malloc(size);
+	}
+	return buffer;
+}
+
+static inline void
+free_buffer(void* buffer) {
+	if (buffer != THREAD_CACHED_BUFFER)
+		free(buffer);
+}
+
 //-------------------------tcp session api---------------------------
 
 static ltcp_session_t*
@@ -209,9 +224,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 					break;
 				}
 				
-				char* data = THREAD_CACHED_BUFFER;
-				if (ltcp_session->need > THREAD_CACHED_SIZE)
-					data = malloc(ltcp_session->need);
+				char* data = get_buffer(ltcp_session->need);
 
 				ev_session_read(ltcp_session->session,data,ltcp_session->need);
 
@@ -223,8 +236,7 @@ read_complete(struct ev_session* ev_session, void* ud) {
 				lua_pcall(lev->main, 4, 0, 0);
 				ltcp_session->state = STATE_HEAD;
 
-				if (data != THREAD_CACHED_BUFFER)
-					free(data);
+				free_buffer(data);
 			}
 		}
 	}
@@ -510,18 +522,13 @@ _tcp_session_read(lua_State* L) {
 		size = total;
 	}
 
-	char* data = THREAD_CACHED_BUFFER;
-	if (size > THREAD_CACHED_SIZE) {
-		data = malloc(size);
-	}
+	char* data = get_buffer(size);
 			
 	ev_session_read(ltcp_session->session,data,size);
 
 	lua_pushlstring(L, data, size);
 	
-	if (data != THREAD_CACHED_BUFFER) {
-		free(data);
-	}
+	free_buffer(data);
 
 	return 1;
 }
