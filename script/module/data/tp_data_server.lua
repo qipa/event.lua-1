@@ -48,7 +48,7 @@ function saveUser(_,args)
 				table.insert(sub,string.format("%s='%s'",field,tostring(dbUserTb[field])))
 			end
 			sql = string.format(sql,table.concat(sub,","))
-			doRequest(nil,"updateSql",sql)
+			doRequest(nil,"executeSql",sql)
 		end
 	end
 	_dirtyUser = {}
