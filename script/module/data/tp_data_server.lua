@@ -19,7 +19,6 @@ function start(self,workerCount)
 end
 
 function doRequest(self,method,args)
-	
 	return tp.call("handler.data_mysql",method,args)
 end
 
