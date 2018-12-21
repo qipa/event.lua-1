@@ -3,23 +3,98 @@ local worker = require "worker"
 local tp = require "tp"
 local model = require "model"
 
-_workerQueue = _workerQueue or {}
-_workerBalance = _workerBalance or 1
-_workerCount = _workerCount
-
 _dirtyUser = _dirtyUser or {}
+_lruUser = _lruUser or nil
 
 MODEL_BINDER("dbUser","uid")
 
-function start(self,workerCount)
-	
-	tp.create(workerCount,"server/tp_data_worker")
+local lru = {}
 
-	timer.callout(1,self,"saveUser")
+function lru:new(name,max,timeout,unload)
+	local ctx = setmetatable({},{__index = self})
+	ctx.head = nil
+	ctx.tail = nil
+	ctx.nodeCtx = {}
+	ctx.count = 0
+	ctx.max = max or 100
+	ctx.timeout = timeout or 3600 * 10
+	ctx.unload = unload
+	ctx.name = name
+	return ctx
 end
 
-function doRequest(self,method,args)
-	return tp.call("handler.data_mysql",method,args)
+function lru:insert(id)
+	local node = self.nodeCtx[id]
+	if not node then
+		self.count = self.count + 1
+		node = {prev = nil,next = nil,id = id,time = os.time()}
+
+		if self.head == nil then
+			self.head = node
+			self.tail = node
+		else
+			self.head.prev = node
+			node.next = self.head
+			self.head = node
+		end
+
+		self.nodeCtx[id] = node
+
+		if self.count > self.max then
+			local node = self.tail
+			self.unload(self.name,node.id)
+			self.tail = node.prev
+			self.tail.next = nil
+			self.count = self.count - 1
+		end
+	else
+		node.time = os.time()
+
+		if not node.prev then
+			return
+		end
+		local prevNode = node.prev
+		local nextNode = node.next
+		prevNode.next = nextNode
+		if nextNode then
+			nextNode.prev = prevNode
+		end
+		node.prev = nil
+		node.next = self.head
+		self.head = node
+	end
+end
+
+function lru:update(now)
+	local node = self.tail
+	while node do
+		if now - node.time >= self.timeout then
+			node.next.prev = node.prev
+			node.prev.next = node.next
+
+			if node == self.tail then
+				self.tail = node.prev
+			end
+
+			if node == self.head then
+				self.head = node.next
+			end
+
+			self.unload(self.name,node.id)
+		else
+			break
+		end
+		node = node.prev
+	end
+end
+
+function start(self,workerCount)
+	_lruUser = lru:new("user",1000,function (name,userUid)
+		mode.unbind_dbUser_with_uid(userUid)
+	end)
+
+	tp.create(workerCount,"server/tp_data_worker")
+	timer.callout(1,self,"saveUser")
 end
 
 function loadUser(_,args)
@@ -28,9 +103,11 @@ function loadUser(_,args)
 		return user
 	end
 
-	local dbUserInfo = doRequest(nil,"loadUser",args.userUid)
+	local dbUserInfo = tp.call("handler.data_mysql","loadUser",args.userUid)
 
 	model.bind_dbUser_with_uid(args.userUid,dbUserInfo)
+
+	_lruUser:insert(args.userUid)
 
 	return dbUserInfo
 end
@@ -47,7 +124,7 @@ function saveUser(_,args)
 				table.insert(sub,string.format("%s='%s'",field,tostring(dbUserTb[field])))
 			end
 			sql = string.format(sql,table.concat(sub,","))
-			doRequest(nil,"executeSql",sql)
+			tp.send("handler.data_mysql","executeSql",sql)
 		end
 	end
 	_dirtyUser = {}
@@ -77,5 +154,7 @@ function updateUser(_,args)
 	for field,value in pairs(updater) do
 		tb[field] = value
 		dirtyField[field] = true
-	end	
+	end
+
+	_lruUser:insert(args.userUid)
 end
