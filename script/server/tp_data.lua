@@ -16,19 +16,26 @@ event.fork(function ()
 	-- -- 	end
 	-- -- end)
 
-	-- local now = util.time()
-	-- for i = 1,1024*100 do
-	-- 	event.fork(function ()
-	-- 		tpDataServer:loadUser({userUid = i})
-	-- 		if i % 1000 == 0 then
-	-- 			print(i)
-	-- 		end
-	-- 		if i == 1024*100 then
-	-- 			print(util.time() - now)
-	-- 			-- event.breakout()
-	-- 		end
-	-- 	end)
-	-- end
+	local now = util.time()
+	for i = 1,1100 do
+		event.fork(function ()
+			tpDataServer:loadUser({userUid = i})
+			-- if i % 1000 == 0 then
+			-- 	print(i)
+			-- end
+			-- if i == 1024*100 then
+			-- 	print(util.time() - now)
+			-- 	-- event.breakout()
+			-- end
+		end)
+
+
+	end
+
+	while true do
+		event.sleep(1)
+		tpDataServer:loadUser({userUid = math.random(1,1100)})
+	end
 
 	-- event.fork(function ()
 	-- 	while true do
@@ -41,5 +48,5 @@ event.fork(function ()
 	-- tpDataServer:loadUser({userUid = 1})
 	-- tpDataServer:updateUser({userUid = 1,tbName = "user",updater = {level = 10,name = "mrq"}})
 
-	table.print(tpDataServer:doRequest("querySql","select count(*) from user"))
+	-- table.print(tpDataServer:doRequest("querySql","select count(*) from user"))
 end)

@@ -9,6 +9,7 @@ function init(self)
 	local mysql,err = mysqlCore:connect("test","root","2444cc818a3bbc06","127.0.0.1",3306)
 	if not mysql then
 		event.error(err)
+		os.exit(1)
 		return
 	else
 		event.error(string.format("connect mysql:%s@%s:%d success","root","127.0.0.1",3306))

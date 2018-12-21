@@ -24,6 +24,7 @@ function lru:new(name,max,timeout,unload)
 end
 
 function lru:insert(id)
+	print("update",id)
 	local node = self.nodeCtx[id]
 	if not node then
 		self.count = self.count + 1
@@ -69,8 +70,13 @@ function lru:update(now)
 	local node = self.tail
 	while node do
 		if now - node.time >= self.timeout then
-			node.next.prev = node.prev
-			node.prev.next = node.next
+			if node.next then
+				node.next.prev = node.prev
+			end
+
+			if node.prev then
+				node.prev.next = node.next
+			end
 
 			if node == self.tail then
 				self.tail = node.prev
@@ -92,9 +98,29 @@ function updateUserLru()
 	_userLru:update(os.time())
 end
 
+function doSaveUser(self,userUid,dirtyData)
+	local dbUser = model.fetch_dbUser_with_uid(userUid)
+
+	for tbName,updateField in pairs(dirtyData) do
+		local dbUserTb = dbUser[tbName]
+		local sql = string.format("update %s set %%s where userUid=%d",tbName,userUid)
+		local sub = {}
+		for field in pairs(updateField) do
+			table.insert(sub,string.format("%s='%s'",field,tostring(dbUserTb[field])))
+		end
+		sql = string.format(sql,table.concat(sub,","))
+		tp.send("handler.data_mysql","executeSql",sql)
+	end
+end
+
 function start(self,workerCount)
-	_userLru = lru:new("user",1000,function (name,userUid)
-		mode.unbind_dbUser_with_uid(userUid)
+	_userLru = lru:new("user",1000,10,function (name,userUid)
+		print("unload",userUid)
+		if _dirtyUser[userUid] then
+			self:doSaveUser(userUid,_dirtyUser[userUid])
+			_dirtyUser[userUid] = nil
+		end
+		model.unbind_dbUser_with_uid(userUid)
 	end)
 
 	tp.create(workerCount,"server/tp_data_worker")
@@ -118,20 +144,9 @@ function loadUser(_,args)
 	return dbUserInfo
 end
 
-function saveUser(_,args)
+function saveUser(self,args)
 	for userUid,dirtyData in pairs(_dirtyUser) do
-		local dbUser = model.fetch_dbUser_with_uid(userUid)
-
-		for tbName,updateField in pairs(dirtyData) do
-			local dbUserTb = dbUser[tbName]
-			local sql = string.format("update %s set %%s where userUid=%d",tbName,userUid)
-			local sub = {}
-			for field in pairs(updateField) do
-				table.insert(sub,string.format("%s='%s'",field,tostring(dbUserTb[field])))
-			end
-			sql = string.format(sql,table.concat(sub,","))
-			tp.send("handler.data_mysql","executeSql",sql)
-		end
+		self:doSaveUser(userUid,dirtyData)
 	end
 	_dirtyUser = {}
 end
