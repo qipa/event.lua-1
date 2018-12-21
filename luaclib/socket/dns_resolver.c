@@ -17,7 +17,6 @@ typedef struct dns_resolver {
 	ares_channel channel;
 	struct ares_options opts;
 	task_hash_t* hash;
-	int count;
 	struct ev_timer io;
 	struct ev_loop_ctx* ev_loop;
 } dns_resolver_t;
@@ -26,16 +25,6 @@ typedef struct query_param {
 	dns_resolve_result cb;
 	void* ud;
 } query_param_t;
-
-void
-dns_init() {
-	ares_library_init(ARES_LIB_INIT_ALL);
-}
-
-void
-dns_fina() {
-	ares_library_cleanup();
-}
 
 void
 task_hash_set(task_hash_t* hash, int fd, dns_task_t* task) {
@@ -58,6 +47,11 @@ void
 task_hash_del(task_hash_t* hash, int fd) {
 	khiter_t k = kh_get(task, hash, fd);
 	kh_del(task, hash, k);
+}
+
+size_t 
+task_hash_count(task_hash_t* hash) {
+	return kh_size(hash);
 }
 
 static void
@@ -97,8 +91,6 @@ dns_sock_state_cb(void* ud, ares_socket_t sock, int readable, int writable) {
 			task->wio.data = resolver;
 			ev_io_init(&task->wio,dns_poll_cb,sock,EV_WRITE);
 
-			resolver->count++;
-
 			task_hash_set(resolver->hash, sock, task);
 		}
 
@@ -121,18 +113,16 @@ dns_sock_state_cb(void* ud, ares_socket_t sock, int readable, int writable) {
 
 		free(task);
 
-		resolver->count--;
-
-		if (ev_is_active((struct ev_timer*)&resolver->io)) {
+		if (task_hash_count(resolver->hash) == 0 && ev_is_active((struct ev_timer*)&resolver->io)) {
 			ev_timer_stop(loop_ctx_get(resolver->ev_loop),(struct ev_timer*)&resolver->io);
 		} 
 	}
 }
 
-
-
 dns_resolver_t*
 dns_resolver_new(struct ev_loop_ctx* ev_loop) {
+	ares_library_init(ARES_LIB_INIT_ALL);
+
 	dns_resolver_t* resolver = malloc(sizeof(*resolver));
 
 	resolver->opts.timeout = 3000;
@@ -142,6 +132,7 @@ dns_resolver_new(struct ev_loop_ctx* ev_loop) {
 
 	if (ares_init_options(&resolver->channel, &resolver->opts, ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES | ARES_OPT_TRIES |ARES_OPT_SOCK_STATE_CB) != ARES_SUCCESS) {
 		free(resolver);
+		ares_library_cleanup();
 		return NULL;
 	}
 
@@ -157,21 +148,19 @@ dns_resolver_new(struct ev_loop_ctx* ev_loop) {
 void
 dns_resolver_delete(dns_resolver_t* resolver) {
 	ares_destroy(resolver->channel);
+	kh_destroy(task, resolver->hash);
+
+	ares_library_cleanup();
 }
  
 static void
 query_callback(void* ud, int status, int timeouts, struct hostent *host) {
 	query_param_t* param = ud;
 	if (status != ARES_SUCCESS) {
-		param->cb(status, NULL, param->ud);
+		param->cb(0, NULL, ares_strerror(status), param->ud);
 	}
 	else {
-		param->cb(status, host, param->ud);
-		// char ip[INET6_ADDRSTRLEN];
-		// int i;
-		// for(i = 0; host->h_addr_list[i];++i) {
-		// 	inet_ntop(host->h_addrtype, host->h_addr_list[i], ip, sizeof(ip));
-		// }
+		param->cb(1, host, NULL, param->ud);
 	}
 	free(param);
 }

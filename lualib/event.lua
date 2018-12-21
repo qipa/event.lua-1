@@ -202,8 +202,8 @@ function _M.http_request(func)
 	return _event:http_request(func)
 end
 
-function _M.dns_resolve(host)
-	return _event:dns_resolve(host)
+function _M.dns_resolve(host,func)
+	return _event:dns_resolve(host,func)
 end
 
 function _M.run_process(cmd,line)

@@ -47,6 +47,7 @@ struct lev_timer;
 typedef struct lev {
 	struct ev_loop_ctx* loop_ctx;
 	struct http_multi* multi;
+	struct dns_resolver* resolver;
 	lua_State* main;
 	int ref;
 	int callback;
@@ -110,7 +111,7 @@ typedef struct lhttp_request {
 
 typedef struct ldns_resolver {
 	lev_t* lev;
-	struct dns_resolver* resolver;
+	struct dns_resolver* core;
 	int ref;
 	int callback;
 } ldns_resolver_t;
@@ -1043,8 +1044,27 @@ _lhttp_request_new(lua_State* L) {
 //-------------------------endof http request api---------------------------
 
 static void
-dns_resolver_result(int status, struct hostent *host, void* ud) {
+dns_resolver_result(int ok, struct hostent *host, const char* reason, void* ud) {
+	ldns_resolver_t* lresolver = ud;
+	lev_t* lev = lresolver->lev;
 
+	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lresolver->callback);
+	if (ok == 0) {
+		lua_pushboolean(lev->main, 0);
+		lua_pushstring(lev->main, reason);
+		lua_pcall(lev->main, 2, 0, 0);
+	} else {
+		lua_newtable(lev->main);
+		char ip[INET6_ADDRSTRLEN];
+		int i;
+		for(i = 0; host->h_addr_list[i];++i) {
+			inet_ntop(host->h_addrtype, host->h_addr_list[i], ip, sizeof(ip));
+			lua_pushstring(lev->main, ip);
+			lua_seti(lev->main, -2, i+1);
+		}
+		lua_pcall(lev->main, 1, 0, 0);
+	}
+	luaL_unref(lev->main, LUA_REGISTRYINDEX, lresolver->ref);
 }
 
 static int
@@ -1052,13 +1072,24 @@ _ldns_resolve(lua_State* L) {
 	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	const char* host = luaL_checkstring(L, 2);
 
-	// luaL_checktype(L, 3, LUA_TFUNCTION);
-	// int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-	// 
-	struct dns_resolver* resolver = dns_resolver_new(lev->loop_ctx);
-	dns_query(resolver, host, dns_resolver_result, NULL);
+	luaL_checktype(L, 3, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
 
-	return 0;
+	struct dns_resolver* core = dns_resolver_new(lev->loop_ctx);
+	
+	ldns_resolver_t* lresolver = lua_newuserdata(L, sizeof(*lresolver));
+	memset(lresolver,0,sizeof(*lresolver));
+
+	lresolver->lev = lev;
+	lresolver->core = core;
+	lresolver->callback = callback;
+
+	lua_pushvalue(L, -1);
+	lresolver->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	dns_query(core, host, dns_resolver_result, lresolver);
+
+	return 1;
 }
 //-------------------------event api---------------------------
 
@@ -1087,6 +1118,7 @@ static int
 _release(lua_State* L) {
 	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	http_multi_delete(lev->multi);
+	dns_resolver_delete(lev->resolver);
 	loop_ctx_release(lev->loop_ctx);
 	luaL_unref(L, LUA_REGISTRYINDEX, lev->ref);
 	return 0;
@@ -1128,6 +1160,7 @@ _event_new(lua_State* L) {
 	lev_t* lev = lua_newuserdata(L, sizeof(*lev));
 	lev->loop_ctx = loop_ctx_create();
 	lev->multi = http_multi_new(lev->loop_ctx);
+	lev->resolver = dns_resolver_new(lev->loop_ctx);
 	lev->main = L;
 	lev->callback = callback;
 	lev->freelist = NULL;

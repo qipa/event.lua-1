@@ -7,7 +7,7 @@
 #include "socket_tcp.h"
 #include "socket_util.h"
 
-typedef void(*dns_resolve_result)(int status, struct hostent *host, void* ud);
+typedef void(*dns_resolve_result)(int status, struct hostent *host, const char* reason, void* ud);
 
 struct dns_resolver;
 

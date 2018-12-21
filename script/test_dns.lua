@@ -1,4 +1,11 @@
 local event = require "event"
 
 
-event.dns_resolve("www.baisdfd2u.com")
+event.dns_resolve("www.baidu.com",function (result,error)
+
+	if result then
+		table.print(result)
+	else
+		print(error)
+	end
+end)

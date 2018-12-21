@@ -81,6 +81,9 @@ $(LIBEV_SHARE_LIB) :
 $(LIBCURL_SHARE_LIB) :
 	cd $(LIBCURL_PATH) && ./configure && make
 
+$(LIBARES_SHARE_LIB) :
+	cd $(LIBARES_PATH) && ./configure && make
+
 $(LUA_CLIB_PATH):
 	mkdir $(LUA_CLIB_PATH)
 
