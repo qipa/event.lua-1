@@ -124,6 +124,7 @@ dns_resolver_new(struct ev_loop_ctx* ev_loop) {
 	ares_library_init(ARES_LIB_INIT_ALL);
 
 	dns_resolver_t* resolver = malloc(sizeof(*resolver));
+	memset(resolver, 0, sizeof(*resolver));
 
 	resolver->opts.timeout = 3000;
 	resolver->opts.tries = 1;
@@ -147,10 +148,10 @@ dns_resolver_new(struct ev_loop_ctx* ev_loop) {
 
 void
 dns_resolver_delete(dns_resolver_t* resolver) {
-	ares_destroy(resolver->channel);
 	kh_destroy(task, resolver->hash);
-
+	ares_destroy(resolver->channel);
 	ares_library_cleanup();
+	free(resolver);
 }
  
 static void

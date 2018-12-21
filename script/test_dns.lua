@@ -9,3 +9,4 @@ event.dns_resolve("www.baidu.com",function (result,error)
 		print(error)
 	end
 end)
+
