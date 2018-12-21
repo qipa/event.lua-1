@@ -202,6 +202,10 @@ function _M.http_request(func)
 	return _event:http_request(func)
 end
 
+function _M.dns_resolve(host)
+	return _event:dns_resolve(host)
+end
+
 function _M.run_process(cmd,line)
     local FILE = assert(io.popen(cmd))
     if not _stream_base then

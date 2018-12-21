@@ -14,6 +14,10 @@ LIBCURL_PATH ?= 3rd/curl
 LIBCURL_INC ?= 3rd/curl/include
 LIBCURL_SHARE_LIB = 3rd/curl/lib/.libs/libcurl.so
 
+LIBARES_PATH ?= 3rd/c-ares
+LIBARES_INC ?= 3rd/c-ares
+LIBARES_SHARE_LIB = 3rd/c-ares/.libs/libcares.so
+
 EFENCE_PATH ?= ./3rd/electric-fence
 EFENCE_STATIC_LIB ?= ./3rd/electric-fence/libefence.a
 
@@ -56,6 +60,7 @@ SHARED=-fPIC --shared
 all : \
 	$(LIBEV_SHARE_LIB) \
 	$(LIBCURL_SHARE_LIB) \
+	$(LIBARES_SHARE_LIB) \
 	$(STATIC_LIBS) \
 	$(TARGET) \
 	$(foreach v, $(LUA_CLIB), $(LUA_CLIB_PATH)/$(v).so) 
@@ -106,8 +111,8 @@ efence :
 $(TARGET) : $(MAIN_OBJ) $(STATIC_LIBS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -Wl,-E
 
-$(LUA_CLIB_PATH)/ev.so : $(LUA_CLIB_SRC)/lua-ev.c $(LUA_CLIB_SRC)/lua-gate.c $(LUA_CLIB_SRC)/common/common.c $(LUA_CLIB_SRC)/socket/gate.c $(LUA_CLIB_SRC)/socket/socket_tcp.c $(LUA_CLIB_SRC)/socket/socket_udp.c $(LUA_CLIB_SRC)/socket/socket_pipe.c $(LUA_CLIB_SRC)/socket/socket_util.c $(LUA_CLIB_SRC)/socket/socket_httpc.c $(LUA_CLIB_SRC)/common/object_container.c $(LUA_CLIB_SRC)/common/string.c $(LIBEV_SHARE_LIB) $(LIBCURL_SHARE_LIB) | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) -Wno-strict-aliasing $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LIBEV_INC) -I$(LUA_CLIB_SRC) -I$(LIBCURL_INC) -I./3rd/klib
+$(LUA_CLIB_PATH)/ev.so : $(LUA_CLIB_SRC)/lua-ev.c $(LUA_CLIB_SRC)/lua-gate.c $(LUA_CLIB_SRC)/common/common.c $(LUA_CLIB_SRC)/socket/gate.c $(LUA_CLIB_SRC)/socket/socket_tcp.c $(LUA_CLIB_SRC)/socket/socket_udp.c $(LUA_CLIB_SRC)/socket/socket_pipe.c $(LUA_CLIB_SRC)/socket/socket_util.c $(LUA_CLIB_SRC)/socket/socket_httpc.c $(LUA_CLIB_SRC)/socket/dns_resolver.c $(LUA_CLIB_SRC)/common/object_container.c $(LUA_CLIB_SRC)/common/string.c $(LIBEV_SHARE_LIB) $(LIBCURL_SHARE_LIB) $(LIBARES_SHARE_LIB) | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) -Wno-strict-aliasing $(SHARED) $^ -o $@ -I$(LUA_INC) -I$(LIBEV_INC) -I$(LUA_CLIB_SRC) -I$(LIBCURL_INC) -I$(LIBARES_INC) -I./3rd/klib
 
 $(LUA_CLIB_PATH)/worker.so : $(LUA_CLIB_SRC)/lua-worker.c $(LUA_CLIB_SRC)/common/message_queue.c $(LUA_CLIB_SRC)/common/lock.c $(LUA_CLIB_SRC)/socket/socket_util.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -I$(LUA_INC)
@@ -193,6 +198,7 @@ cleanall :
 	cd $(LUA_PATH) && make clean
 	cd $(LIBEV_PATH) && make clean
 	cd $(LIBCURL_PATH) && make clean
+	cd $(LIBARES_PATH) && make clean
 	# cd $(TC_PATH) && make distclean
 	cd $(TC_PATH) && make clean
 	cd $(EFENCE_PATH) && make clean

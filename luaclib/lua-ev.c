@@ -13,6 +13,7 @@
 #include "socket/socket_util.h"
 #include "socket/socket_udp.h"
 #include "socket/socket_pipe.h"
+#include "socket/dns_resolver.h"
 
 #define LUA_EV_ERROR    0
 #define LUA_EV_TIMEOUT	1
@@ -106,6 +107,13 @@ typedef struct lhttp_request {
 	int ref;
 	int callback;
 } lhttp_request_t;
+
+typedef struct ldns_resolver {
+	lev_t* lev;
+	struct dns_resolver* resolver;
+	int ref;
+	int callback;
+} ldns_resolver_t;
 
 union un_sockaddr {
 	struct sockaddr_un su;
@@ -1034,6 +1042,24 @@ _lhttp_request_new(lua_State* L) {
 }
 //-------------------------endof http request api---------------------------
 
+static void
+dns_resolver_result(int status, struct hostent *host, void* ud) {
+
+}
+
+static int
+_ldns_resolve(lua_State* L) {
+	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
+	const char* host = luaL_checkstring(L, 2);
+
+	// luaL_checktype(L, 3, LUA_TFUNCTION);
+	// int callback = luaL_ref(L, LUA_REGISTRYINDEX);
+	// 
+	struct dns_resolver* resolver = dns_resolver_new(lev->loop_ctx);
+	dns_query(resolver, host, dns_resolver_result, NULL);
+
+	return 0;
+}
 //-------------------------event api---------------------------
 
 extern int lgate_create(lua_State* L, struct ev_loop_ctx* loop_ctx, uint32_t max_client, uint32_t max_freq, uint32_t timeout);
@@ -1124,6 +1150,7 @@ luaopen_ev_core(lua_State* L) {
 		{ "pipe", _lpipe_new },
 		{ "gate", _lgate_new },
 		{ "http_request", _lhttp_request_new },
+		{ "dns_resolve", _ldns_resolve },
 		{ "breakout", _break },
 		{ "dispatch", _dispatch },
 		{ "clean", _clean },
