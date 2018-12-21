@@ -4,7 +4,7 @@ local tp = require "tp"
 local model = require "model"
 
 _dirtyUser = _dirtyUser or {}
-_lruUser = _lruUser or nil
+_userLru = _userLru or nil
 
 MODEL_BINDER("dbUser","uid")
 
@@ -88,14 +88,20 @@ function lru:update(now)
 	end
 end
 
+function updateUserLru()
+	_userLru:update(os.time())
+end
+
 function start(self,workerCount)
-	_lruUser = lru:new("user",1000,function (name,userUid)
+	_userLru = lru:new("user",1000,function (name,userUid)
 		mode.unbind_dbUser_with_uid(userUid)
 	end)
 
 	tp.create(workerCount,"server/tp_data_worker")
-	timer.callout(1,self,"saveUser")
+	timer.callout(10,self,"saveUser")
+	timer.callout(1,self,"updateUserLru")
 end
+
 
 function loadUser(_,args)
 	local user = model.fetch_dbUser_with_uid(args.userUid)
@@ -107,7 +113,7 @@ function loadUser(_,args)
 
 	model.bind_dbUser_with_uid(args.userUid,dbUserInfo)
 
-	_lruUser:insert(args.userUid)
+	_userLru:insert(args.userUid)
 
 	return dbUserInfo
 end
@@ -156,5 +162,5 @@ function updateUser(_,args)
 		dirtyField[field] = true
 	end
 
-	_lruUser:insert(args.userUid)
+	_userLru:insert(args.userUid)
 end
