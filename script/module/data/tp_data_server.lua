@@ -24,7 +24,7 @@ function lru:new(name,max,timeout,unload)
 end
 
 function lru:insert(id)
-	print("update",id)
+
 	local node = self.nodeCtx[id]
 	if not node then
 		self.count = self.count + 1
@@ -86,7 +86,11 @@ function lru:update(now)
 				self.head = node.next
 			end
 
+			self.nodeCtx[node.id] = nil
+			self.count = self.count - 1
+
 			self.unload(self.name,node.id)
+
 		else
 			break
 		end
@@ -114,7 +118,7 @@ function doSaveUser(self,userUid,dirtyData)
 end
 
 function start(self,workerCount)
-	_userLru = lru:new("user",1000,10,function (name,userUid)
+	_userLru = lru:new("user",10,10,function (name,userUid)
 		print("unload",userUid)
 		if _dirtyUser[userUid] then
 			self:doSaveUser(userUid,_dirtyUser[userUid])
