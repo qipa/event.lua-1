@@ -46,12 +46,13 @@ struct lev_timer;
 
 typedef struct lev {
 	struct ev_loop_ctx* loop_ctx;
-	struct http_multi* multi;
 	struct dns_resolver* resolver;
+	struct http_multi* multi;
+	struct lev_timer* freelist;
+
 	lua_State* main;
 	int ref;
 	int callback;
-	struct lev_timer* freelist;
 } lev_t;
 
 typedef struct ltcp_session {
