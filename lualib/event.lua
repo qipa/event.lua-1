@@ -198,12 +198,12 @@ function _M.gate(max)
 	return gate
 end
 
-function _M.http_request(func)
-	return _event:http_request(func)
+function _M.dns(host,func)
+	return _event:dns_resolve(host,func)
 end
 
-function _M.dns_resolve(host,func)
-	return _event:dns_resolve(host,func)
+function _M.http_request(func)
+	return _event:http_request(func)
 end
 
 function _M.run_process(cmd,line)

@@ -44,8 +44,8 @@
 #include "convert.h"
 #include "linenoise.h"
 #include "common/common.h"
+#include "common/encrypt.h"
 #include "common/timeutil.h"
-
 
 #define LOG_ERROR   "\033[40;31m%s\033[0m"
 #define LOG_WARN    "\033[40;33m%s\033[0m"

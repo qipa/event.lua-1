@@ -12,6 +12,7 @@
 #include "lstate.h"
 
 #include "socket/gate.h"
+#include "common/encrypt.h"
 
 #define CACHED_SIZE 		1024 * 1024
 #define WARN_OUTPUT_FLOW 	1024 * 10
