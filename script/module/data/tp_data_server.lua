@@ -24,7 +24,6 @@ function lru:new(name,max,timeout,unload)
 end
 
 function lru:insert(id)
-
 	local node = self.nodeCtx[id]
 	if not node then
 		self.count = self.count + 1
@@ -47,6 +46,7 @@ function lru:insert(id)
 			self.tail = node.prev
 			self.tail.next = nil
 			self.count = self.count - 1
+			self.nodeCtx[node.id] = nil
 		end
 	else
 		node.time = os.time()
@@ -80,17 +80,23 @@ function lru:update(now)
 
 			if node == self.tail then
 				self.tail = node.prev
+				if not self.tail then
+					self.head = nil
+					self.tail = nil
+				end
 			end
 
 			if node == self.head then
 				self.head = node.next
+				if not self.head then
+					self.head = nil
+					self.tail = nil
+				end
 			end
 
 			self.nodeCtx[node.id] = nil
 			self.count = self.count - 1
-
 			self.unload(self.name,node.id)
-
 		else
 			break
 		end
@@ -118,7 +124,7 @@ function doSaveUser(self,userUid,dirtyData)
 end
 
 function start(self,workerCount)
-	_userLru = lru:new("user",10,10,function (name,userUid)
+	_userLru = lru:new("user",1000,60 * 10,function (name,userUid)
 		print("unload",userUid)
 		if _dirtyUser[userUid] then
 			self:doSaveUser(userUid,_dirtyUser[userUid])
@@ -134,8 +140,10 @@ end
 
 
 function loadUser(_,args)
+	print("args.userUid",args.userUid)
 	local user = model.fetch_dbUser_with_uid(args.userUid)
 	if user then
+		_userLru:insert(args.userUid)
 		return user
 	end
 
