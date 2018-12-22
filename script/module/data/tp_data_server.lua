@@ -121,7 +121,7 @@ function doSaveUser(self,userUid,dirtyData)
 			local updateInfo = {}
 			for fieldSeq in pairs(updateField) do
 				local field,subField = string.format(fieldSeq,"(%S+).(%S+)")
-				local info = updateInfo[field)]
+				local info = updateInfo[field]
 				if not info then
 					updateInfo[field] = info
 				end
@@ -221,4 +221,8 @@ function updateUser(_,args)
 	end
 
 	_userLru:insert(args.userUid)
+end
+
+function report(_,title)
+	return "fuck"
 end
