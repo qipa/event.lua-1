@@ -3,6 +3,8 @@ local worker = require "worker"
 local tp = require "tp"
 local model = require "model"
 
+local userTableDefine = import "module.data.user_table_define"
+
 _dirtyUser = _dirtyUser or {}
 _userLru = _userLru or nil
 
@@ -113,13 +115,40 @@ function doSaveUser(self,userUid,dirtyData)
 
 	for tbName,updateField in pairs(dirtyData) do
 		local dbUserTb = dbUser[tbName]
-		local sql = string.format("update %s set %%s where userUid=%d",tbName,userUid)
-		local sub = {}
-		for field in pairs(updateField) do
-			table.insert(sub,string.format("%s='%s'",field,tostring(dbUserTb[field])))
+
+		local tbDefine = userTableDefine.agentUser[tbName]
+		if tbDefine.array then
+			local updateInfo = {}
+			for fieldSeq in pairs(updateField) do
+				local field,subField = string.format(fieldSeq,"(%S+).(%S+)")
+				local info = updateInfo[field)]
+				if not info then
+					updateInfo[field] = info
+				end
+				info[subField] = dbUserTb[tonumber(field)][subField]
+			end
+
+			for key,updateInfo in pairs(udpateInfo) do
+				local sql = string.format("update %s set %%s where %s=%d",tbName,tbDefine.key,key)
+				local subInfo = dbUserTb[tonumber(key)]
+				local subSql = {}
+				for k,v in pairs(updateInfo) do
+					table.insert(subSql,string.format("%s='%s'",k,tostring(v)))
+				end
+
+				sql = string.format(sql,table.concat(subSql,","))
+				tp.send("handler.data_mysql","executeSql",sql)
+			end
+			
+		else
+			local sql = string.format("update %s set %%s where userUid=%d",tbName,userUid)
+			local fieldSql = {}
+			for field in pairs(updateField) do
+				table.insert(fieldSql,string.format("%s='%s'",field,tostring(dbUserTb[field])))
+			end
+			sql = string.format(sql,table.concat(fieldSql,","))
+			tp.send("handler.data_mysql","executeSql",sql)
 		end
-		sql = string.format(sql,table.concat(sub,","))
-		tp.send("handler.data_mysql","executeSql",sql)
 	end
 end
 
@@ -140,7 +169,6 @@ end
 
 
 function loadUser(_,args)
-	print("args.userUid",args.userUid)
 	local user = model.fetch_dbUser_with_uid(args.userUid)
 	if user then
 		_userLru:insert(args.userUid)
@@ -182,10 +210,13 @@ function updateUser(_,args)
 		dirtyData[args.tbName] = dirtyField
 	end
 
-	local tb = dbUser[args.tbName]
 	local updater = args.updater
-	for field,value in pairs(updater) do
-		tb[field] = value
+	local info = dbUser[args.tbName]
+	for fieldSeq,value in pairs(updater) do
+		local field,subField = string.format(fieldSeq,"(%S+).(%S+)")
+		if subField then
+			info[field][subField] = value
+		end
 		dirtyField[field] = true
 	end
 

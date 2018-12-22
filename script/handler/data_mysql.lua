@@ -1,6 +1,9 @@
 local event = require "event"
 local worker = require "worker"
 local mysqlEnv = require "luasql.mysql"
+
+local userTableDefine = import "module.data.user_table_define"
+
 local mysqlCore = mysqlEnv.mysql()
 
 mysqlSession = mysqlSession or nil
@@ -47,23 +50,21 @@ end
 
 function loadUser(uid)
 	local dbUser = {}
-	local userInfo = querySql("select * from user where userUid = "..uid)
-	if userInfo then
-		dbUser.user = userInfo[1]
-	end
 
-	local itemInfo = querySql("select * from item where userUid = "..uid)
-	if itemInfo then
-		dbUser.item = itemInfo
+	local pat = "select * from %s where userUid = %d"
+	for tblName,tblInfo in pairs(userTableDefine) do
+		local sql = string.format(pat,tblName,uid)
+		local result = querySql(sql)
+		if tblInfo.array then
+			local info = {}
+			for _,sub in pairs(result) do
+				info[sub[tblInfo.key]] = sub
+			end
+			dbUser[tblName] = info
+		else
+			dbUser[tblName] = result[1]
+		end
 	end
 
 	return dbUser
-end
-
-function saveUser()
-
-end
-
-function updateUser()
-
 end
