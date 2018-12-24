@@ -150,7 +150,8 @@ free_buffer(void* buffer) {
 static ltcp_session_t*
 tcp_session_create(lua_State* L, lev_t* lev,int fd,int header) {
 	ltcp_session_t* ltcp_session = lua_newuserdata(L, sizeof(ltcp_session_t));
-	memset(ltcp_session, 0, sizeof(*ltcp_session));
+	memset(ltcp_session, 0, sizeof(ltcp_session_t));
+
 	ltcp_session->lev = lev;
 	ltcp_session->closed = 0;
 	ltcp_session->header = header;
@@ -159,8 +160,9 @@ tcp_session_create(lua_State* L, lev_t* lev,int fd,int header) {
 	ltcp_session->markdead = 0;
 	ltcp_session->threhold = MB;
 
-	if (fd > 0)
+	if (fd > 0) {
 		ltcp_session->session = ev_session_bind(lev->loop_ctx, fd);
+	}
 
 	ltcp_session->ref = meta_init(L,META_SESSION);
 
