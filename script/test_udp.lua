@@ -8,18 +8,20 @@ local udp_session_server,err = event.udp(65536,function(udp_session,data,ip,port
 	--		if count %10000 == 0 then
 				print("recv",count,data)
 	--		end
-end,"127.0.0.1",2200)
+end,"127.0.0.8.8",1111111)
 
-local udp_session_client,err = event.udp(65536,function(udp_session,data,ip,port)
-	print(data)
-end,"127.0.0.1",2300)
+print(udp_session_server,err)
 
-event.fork(function ()
-	for i = 1,1024 do
-		if i %20000 == 0 then
-			print("send",i)
-			event.sleep(0.1)
-		end
-		udp_session_client:send("127.0.0.1",2200,"fuck")
-	end
-end)
+-- local udp_session_client,err = event.udp(65536,function(udp_session,data,ip,port)
+-- 	print(data)
+-- end,"127.0.0.1",2300)
+
+-- event.fork(function ()
+-- 	for i = 1,1024 do
+-- 		if i %20000 == 0 then
+-- 			print("send",i)
+-- 			event.sleep(0.1)
+-- 		end
+-- 		udp_session_client:send("127.0.0.1",2200,"fuck")
+-- 	end
+-- end)

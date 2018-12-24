@@ -584,7 +584,7 @@ _tcp_session_close(lua_State* L) {
 
 	if (!immediately) {
 		ev_session_setcb(ltcp_session->session, NULL, close_complete, tcp_session_error, ltcp_session);
-		ev_session_disable(ltcp_session->session,EV_READ);
+		ev_session_disable(ltcp_session->session, EV_READ);
 		ev_session_enable(ltcp_session->session, EV_WRITE);
 	} else {
 		if (ltcp_session->execute) {
