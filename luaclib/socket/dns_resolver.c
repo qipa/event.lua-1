@@ -125,7 +125,7 @@ dns_resolver_new(struct ev_loop_ctx* ev_loop) {
 
 	dns_resolver_t* resolver = malloc(sizeof(*resolver));
 	memset(resolver, 0, sizeof(*resolver));
-
+	
 	resolver->opts.timeout = 3000;
 	resolver->opts.tries = 1;
 	resolver->opts.sock_state_cb_data  = resolver;

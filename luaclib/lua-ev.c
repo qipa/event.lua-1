@@ -1075,20 +1075,18 @@ _ldns_resolve(lua_State* L) {
 
 	luaL_checktype(L, 3, LUA_TFUNCTION);
 	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	struct dns_resolver* core = dns_resolver_new(lev->loop_ctx);
 	
 	ldns_resolver_t* lresolver = lua_newuserdata(L, sizeof(*lresolver));
 	memset(lresolver,0,sizeof(*lresolver));
 
 	lresolver->lev = lev;
-	lresolver->core = core;
+	lresolver->core = lev->resolver;
 	lresolver->callback = callback;
 
 	lua_pushvalue(L, -1);
 	lresolver->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
-	dns_query(core, host, dns_resolver_result, lresolver);
+	dns_query(lresolver->core, host, dns_resolver_result, lresolver);
 
 	return 1;
 }
