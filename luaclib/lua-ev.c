@@ -60,7 +60,7 @@ typedef struct ltcp_session {
 	struct ev_session* session;
 	int ref;
 	int closed;
-	int wait;
+	int connect_session;
 
 	int execute;
 	int markdead;
@@ -280,7 +280,7 @@ connect_complete(struct ev_session* session,void *userdata) {
 
 	lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 	lua_pushinteger(lev->main, LUA_EV_CONNECT);
-	lua_pushinteger(lev->main, ltcp_session->wait);
+	lua_pushinteger(lev->main, ltcp_session->connect_session);
 
 	int fd = ev_session_fd(session);
 	int error;
@@ -345,41 +345,42 @@ get_tcp_session(lua_State* L, int index) {
 }
 
 struct sockaddr*
-get_addr(lua_State* L, int index, union un_sockaddr* sa, int* addrlen, int remove) {
+make_addr(lua_State* L, int index, union un_sockaddr* sa, int* len, int listen) {
 	luaL_checktype(L, index, LUA_TTABLE);
 	lua_getfield(L, index, "file");
 
 	struct sockaddr* addr;
 
 	if (!lua_isnoneornil(L, -1)) {
-		const char* file = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
+		sa->su.sun_family = AF_UNIX;  
 
-		if (remove) {
+		const char* file = luaL_checkstring(L, -1);
+		strcpy(sa->su.sun_path, file);
+		
+		if (listen) {
 			unlink(file);
 		}
 
-		sa->su.sun_family = AF_UNIX;  
-		strcpy(sa->su.sun_path, file);
+		lua_pop(L, 1);
 
 		addr = (struct sockaddr*)&sa->su;
-		*addrlen = sizeof(sa->su);
+		*len = sizeof(sa->su);
 	} else {
+		sa->si.sin_family = AF_INET;
+
 		lua_pop(L, 1);
 		lua_getfield(L, index, "ip");
 		const char* ip = luaL_checkstring(L, -1);
+		sa->si.sin_addr.s_addr = inet_addr(ip);
 		lua_pop(L, 1);
 
 		lua_getfield(L, index, "port");
 		int port = luaL_checkinteger(L, -1);
+		sa->si.sin_port = htons(port);
 		lua_pop(L, 1);
 
-		sa->si.sin_family = AF_INET;
-		sa->si.sin_addr.s_addr = inet_addr(ip);
-		sa->si.sin_port = htons(port);
-
 		addr = (struct sockaddr*)&sa->si;
-		*addrlen = sizeof(sa->si);
+		*len = sizeof(sa->si);
 	}
 	return addr;
 }
@@ -389,25 +390,27 @@ _connect(lua_State* L) {
 	lev_t* lev = (lev_t*)lua_touserdata(L, 1);
 	int header = lua_tointeger(L, 2);
 	if (header != 0) {
-		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD)
-			luaL_error(L,"error header size:%d",header);
+		if (header != HEADER_TYPE_WORD && header != HEADER_TYPE_DWORD) {
+			luaL_error(L,"connect error:header size:%d",header);
+		}
 	}
 
-	int wait = lua_tointeger(L, 3);
-	union un_sockaddr sa;
-	int addrlen = 0;
-	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 0);
+	int connect_session = lua_tointeger(L, 3);
 
-	int block = 1;
-	if (wait > 0) {
-		block = 0;
+	union un_sockaddr sa;
+	int len = 0;
+	struct sockaddr* addr = make_addr(L, 4, &sa, &len, 0);
+
+	int block_connect = 1;
+	if (connect_session > 0) {
+		block_connect = 0;
 	}
 
 	int status;
 	ltcp_session_t* ltcp_session = tcp_session_create(L,lev,-1,header);
 	ltcp_session->lev = lev;
-	ltcp_session->wait = wait;
-	ltcp_session->session = ev_session_connect(lev->loop_ctx,addr,addrlen,block,&status);
+	ltcp_session->connect_session = connect_session;
+	ltcp_session->session = ev_session_connect(lev->loop_ctx,addr,len,block_connect,&status);
 
 	if (status == CONNECT_STATUS_CONNECT_FAIL) {
 		lua_pushboolean(L,0);
@@ -415,7 +418,7 @@ _connect(lua_State* L) {
 		return 2;
 	}
 
-	if (!block) {
+	if (!block_connect) {
 		ev_session_setcb(ltcp_session->session,NULL,connect_complete,NULL,ltcp_session);
 		ev_session_enable(ltcp_session->session,EV_WRITE);
 		lua_pushboolean(L,1);
@@ -611,8 +614,8 @@ _listen(lua_State* L) {
 	int multi = lua_toboolean(L, 3);
 
 	union un_sockaddr sa;
-	int addrlen = 0;
-	struct sockaddr* addr = get_addr(L, 4, &sa, &addrlen, 1);
+	int len = 0;
+	struct sockaddr* addr = make_addr(L, 4, &sa, &len, 1);
 	
 	ltcp_listener_t* lev_listener = lua_newuserdata(L, sizeof(*lev_listener));
 	lev_listener->lev = lev;
@@ -620,10 +623,11 @@ _listen(lua_State* L) {
 	lev_listener->header = header;
 
 	int flag = SOCKET_OPT_NOBLOCK | SOCKET_OPT_CLOSE_ON_EXEC | SOCKET_OPT_REUSEABLE_ADDR;
-	if (multi)
+	if (multi) {
 		flag |= SOCKET_OPT_REUSEABLE_PORT;
+	}
 
-	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,addrlen,16,flag,accept_complete,lev_listener);
+	lev_listener->listener = ev_listener_bind(lev->loop_ctx,addr,len,16,flag,accept_complete,lev_listener);
 	if (!lev_listener->listener) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, strdup(strerror(errno)));
