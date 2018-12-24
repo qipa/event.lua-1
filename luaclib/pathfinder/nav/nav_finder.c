@@ -1,4 +1,4 @@
-#include "nav.h"
+﻿#include "nav.h"
 #include <float.h>
 
 inline double
@@ -274,7 +274,7 @@ raycast(struct nav_mesh_context* ctx, struct vector3* pt0, struct vector3* pt1, 
 			vector3_sub(pt3, pt0, &vt30);
 			vector3_sub(pt4, pt0, &vt40);
 
-			if ( vt_inside_vt(&vt10, &vt30, &vt40)) {
+			if ( vt_inside_vt(&vt10, &vt30, &vt40) ) {
 				int next = -1;
 				if ( border->node[0] != -1 ) {
 					if ( border->node[0] == node->id )
@@ -330,7 +330,7 @@ clear_node(struct nav_node* n) {
 
 static inline void
 heap_clear(mh_elt_t* elt) {
-	struct nav_node *node = ( struct nav_node *)elt;
+	struct nav_node *node = ( struct nav_node * )elt;
 	clear_node(node);
 }
 
@@ -732,46 +732,6 @@ around_movable(struct nav_mesh_context* ctx, double x, double z, int range, int*
 	return result;
 }
 
-#define INIT_RECORD_SIZE 8
-struct dt_poly_record {
-	int init[INIT_RECORD_SIZE];
-	int offset;
-	int size;
-	int* record;
-};
-
-static inline void
-dt_record_init(struct dt_poly_record* dt_record) {
-	dt_record->record = dt_record->init;
-	dt_record->offset = 0;
-	dt_record->size = INIT_RECORD_SIZE;
-}
-
-static inline void
-dt_record_add(struct dt_poly_record* dt_record, int poly) {
-	if ( dt_record->offset >= dt_record->size ) {
-		int nsize = dt_record->size * 2;
-		int* nrecord = (int*)malloc(sizeof(int)* nsize);
-		memcpy(nrecord, dt_record->record, sizeof(int)* dt_record->size);
-		if (dt_record->record != dt_record->init) {
-			free(dt_record->record);
-		}
-		dt_record->record = nrecord;
-		dt_record->size = nsize;
-	}
-
-	dt_record->record[dt_record->offset++] = poly;
-}
-
-static inline void
-dt_record_release(struct dt_poly_record* dt_record) {
-	if ( dt_record->record != dt_record->init ) {
-		free(dt_record->record);
-	}
-}
-
-#define MOVABLE_USE_RECORD
-
 bool
 point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, double* dt_offset) {
 	if ( x < ctx->lt.x || x > ctx->br.x )
@@ -780,7 +740,7 @@ point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, doub
 	if ( z < ctx->lt.z || z > ctx->br.z )
 		return false;
 
-	if (ctx->tile == NULL) {
+	if ( ctx->tile == NULL ) {
 		return false;
 	}
 
@@ -810,15 +770,11 @@ point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, doub
 		return false;
 	}
 
-	if ( fix == 0 ) {
+	if ( fix <= 0.1f ) {
 		return false;
 	}
 
-#ifdef MOVABLE_USE_RECORD
-	struct dt_poly_record dt_record;
-	dt_record_init(&dt_record);
-#endif
-
+	struct nav_node* search_node = NULL;
 	struct vector3 pt = { x, 0, z };
 	double dt_min = -1;
 
@@ -837,44 +793,36 @@ point_movable(struct nav_mesh_context* ctx, double x, double z, double fix, doub
 			int i;
 			for ( i = 0; i < tile->offset; i++ ) {
 				int poly_id = tile->node[i];
-#ifdef MOVABLE_USE_RECORD
+
 				node = get_node(ctx, poly_id);
 				if ( node->dt_recorded == 0 ) {
 					node->dt_recorded = 1;
-					dt_record_add(&dt_record, poly_id);
+					node->next = search_node;
+					search_node = node;
 					double dt = dot2poly(ctx, poly_id, &pt);
 					if ( dt_min < 0 || dt_min > dt ) {
 						dt_min = dt;
 					}
 				}
-#else
-				double dt = dot2poly(ctx, poly_id, &pt);
-				if ( dt_min < 0 || dt_min > dt ) {
-					dt_min = dt;
-				}
-#endif
-
 			}
 		}
 	}
 
-#ifdef MOVABLE_USE_RECORD
-	for ( i = 0; i < dt_record.offset; i++ ) {
-		int poly_id = dt_record.record[i];
-		node = get_node(ctx, poly_id);
-		assert(node->dt_recorded == 1);
-		node->dt_recorded = 0;
+	while ( search_node ) {
+		struct nav_node* current = search_node;
+		assert(current->dt_recorded == 1);
+		current->dt_recorded = 0;
+		search_node = search_node->next;
+		current->next = NULL;
 	}
-	dt_record_release(&dt_record);
-#endif
 
-	if (dt_offset) {
+	if ( dt_offset ) {
 		*dt_offset = dt_min;
 	}
 	if ( dt_min > 0 && dt_min <= fix ) {
 		return true;
 	}
-	
+
 	return false;
 }
 
