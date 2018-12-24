@@ -241,9 +241,10 @@ read_complete(struct ev_session* ev_session, void* ud) {
 				lua_rawgeti(lev->main, LUA_REGISTRYINDEX, lev->callback);
 				lua_pushinteger(lev->main, LUA_EV_DATA);
 				lua_rawgeti(lev->main, LUA_REGISTRYINDEX, ltcp_session->ref);
-				lua_pushlightuserdata(lev->main,data);
-				lua_pushinteger(lev->main,ltcp_session->need);
+				lua_pushlightuserdata(lev->main, data);
+				lua_pushinteger(lev->main, ltcp_session->need);
 				lua_pcall(lev->main, 4, 0, 0);
+
 				ltcp_session->state = STATE_HEAD;
 
 				free_buffer(data);
@@ -339,7 +340,7 @@ static inline ltcp_session_t*
 get_tcp_session(lua_State* L, int index) {
 	ltcp_session_t* ltcp_session = (ltcp_session_t*)lua_touserdata(L, 1);
 	if (ltcp_session->closed) {
-		luaL_error(L,"session already closed");
+		luaL_error(L, "session:%p already closed", ltcp_session);
 	}
 	return ltcp_session;
 }
@@ -464,11 +465,11 @@ _tcp_session_write(lua_State* L) {
 			break;
 		}
 		default:
-			luaL_error(L,"session write error:unknow lua type:%s",lua_typename(L,vt));
+			luaL_error(L,"session:%p write error:unknow lua type:%s", ltcp_session, lua_typename(L,vt));
 	}
 
 	if (size == 0) {
-		luaL_error(L,"session write error:size is zero");
+		luaL_error(L, "session:%p write error:empty content", ltcp_session);
 	}
 
 	char* block = NULL;
@@ -509,7 +510,7 @@ _tcp_session_write(lua_State* L) {
 	if (total >= ltcp_session->threhold) {
 		size_t howmuch = total / MB;
 		ltcp_session->threhold += MB;
-		fprintf(stderr,"channel:%p more than %ldmb data need to send out\n",ltcp_session,howmuch);
+		fprintf(stderr,"session:%p more than %ldmb data need to send out\n",ltcp_session,howmuch);
 	} else {
 		size_t threhold = ltcp_session->threhold;
 		if ( threhold > MB && total < threhold / 2) {
@@ -820,7 +821,7 @@ static int
 _udp_session_send(lua_State* L) {
 	ludp_session_t* ludp_session = (ludp_session_t*)lua_touserdata(L, 1);
 	if (ludp_session->closed == 1) {
-		luaL_error(L,"udp session:0x%x already closed",ludp_session);
+		luaL_error(L,"udp session:%p already closed",ludp_session);
 	}
 
 	const char* ip = luaL_checkstring(L,2);
@@ -877,7 +878,7 @@ static int
 _udp_session_close(lua_State* L) {
 	ludp_session_t* ludp_session = (ludp_session_t*)lua_touserdata(L, 1);
 	if (ludp_session->closed == 1) {
-		luaL_error(L,"udp session:0x%x already closed",ludp_session);
+		luaL_error(L,"udp session:%p already closed",ludp_session);
 	}
 	udp_session_release(ludp_session);
 	return 0;
