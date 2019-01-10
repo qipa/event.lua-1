@@ -110,7 +110,7 @@ function channel:send(file,method,args,callback)
 		self.session_ctx[session] = {callback = callback}
 	end
 
-	local ptr,size = tencode({file = file,method = method,session = 0,args = args})
+	local ptr,size = tencode({file = file,method = method,session = session,args = args})
 	self.channel_buff:write(ptr,size)
 	
 	-- monitor.report_output(file,method,size)
